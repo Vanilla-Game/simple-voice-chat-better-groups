@@ -2,10 +2,12 @@ name: Voice Chat Version Discovery
 
 # Finds new Simple Voice Chat Fabric releases on Modrinth, runs the shared
 # compatibility harness against them, and opens (or updates) a draft PR that
-# widens the supported range across the contiguous green prefix only. The PR
-# uses a fix: commit type so release-please ships the widened range in a patch
-# release. voicechat.compile intentionally stays at the minimum supported
-# version.
+# widens the supported range across the contiguous green prefix only. The
+# prefix never crosses a minor-version boundary: a shipped range must not
+# cover an untested gap that a later backport could land in, so moving to a
+# new minor line is a manual decision. The PR uses a fix: commit type so
+# release-please ships the widened range in a patch release.
+# voicechat.compile intentionally stays at the minimum supported version.
 
 on:
   schedule:
@@ -84,8 +86,18 @@ jobs:
       - name: Compute contiguous green prefix
         id: widen
         run: |
+          current_upper=$(grep '^voicechat\.range=' compatibility.properties | cut -d= -f2- | awk '{print $2}')
+          current_upper="${current_upper#<}"
+          minor_line="${current_upper%.*}"
+
           green=()
           for version in $(echo '${{ needs.discover.outputs.candidates }}' | jq -r '.[]'); do
+            core="${version#fabric-}"
+            core="${core%%+*}"
+            if [ "${core%.*}" != "$minor_line" ]; then
+              echo "Stopping at \`$version\`: crosses the \`$minor_line\` minor line; widening beyond it needs manual review." >> "$GITHUB_STEP_SUMMARY"
+              break
+            fi
             result_file="compat-results/$version"
             if [ -f "$result_file" ] && [ "$(cat "$result_file")" = "ok" ]; then
               green+=("$version")
