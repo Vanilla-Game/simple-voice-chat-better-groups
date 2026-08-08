@@ -31,7 +31,7 @@ class VcGroupCommandTest {
     private static final Instant NOW = Instant.parse("2026-08-08T10:00:00Z");
 
     @Test
-    void inviteCooldownPreventsRepeatedMessagesAndTokens() {
+    void inviteCooldownThrottlesRepeatInvitesToSameTargetOnly() {
         VoiceChatGroupToolsPlugin plugin = mock(VoiceChatGroupToolsPlugin.class);
         InviteStore invites = mock(InviteStore.class);
         GroupOwnershipRegistry ownership = new GroupOwnershipRegistry();
@@ -42,25 +42,33 @@ class VcGroupCommandTest {
         VoicechatServerApi api = mock(VoicechatServerApi.class);
         Player inviter = player("Inviter");
         Player target = player("Target");
+        Player other = player("Other");
         Group group = group();
         VoicechatConnection inviterConnection = connection(group);
         VoicechatConnection targetConnection = connection(null);
+        VoicechatConnection otherConnection = connection(null);
         when(plugin.getVoicechatApi()).thenReturn(api);
         when(api.getConnectionOf(inviter.getUniqueId())).thenReturn(inviterConnection);
         when(api.getConnectionOf(target.getUniqueId())).thenReturn(targetConnection);
+        when(api.getConnectionOf(other.getUniqueId())).thenReturn(otherConnection);
         when(api.getGroup(group.getId())).thenReturn(group);
         when(invites.create(target.getUniqueId(), group.getId())).thenReturn("token");
+        when(invites.create(other.getUniqueId(), group.getId())).thenReturn("token2");
         VcGroupCommand command = new VcGroupCommand(plugin, invites, ownership, cooldowns, 5);
 
         try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
             bukkit.when(() -> Bukkit.getPlayerExact("Target")).thenReturn(target);
+            bukkit.when(() -> Bukkit.getPlayerExact("Other")).thenReturn(other);
 
             command.onCommand(inviter, mock(Command.class), "vcgroup", new String[]{"invite", "Target"});
             command.onCommand(inviter, mock(Command.class), "vcgroup", new String[]{"invite", "Target"});
+            command.onCommand(inviter, mock(Command.class), "vcgroup", new String[]{"invite", "Other"});
         }
 
         verify(invites, times(1)).create(target.getUniqueId(), group.getId());
         verify(target, times(1)).sendMessage(any(Component.class));
+        verify(invites, times(1)).create(other.getUniqueId(), group.getId());
+        verify(other, times(1)).sendMessage(any(Component.class));
     }
 
     @Test

@@ -116,7 +116,8 @@ final class VcGroupCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
-        InviteCooldownStore.Attempt cooldownAttempt = inviteCooldowns.tryAcquire(inviter.getUniqueId());
+        InviteCooldownStore.Attempt cooldownAttempt =
+                inviteCooldowns.tryAcquire(inviter.getUniqueId(), target.getUniqueId());
         if (!cooldownAttempt.allowed()) {
             inviter.sendMessage(Messages.component(
                     Messages.INVITE_COOLDOWN,

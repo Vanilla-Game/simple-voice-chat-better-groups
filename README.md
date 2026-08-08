@@ -33,7 +33,7 @@ The first automated release starts at `0.1.0`. Pull request titles are checked f
 
 All commands are player-only.
 
-- `/vcgroup invite <player>` — sends an online player a clickable, password-free invite to the sender's current voice chat group. The target must not already be in a group. A configurable per-inviter cooldown prevents chat spam.
+- `/vcgroup invite <player>` — sends an online player a clickable, password-free invite to the sender's current voice chat group. The target must not already be in a group. A configurable cooldown per inviter and target pair prevents chat spam.
 - `/vcgroup accept <token>` — accepts an invite that belongs to the executing player's UUID. Tokens expire after the configured lifetime and are removed after successful use.
 - `/vcgroup kick <player>` — removes an online member from the caller's current voice chat group. Only the UUID observed in `CreateGroupEvent#getConnection()` for that group is authorized.
 
@@ -49,7 +49,7 @@ invites:
   cooldown-seconds: 10
 ```
 
-`expiration-minutes` must be at least `1`. `cooldown-seconds` is applied per inviting player and may be set to `0` to disable it. Invalid values are reported in the server log and replaced with safe defaults. Restart the plugin/server after changing the file; this MVP does not add a reload command.
+`expiration-minutes` must be at least `1`. `cooldown-seconds` is applied per inviter and target pair, so inviting a different player is not throttled, and may be set to `0` to disable it. Invalid values are reported in the server log and replaced with safe defaults. Restart the plugin/server after changing the file; this MVP does not add a reload command.
 
 ## Permission
 
@@ -76,4 +76,4 @@ Run the focused unit tests and build the plugin:
 ./gradlew build
 ```
 
-The unit tests cover secure token shape/randomness, configurable expiry, one-time consumption, player/group UUID binding, replacement of stale invites, cooldown timing, command accept/kick mutation checks, invite throttling, vanish-aware tab completion, fail-closed creator authorization, translation-key parity, configured lifetime rendering, per-player Russian/English rendering, and English fallback.
+The unit tests cover secure token shape/randomness, configurable expiry, one-time consumption, player/group UUID binding, replacement of stale invites, cooldown timing, command accept/kick mutation checks, per-target invite throttling, vanish-aware tab completion, fail-closed creator authorization, translation-key parity, configured lifetime rendering, per-player Russian/English rendering, and English fallback.

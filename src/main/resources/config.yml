@@ -2,6 +2,6 @@
 invites:
   expiration-minutes: 5
 
-  # Per-inviter delay between successfully validated invite attempts.
-  # Set to 0 to disable the cooldown.
+  # Delay between successfully validated invite attempts, applied per
+  # inviter and target pair. Set to 0 to disable the cooldown.
   cooldown-seconds: 10

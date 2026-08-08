@@ -10,7 +10,7 @@ import java.util.UUID;
 
 final class InviteCooldownStore {
 
-    private final Map<UUID, Instant> nextAllowedAt = new HashMap<>();
+    private final Map<PairKey, Instant> nextAllowedAt = new HashMap<>();
     private final Clock clock;
     private final Duration cooldown;
 
@@ -22,26 +22,29 @@ final class InviteCooldownStore {
         }
     }
 
-    synchronized Attempt tryAcquire(UUID playerId) {
-        Objects.requireNonNull(playerId, "playerId");
+    synchronized Attempt tryAcquire(UUID inviterId, UUID targetId) {
+        PairKey key = new PairKey(inviterId, targetId);
         if (cooldown.isZero()) {
             return Attempt.allowedAttempt();
         }
 
         Instant now = clock.instant();
-        Instant nextAllowed = nextAllowedAt.get(playerId);
+        Instant nextAllowed = nextAllowedAt.get(key);
         if (nextAllowed != null && now.isBefore(nextAllowed)) {
             long remainingMillis = Duration.between(now, nextAllowed).toMillis();
             long remainingSeconds = Math.max(1L, (remainingMillis + 999L) / 1_000L);
             return Attempt.blocked(remainingSeconds);
         }
 
-        nextAllowedAt.put(playerId, now.plus(cooldown));
+        nextAllowedAt.put(key, now.plus(cooldown));
         return Attempt.allowedAttempt();
     }
 
     synchronized void invalidate(UUID playerId) {
-        nextAllowedAt.remove(Objects.requireNonNull(playerId, "playerId"));
+        Objects.requireNonNull(playerId, "playerId");
+        nextAllowedAt.keySet().removeIf(
+                key -> key.inviterId().equals(playerId) || key.targetId().equals(playerId)
+        );
     }
 
     synchronized void cleanupExpired() {
@@ -61,6 +64,13 @@ final class InviteCooldownStore {
 
         private static Attempt blocked(long retryAfterSeconds) {
             return new Attempt(false, retryAfterSeconds);
+        }
+    }
+
+    private record PairKey(UUID inviterId, UUID targetId) {
+        PairKey {
+            Objects.requireNonNull(inviterId, "inviterId");
+            Objects.requireNonNull(targetId, "targetId");
         }
     }
 }

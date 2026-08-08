@@ -18,31 +18,67 @@ class InviteCooldownStoreTest {
     private static final Instant START = Instant.parse("2026-08-08T10:00:00Z");
 
     @Test
-    void blocksRepeatedInvitesUntilCooldownExpires() {
+    void blocksRepeatedInvitesToSameTargetUntilCooldownExpires() {
         MutableClock clock = new MutableClock(START);
         InviteCooldownStore cooldowns = new InviteCooldownStore(clock, Duration.ofSeconds(10));
-        UUID playerId = UUID.randomUUID();
+        UUID inviterId = UUID.randomUUID();
+        UUID targetId = UUID.randomUUID();
 
-        assertTrue(cooldowns.tryAcquire(playerId).allowed());
+        assertTrue(cooldowns.tryAcquire(inviterId, targetId).allowed());
 
         clock.advance(Duration.ofMillis(1_001));
-        InviteCooldownStore.Attempt blocked = cooldowns.tryAcquire(playerId);
+        InviteCooldownStore.Attempt blocked = cooldowns.tryAcquire(inviterId, targetId);
         assertFalse(blocked.allowed());
         assertEquals(9L, blocked.retryAfterSeconds());
 
         clock.advance(Duration.ofMillis(8_999));
-        assertTrue(cooldowns.tryAcquire(playerId).allowed());
+        assertTrue(cooldowns.tryAcquire(inviterId, targetId).allowed());
     }
 
     @Test
-    void cooldownIsTrackedSeparatelyForEachPlayer() {
+    void cooldownIsTrackedSeparatelyForEachInviterTargetPair() {
         InviteCooldownStore cooldowns = new InviteCooldownStore(
                 Clock.fixed(START, ZoneOffset.UTC),
                 Duration.ofSeconds(10)
         );
+        UUID inviterId = UUID.randomUUID();
+        UUID targetId = UUID.randomUUID();
 
-        assertTrue(cooldowns.tryAcquire(UUID.randomUUID()).allowed());
-        assertTrue(cooldowns.tryAcquire(UUID.randomUUID()).allowed());
+        assertTrue(cooldowns.tryAcquire(inviterId, targetId).allowed());
+        assertTrue(cooldowns.tryAcquire(inviterId, UUID.randomUUID()).allowed());
+        assertTrue(cooldowns.tryAcquire(UUID.randomUUID(), targetId).allowed());
+        assertFalse(cooldowns.tryAcquire(inviterId, targetId).allowed());
+    }
+
+    @Test
+    void pairKeyIsDirectional() {
+        InviteCooldownStore cooldowns = new InviteCooldownStore(
+                Clock.fixed(START, ZoneOffset.UTC),
+                Duration.ofSeconds(10)
+        );
+        UUID inviterId = UUID.randomUUID();
+        UUID targetId = UUID.randomUUID();
+
+        assertTrue(cooldowns.tryAcquire(inviterId, targetId).allowed());
+        assertTrue(cooldowns.tryAcquire(targetId, inviterId).allowed());
+    }
+
+    @Test
+    void invalidateRemovesPairsOnEitherSide() {
+        InviteCooldownStore cooldowns = new InviteCooldownStore(
+                Clock.fixed(START, ZoneOffset.UTC),
+                Duration.ofSeconds(10)
+        );
+        UUID quittingPlayerId = UUID.randomUUID();
+        UUID otherId = UUID.randomUUID();
+
+        assertTrue(cooldowns.tryAcquire(quittingPlayerId, otherId).allowed());
+        assertTrue(cooldowns.tryAcquire(otherId, quittingPlayerId).allowed());
+
+        cooldowns.invalidate(quittingPlayerId);
+
+        assertTrue(cooldowns.tryAcquire(quittingPlayerId, otherId).allowed());
+        assertTrue(cooldowns.tryAcquire(otherId, quittingPlayerId).allowed());
     }
 
     @Test
@@ -51,10 +87,11 @@ class InviteCooldownStoreTest {
                 Clock.fixed(START, ZoneOffset.UTC),
                 Duration.ZERO
         );
-        UUID playerId = UUID.randomUUID();
+        UUID inviterId = UUID.randomUUID();
+        UUID targetId = UUID.randomUUID();
 
-        assertTrue(cooldowns.tryAcquire(playerId).allowed());
-        assertTrue(cooldowns.tryAcquire(playerId).allowed());
+        assertTrue(cooldowns.tryAcquire(inviterId, targetId).allowed());
+        assertTrue(cooldowns.tryAcquire(inviterId, targetId).allowed());
     }
 
     private static final class MutableClock extends Clock {
