@@ -1,0 +1,4 @@
+{
+  "gui.voicechat_group_tools.invite": "Invite player",
+  "gui.voicechat_group_tools.kick": "Remove %s from the voice group (creator only)"
+}

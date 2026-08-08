@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "voicechat_group_tools_client",
+  "version": "${version}",
+  "name": "Voice Chat Group Tools Client",
+  "description": "Adds Vanilla Game group actions to the existing Simple Voice Chat group screen.",
+  "authors": [
+    "Vanilla Game"
+  ],
+  "contact": {
+    "homepage": "https://vanilla-game.ru",
+    "sources": "https://github.com/Vanilla-Game/voicechat-group-tools"
+  },
+  "license": "All-Rights-Reserved",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "ru.vanillagame.voicechat.grouptools.client.VoiceChatGroupToolsClient"
+    ]
+  },
+  "mixins": [
+    "voicechat-group-tools-client.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "java": ">=25",
+    "minecraft": "${minecraft_version}",
+    "voicechat": "${voicechat_range}"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "ru.vanillagame.voicechat.grouptools.client.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "GroupEntryMixin",
+    "GroupScreenMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

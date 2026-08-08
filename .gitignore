@@ -1,6 +1,7 @@
 .gradle/
 build/
 out/
+client-fabric/run/
 .idea/
 *.iml
 .DS_Store
