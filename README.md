@@ -21,7 +21,7 @@ The optional client module additionally requires:
 
 - Minecraft `26.2`
 - Fabric Loader `0.19.3` or newer
-- Simple Voice Chat Fabric `2.6.21`
+- Simple Voice Chat Fabric `2.6.18` or newer within the supported range
 
 The server project compiles against Paper API `26.2.build.84-stable` and emits Java 25 bytecode. Paper's 26.2 development documentation specifies Java 25 and the `26.2.build.*` API line. Simple Voice Chat 2.6.21 exposes the separately published public API artifact `voicechat-api:2.6.20`, which is used as a compile-only dependency by the server plugin.
 
