@@ -26,15 +26,21 @@ final class VcGroupCommand implements CommandExecutor, TabCompleter {
     private final VoiceChatGroupToolsPlugin plugin;
     private final InviteStore invites;
     private final GroupOwnershipRegistry ownership;
+    private final InviteCooldownStore inviteCooldowns;
+    private final int inviteExpirationMinutes;
 
     VcGroupCommand(
             VoiceChatGroupToolsPlugin plugin,
             InviteStore invites,
-            GroupOwnershipRegistry ownership
+            GroupOwnershipRegistry ownership,
+            InviteCooldownStore inviteCooldowns,
+            int inviteExpirationMinutes
     ) {
         this.plugin = plugin;
         this.invites = invites;
         this.ownership = ownership;
+        this.inviteCooldowns = inviteCooldowns;
+        this.inviteExpirationMinutes = inviteExpirationMinutes;
     }
 
     @Override
@@ -110,6 +116,16 @@ final class VcGroupCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
+        InviteCooldownStore.Attempt cooldownAttempt = inviteCooldowns.tryAcquire(inviter.getUniqueId());
+        if (!cooldownAttempt.allowed()) {
+            inviter.sendMessage(Messages.component(
+                    Messages.INVITE_COOLDOWN,
+                    NamedTextColor.RED,
+                    Component.text(cooldownAttempt.retryAfterSeconds())
+            ));
+            return;
+        }
+
         String token = invites.create(target.getUniqueId(), groupId);
         Component acceptButton = Messages.component(Messages.INVITE_ACCEPT_LABEL, NamedTextColor.GREEN)
                 .decorate(TextDecoration.BOLD)
@@ -124,7 +140,11 @@ final class VcGroupCommand implements CommandExecutor, TabCompleter {
                         .append(Component.space())
                         .append(acceptButton)
                         .append(Component.space())
-                        .append(Messages.component(Messages.INVITE_EXPIRES, NamedTextColor.GRAY))
+                        .append(Messages.component(
+                                Messages.INVITE_EXPIRES,
+                                NamedTextColor.GRAY,
+                                Component.text(inviteExpirationMinutes)
+                        ))
         );
         inviter.sendMessage(Messages.component(
                 Messages.INVITE_SENT,
@@ -254,8 +274,11 @@ final class VcGroupCommand implements CommandExecutor, TabCompleter {
         }
         if (args.length == 2 && (args[0].equalsIgnoreCase("invite") || args[0].equalsIgnoreCase("kick"))) {
             List<String> names = new ArrayList<>();
-            for (Player player : Bukkit.getOnlinePlayers()) {
-                names.add(player.getName());
+            Player viewer = sender instanceof Player player ? player : null;
+            for (Player candidate : Bukkit.getOnlinePlayers()) {
+                if (viewer == null || viewer.canSee(candidate)) {
+                    names.add(candidate.getName());
+                }
             }
             return filter(names, args[1]);
         }

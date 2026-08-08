@@ -33,11 +33,23 @@ The first automated release starts at `0.1.0`. Pull request titles are checked f
 
 All commands are player-only.
 
-- `/vcgroup invite <player>` — sends an online player a clickable, password-free invite to the sender's current voice chat group. The target must not already be in a group.
-- `/vcgroup accept <token>` — accepts an invite that belongs to the executing player's UUID. Tokens expire after five minutes and are removed after successful use.
+- `/vcgroup invite <player>` — sends an online player a clickable, password-free invite to the sender's current voice chat group. The target must not already be in a group. A configurable per-inviter cooldown prevents chat spam.
+- `/vcgroup accept <token>` — accepts an invite that belongs to the executing player's UUID. Tokens expire after the configured lifetime and are removed after successful use.
 - `/vcgroup kick <player>` — removes an online member from the caller's current voice chat group. Only the UUID observed in `CreateGroupEvent#getConnection()` for that group is authorized.
 
 Invites contain a random 192-bit URL-safe token. They never contain, log, or display a group password.
+
+## Configuration
+
+The generated `plugins/VoiceChatGroupTools/config.yml` file contains:
+
+```yaml
+invites:
+  expiration-minutes: 5
+  cooldown-seconds: 10
+```
+
+`expiration-minutes` must be at least `1`. `cooldown-seconds` is applied per inviting player and may be set to `0` to disable it. Invalid values are reported in the server log and replaced with safe defaults. Restart the plugin/server after changing the file; this MVP does not add a reload command.
 
 ## Permission
 
@@ -51,7 +63,7 @@ Translations are bundled in `src/main/resources/lang/Messages_en_US.properties` 
 
 ## State and public API limitations
 
-- Invites are deliberately in memory only. They expire after five minutes and are invalidated when used, superseded for the same player/group pair, when the invited player disconnects, when the group is removed, or when the plugin/voice chat server stops.
+- Invites and cooldowns are deliberately in memory only. Invites expire after the configured lifetime and are invalidated when used, superseded for the same player/group pair, when the invited player disconnects, when the group is removed, or when the plugin/voice chat server stops.
 - Group ownership is learned only from public `CreateGroupEvent` events observed while this addon is active and is removed on `RemoveGroupEvent`.
 - The public API does not expose the creator of an already existing group. After a plugin reload, or for a persistent group created before this addon observed its creation event, ownership cannot be safely reconstructed. In that case `/vcgroup kick` is denied with a clear message; the plugin never guesses or grants fallback ownership.
 - The plugin only acts on online Bukkit players and current public `VoicechatConnection` objects.
@@ -64,4 +76,4 @@ Run the focused unit tests and build the plugin:
 ./gradlew build
 ```
 
-The unit tests cover secure token shape/randomness, five-minute expiry, one-time consumption, player/group UUID binding, replacement of stale invites, fail-closed creator authorization, translation-key parity, per-player Russian/English rendering, and English fallback.
+The unit tests cover secure token shape/randomness, configurable expiry, one-time consumption, player/group UUID binding, replacement of stale invites, cooldown timing, command accept/kick mutation checks, invite throttling, vanish-aware tab completion, fail-closed creator authorization, translation-key parity, configured lifetime rendering, per-player Russian/English rendering, and English fallback.

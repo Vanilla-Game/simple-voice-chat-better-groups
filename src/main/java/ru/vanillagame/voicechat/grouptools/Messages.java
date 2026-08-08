@@ -29,6 +29,7 @@ final class Messages {
     static final String INVITE_RECEIVED = key("invite.received");
     static final String INVITE_EXPIRES = key("invite.expires");
     static final String INVITE_SENT = key("invite.sent");
+    static final String INVITE_COOLDOWN = key("invite.cooldown");
     static final String INVITE_NOT_FOUND = key("invite.not_found");
     static final String INVITE_EXPIRED = key("invite.expired");
     static final String INVITE_WRONG_PLAYER = key("invite.wrong_player");
@@ -61,6 +62,7 @@ final class Messages {
             INVITE_RECEIVED,
             INVITE_EXPIRES,
             INVITE_SENT,
+            INVITE_COOLDOWN,
             INVITE_NOT_FOUND,
             INVITE_EXPIRED,
             INVITE_WRONG_PLAYER,

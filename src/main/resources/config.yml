@@ -1,0 +1,7 @@
+# How long a one-time invite remains valid.
+invites:
+  expiration-minutes: 5
+
+  # Per-inviter delay between successfully validated invite attempts.
+  # Set to 0 to disable the cooldown.
+  cooldown-seconds: 10

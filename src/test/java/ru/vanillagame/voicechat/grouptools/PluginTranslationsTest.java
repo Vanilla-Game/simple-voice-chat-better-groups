@@ -42,6 +42,27 @@ class PluginTranslationsTest {
         }
     }
 
+    @Test
+    void inviteLifetimeMessageUsesConfiguredValue() {
+        PluginTranslations translations = new PluginTranslations();
+        translations.register(getClass().getClassLoader());
+        try {
+            Component message = Messages.component(
+                    Messages.INVITE_EXPIRES,
+                    NamedTextColor.GRAY,
+                    Component.text(12)
+            );
+
+            assertEquals("This invite expires after 12 min.", render(message, Locale.US));
+            assertEquals(
+                    "Приглашение истечёт через 12 мин.",
+                    render(message, PluginTranslations.RUSSIAN_LOCALE)
+            );
+        } finally {
+            translations.unregister();
+        }
+    }
+
     private static ResourceBundle bundle(Locale locale) {
         return ResourceBundle.getBundle(
                 PluginTranslations.BUNDLE_NAME,

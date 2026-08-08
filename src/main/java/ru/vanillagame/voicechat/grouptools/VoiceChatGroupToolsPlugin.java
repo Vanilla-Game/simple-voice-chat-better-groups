@@ -15,12 +15,16 @@ public final class VoiceChatGroupToolsPlugin extends JavaPlugin implements Liste
 
     private volatile VoicechatServerApi voicechatApi;
     private InviteStore invites;
+    private InviteCooldownStore inviteCooldowns;
     private GroupOwnershipRegistry ownership;
     private PluginTranslations translations;
 
     @Override
     public void onEnable() {
-        invites = new InviteStore(Clock.systemUTC());
+        PluginSettings settings = PluginSettings.load(this);
+        Clock clock = Clock.systemUTC();
+        invites = new InviteStore(clock, settings.inviteExpiration(), new InviteStore.SecureTokenGenerator());
+        inviteCooldowns = new InviteCooldownStore(clock, settings.inviteCooldown());
         ownership = new GroupOwnershipRegistry();
 
         BukkitVoicechatService service = getServer().getServicesManager().load(BukkitVoicechatService.class);
@@ -41,7 +45,13 @@ public final class VoiceChatGroupToolsPlugin extends JavaPlugin implements Liste
 
         service.registerPlugin(new VoiceChatAddon(this, ownership, invites));
 
-        VcGroupCommand commandHandler = new VcGroupCommand(this, invites, ownership);
+        VcGroupCommand commandHandler = new VcGroupCommand(
+                this,
+                invites,
+                ownership,
+                inviteCooldowns,
+                settings.inviteExpirationMinutes()
+        );
         PluginCommand command = getCommand("vcgroup");
         if (command == null) {
             getLogger().severe("The /vcgroup command is missing from plugin.yml; disabling plugin.");
@@ -52,7 +62,7 @@ public final class VoiceChatGroupToolsPlugin extends JavaPlugin implements Liste
         command.setTabCompleter(commandHandler);
 
         getServer().getPluginManager().registerEvents(this, this);
-        getServer().getScheduler().runTaskTimer(this, invites::cleanupExpired, 20L * 60L, 20L * 60L);
+        getServer().getScheduler().runTaskTimer(this, this::cleanupExpiredState, 20L * 60L, 20L * 60L);
         getLogger().info("Voice Chat Group Tools enabled.");
     }
 
@@ -68,6 +78,9 @@ public final class VoiceChatGroupToolsPlugin extends JavaPlugin implements Liste
     public void onPlayerQuit(PlayerQuitEvent event) {
         if (invites != null) {
             invites.invalidatePlayer(event.getPlayer().getUniqueId());
+        }
+        if (inviteCooldowns != null) {
+            inviteCooldowns.invalidate(event.getPlayer().getUniqueId());
         }
     }
 
@@ -87,5 +100,13 @@ public final class VoiceChatGroupToolsPlugin extends JavaPlugin implements Liste
         if (ownership != null) {
             ownership.clear();
         }
+        if (inviteCooldowns != null) {
+            inviteCooldowns.clear();
+        }
+    }
+
+    private void cleanupExpiredState() {
+        invites.cleanupExpired();
+        inviteCooldowns.cleanupExpired();
     }
 }

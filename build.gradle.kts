@@ -23,6 +23,9 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation("net.kyori:adventure-api:5.2.0")
     testImplementation("net.kyori:adventure-text-serializer-plain:5.2.0")
+    testImplementation("io.papermc.paper:paper-api:26.2.build.84-stable")
+    testImplementation("de.maxhenkel.voicechat:voicechat-api:2.6.20")
+    testImplementation("org.mockito:mockito-core:5.23.0")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
