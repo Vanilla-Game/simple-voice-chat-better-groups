@@ -5,10 +5,10 @@ plugins {
 }
 
 group = rootProject.group
-version = rootProject.version
+version = "0.1.0" // x-release-please-version
 
 val compatibility = Properties().apply {
-    rootProject.file("compatibility.properties").inputStream().use { load(it) }
+    file("compatibility.properties").inputStream().use { load(it) }
 }
 val minecraftVersion: String = compatibility.getProperty("minecraft")
 val voicechatVersion: String = providers.gradleProperty("voicechatVersion")
