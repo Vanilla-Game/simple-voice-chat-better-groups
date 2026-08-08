@@ -51,7 +51,7 @@ The server still performs every permission, ownership, membership, and live-stat
 
 ## Releases
 
-Releases follow the same Release Please workflow used by other Vanilla Game plugins, with the server plugin and the client mod versioned independently. Commits touching the repository outside `client-fabric/` attribute to the server plugin; commits touching `client-fabric/` attribute to the client mod. Each component gets its own release pull request, changelog, and GitHub Release: the server releases as `v<version>` with the server jar attached, the client as `voicechat-group-tools-fabric-v<version>` with the Fabric jar attached.
+Releases follow the same Release Please workflow used by other Vanilla Game plugins, with the server plugin and the client mod versioned independently. Commits touching the repository outside `client-fabric/` attribute to the server plugin; commits touching `client-fabric/` attribute to the client mod. Each component gets its own release pull request, changelog, and GitHub Release: the server releases as `voicechat-group-tools-v<version>` with the server jar attached, the client as `voicechat-group-tools-fabric-v<version>` with the Fabric jar attached.
 
 Each component starts at `0.1.0`. Pull request titles are checked for Conventional Commit format, and every pull request to `main` runs the Gradle build and unit tests.
 
