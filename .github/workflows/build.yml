@@ -37,3 +37,26 @@ jobs:
             client-fabric/build/libs/*.jar
           if-no-files-found: error
           retention-days: 14
+
+  read-compatibility:
+    runs-on: ubuntu-latest
+    outputs:
+      tested: ${{ steps.read.outputs.tested }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Read tested Simple Voice Chat versions
+        id: read
+        run: |
+          tested=$(grep '^voicechat\.tested=' compatibility.properties | cut -d= -f2- \
+            | jq -Rc 'split(",") | map(gsub("^\\s+|\\s+$"; ""))')
+          echo "tested=$tested" >> "$GITHUB_OUTPUT"
+
+  # Guards our own changes: every PR re-checks the client against every
+  # Simple Voice Chat version the mod currently claims to support.
+  client-compatibility:
+    needs: read-compatibility
+    uses: ./.github/workflows/voicechat-compat.yml
+    with:
+      versions: ${{ needs.read-compatibility.outputs.tested }}

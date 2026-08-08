@@ -1,0 +1,159 @@
+name: Voice Chat Version Discovery
+
+# Finds new Simple Voice Chat Fabric releases on Modrinth, runs the shared
+# compatibility harness against them, and opens (or updates) a draft PR that
+# widens the supported range across the contiguous green prefix only. The PR
+# uses a fix: commit type so release-please ships the widened range in a patch
+# release. voicechat.compile intentionally stays at the minimum supported
+# version.
+
+on:
+  schedule:
+    - cron: '17 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      candidates: ${{ steps.find.outputs.candidates }}
+      has-candidates: ${{ steps.find.outputs.has-candidates }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Query Modrinth for untested releases
+        id: find
+        run: |
+          minecraft=$(grep '^minecraft=' compatibility.properties | cut -d= -f2-)
+          tested=$(grep '^voicechat\.tested=' compatibility.properties | cut -d= -f2-)
+          minimum=$(grep '^voicechat\.compile=' compatibility.properties | cut -d= -f2-)
+          curl -fsSL -G 'https://api.modrinth.com/v2/project/simple-voice-chat/version' \
+            -H 'User-Agent: Vanilla-Game/voicechat-group-tools discovery workflow' \
+            --data-urlencode "loaders=[\"fabric\"]" \
+            --data-urlencode "game_versions=[\"$minecraft\"]" > versions.json
+          # Versions below voicechat.compile are deliberately unsupported and
+          # must never become candidates; sort by semver so the contiguous
+          # green prefix walk is meaningful.
+          candidates=$(jq -c --arg tested "$tested" --arg minimum "$minimum" '
+            def core: sub("^fabric-"; "") | sub("\\+.*$"; "") | split(".") | map(tonumber);
+            [ .[]
+              | select(.version_type == "release" and .status == "listed")
+              | .version_number ]
+            | map(select(core > ($minimum | core)))
+            | . - ($tested | split(",") | map(gsub("^\\s+|\\s+$"; "")))
+            | sort_by(core)
+          ' versions.json)
+          echo "candidates=$candidates" >> "$GITHUB_OUTPUT"
+          if [ "$candidates" = "[]" ]; then
+            echo "has-candidates=false" >> "$GITHUB_OUTPUT"
+            echo "No untested Simple Voice Chat releases found." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "has-candidates=true" >> "$GITHUB_OUTPUT"
+            echo "Untested candidates (oldest first): \`$candidates\`" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  check:
+    needs: discover
+    if: needs.discover.outputs.has-candidates == 'true'
+    uses: ./.github/workflows/voicechat-compat.yml
+    with:
+      versions: ${{ needs.discover.outputs.candidates }}
+
+  propose:
+    needs: [discover, check]
+    if: always() && needs.discover.outputs.has-candidates == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Download results
+        uses: actions/download-artifact@v6
+        with:
+          pattern: compat-result-*
+          merge-multiple: true
+          path: compat-results
+
+      - name: Compute contiguous green prefix
+        id: widen
+        run: |
+          green=()
+          for version in $(echo '${{ needs.discover.outputs.candidates }}' | jq -r '.[]'); do
+            result_file="compat-results/$version"
+            if [ -f "$result_file" ] && [ "$(cat "$result_file")" = "ok" ]; then
+              green+=("$version")
+            else
+              echo "Stopping at \`$version\`: check failed or produced no result." >> "$GITHUB_STEP_SUMMARY"
+              break
+            fi
+          done
+          if [ "${#green[@]}" -eq 0 ]; then
+            echo "updated=false" >> "$GITHUB_OUTPUT"
+            echo "No contiguous green prefix; range not widened." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          last="${green[$((${#green[@]} - 1))]}"
+          core="${last#fabric-}"
+          core="${core%%+*}"
+          IFS=. read -r major minor patch <<< "$core"
+          upper="$major.$minor.$((patch + 1))"
+          lower=$(grep '^voicechat\.range=' compatibility.properties | cut -d= -f2- | awk '{print $1}')
+          new_range="$lower <$upper"
+
+          tested_old=$(grep '^voicechat\.tested=' compatibility.properties | cut -d= -f2-)
+          green_joined=$(IFS=,; echo "${green[*]}")
+          tested_new="$tested_old,$green_joined"
+
+          awk -v range="voicechat.range=$new_range" -v tested="voicechat.tested=$tested_new" '
+            /^voicechat\.range=/ { print range; next }
+            /^voicechat\.tested=/ { print tested; next }
+            { print }
+          ' compatibility.properties > compatibility.properties.new
+          mv compatibility.properties.new compatibility.properties
+
+          human=$(echo "$green_joined" | sed -e 's/fabric-//g' -e 's/+[^,]*//g' -e 's/,/, /g')
+          echo "updated=true" >> "$GITHUB_OUTPUT"
+          echo "human=$human" >> "$GITHUB_OUTPUT"
+          echo "new-range=$new_range" >> "$GITHUB_OUTPUT"
+          echo "Green prefix: \`$green_joined\`; proposing range \`$new_range\`." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Create or update draft PR
+        if: steps.widen.outputs.updated == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          branch="ci/voicechat-compat-bump"
+          title="fix: support Simple Voice Chat ${{ steps.widen.outputs.human }}"
+          body=$(cat <<'EOF'
+          Automated compatibility bump from the Voice Chat discovery workflow.
+
+          Every listed version passed the full harness: compile against the new
+          Simple Voice Chat artifact plus a headless client launch verifying
+          that all required mixins apply. `voicechat.compile` intentionally
+          stays at the minimum supported version.
+
+          Note: CI does not run automatically on workflow-created PRs; close
+          and reopen the PR to trigger it before merging.
+          EOF
+          )
+          body="$body"$'\n\n'"New range: \`${{ steps.widen.outputs.new-range }}\`"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$branch"
+          git add compatibility.properties
+          git commit -m "$title"
+          git push -f origin "$branch"
+          existing=$(gh pr list --head "$branch" --state open --json number -q '.[0].number')
+          if [ -n "$existing" ]; then
+            gh pr edit "$existing" --title "$title" --body "$body"
+          else
+            gh pr create --draft --base main --head "$branch" --title "$title" --body "$body"
+          fi
