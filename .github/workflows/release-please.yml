@@ -36,12 +36,12 @@ jobs:
         if: ${{ steps.release.outputs.release_created }}
         uses: gradle/actions/setup-gradle@v5
 
-      - name: Build plugin jar
+      - name: Build server and client jars
         if: ${{ steps.release.outputs.release_created }}
         run: ./gradlew --no-daemon clean build --warning-mode all
 
-      - name: Attach jar to release
+      - name: Attach server and client jars to release
         if: ${{ steps.release.outputs.release_created }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "${{ steps.release.outputs.tag_name }}" build/libs/*.jar --clobber
+        run: gh release upload "${{ steps.release.outputs.tag_name }}" build/libs/*.jar client-fabric/build/libs/*.jar --clobber

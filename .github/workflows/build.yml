@@ -28,10 +28,12 @@ jobs:
       - name: Build and test
         run: ./gradlew --no-daemon clean build --warning-mode all
 
-      - name: Upload plugin jar
+      - name: Upload server and client jars
         uses: actions/upload-artifact@v6
         with:
           name: voicechat-group-tools-${{ github.sha }}
-          path: build/libs/*.jar
+          path: |
+            build/libs/*.jar
+            client-fabric/build/libs/*.jar
           if-no-files-found: error
           retention-days: 14

@@ -55,3 +55,7 @@ tasks.test {
 tasks.jar {
     archiveBaseName = "voicechat-group-tools"
 }
+
+tasks.named("build") {
+    dependsOn(":client-fabric:build")
+}
