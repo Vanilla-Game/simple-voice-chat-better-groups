@@ -1,0 +1,19 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "bootstrap-sha": "d8a26be57bfc3e0e116474515a8be6c0216be9d5",
+  "packages": {
+    ".": {
+      "release-type": "simple",
+      "package-name": "voicechat-group-tools",
+      "initial-version": "0.1.0",
+      "include-component-in-tag": false,
+      "include-v-in-tag": true,
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "build.gradle.kts"
+        }
+      ]
+    }
+  }
+}

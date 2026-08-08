@@ -18,10 +18,16 @@ The project compiles against Paper API `26.2.build.84-stable` and emits Java 25 
 
 1. Install Simple Voice Chat 2.6.21 on the server.
 2. Build this plugin with `./gradlew build`.
-3. Copy `build/libs/voicechat-group-tools-0.1.0-SNAPSHOT.jar` into the server's `plugins` directory.
+3. Copy the `build/libs/voicechat-group-tools-*.jar` file into the server's `plugins` directory.
 4. Restart the server. A full restart is recommended instead of Bukkit plugin reload tools.
 
 The plugin declares a hard dependency on `voicechat`. If Simple Voice Chat is missing, the server will not load this plugin. If its `BukkitVoicechatService` is unexpectedly unavailable, this plugin logs a severe error and disables itself.
+
+## Releases
+
+Releases follow the same Release Please workflow used by other Vanilla Game plugins. Conventional commits merged into `main` update an automated release pull request and changelog. Merging that release pull request creates a `v<version>` GitHub Release, builds the plugin with Java 25, and attaches the versioned JAR.
+
+The first automated release starts at `0.1.0`. Pull request titles are checked for Conventional Commit format, and every pull request to `main` runs the Gradle build and unit tests.
 
 ## Commands
 
