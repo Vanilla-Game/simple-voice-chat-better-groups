@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.2.0](https://github.com/Vanilla-Game/voicechat-group-tools/compare/v0.1.0...v0.2.0) (2026-08-08)
+## [0.2.0](https://github.com/Vanilla-Game/voicechat-group-tools/compare/voicechat-group-tools-v0.1.0...voicechat-group-tools-v0.2.0) (2026-08-08)
 
 
 ### Features

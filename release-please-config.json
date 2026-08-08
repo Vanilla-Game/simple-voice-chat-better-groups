@@ -7,7 +7,7 @@
       "release-type": "simple",
       "package-name": "voicechat-group-tools",
       "initial-version": "0.1.0",
-      "include-component-in-tag": false,
+      "include-component-in-tag": true,
       "include-v-in-tag": true,
       "exclude-paths": [
         "client-fabric",
