@@ -51,9 +51,9 @@ The server still performs every permission, ownership, membership, and live-stat
 
 ## Releases
 
-Releases follow the same Release Please workflow used by other Vanilla Game plugins. Conventional commits merged into `main` update an automated release pull request and changelog. Merging that release pull request creates a `v<version>` GitHub Release, builds both artifacts with Java 25, and attaches the versioned server and Fabric JARs.
+Releases follow the same Release Please workflow used by other Vanilla Game plugins, with the server plugin and the client mod versioned independently. Commits touching the repository outside `client-fabric/` attribute to the server plugin; commits touching `client-fabric/` attribute to the client mod. Each component gets its own release pull request, changelog, and GitHub Release: the server releases as `v<version>` with the server jar attached, the client as `voicechat-group-tools-fabric-v<version>` with the Fabric jar attached.
 
-The first automated release starts at `0.1.0`. Pull request titles are checked for Conventional Commit format, and every pull request to `main` runs the Gradle build and unit tests.
+Each component starts at `0.1.0`. Pull request titles are checked for Conventional Commit format, and every pull request to `main` runs the Gradle build and unit tests.
 
 ## Commands
 
@@ -96,7 +96,7 @@ Translations are bundled in `src/main/resources/lang/Messages_en_US.properties` 
 
 ## Simple Voice Chat compatibility automation
 
-`compatibility.properties` at the repository root is the single source of truth for the client module:
+`client-fabric/compatibility.properties` is the single source of truth for the client module:
 
 - `minecraft` — the targeted Minecraft version, used by Gradle and `fabric.mod.json`.
 - `voicechat.compile` — the minimum supported Simple Voice Chat artifact; the client always compiles against it so newer-only APIs cannot creep in.
@@ -106,7 +106,7 @@ Translations are bundled in `src/main/resources/lang/Messages_en_US.properties` 
 Two workflows consume it:
 
 - Every pull request re-checks the client against every version in `voicechat.tested` (compile plus a headless client launch that force-loads both mixin target classes; `required: true` with `defaultRequire: 1` turns any missing injection point into a non-zero exit). This guards our own changes as much as Simple Voice Chat updates.
-- A daily discovery workflow queries the Modrinth API for new Simple Voice Chat Fabric releases for the targeted Minecraft version, runs the same harness against them, and opens a draft `fix:` pull request that widens `voicechat.range` and extends `voicechat.tested` across the contiguous green prefix only. A red version is never skipped, and the prefix never crosses a minor-version boundary — a shipped range must not cover an untested gap that a later backport could land in, so moving to a new Simple Voice Chat minor line is a manual decision. `voicechat.compile` is never bumped automatically. The `fix:` type makes release-please ship the widened range in a patch release; because the repository shares one version, that patch re-releases the server jar as well.
+- A daily discovery workflow queries the Modrinth API for new Simple Voice Chat Fabric releases for the targeted Minecraft version, runs the same harness against them, and opens a draft `fix:` pull request that widens `voicechat.range` and extends `voicechat.tested` across the contiguous green prefix only. A red version is never skipped, and the prefix never crosses a minor-version boundary — a shipped range must not cover an untested gap that a later backport could land in, so moving to a new Simple Voice Chat minor line is a manual decision. `voicechat.compile` is never bumped automatically. The `fix:` type makes release-please ship the widened range in a patch release of the client mod; the server plugin is versioned independently and is not re-released.
 
 The compatibility harness builds a test-only flavor (`-PvoicechatCompatCheck`) that relaxes the `fabric.mod.json` range to `*` — otherwise Fabric Loader would reject a candidate version before mixins are even applied — and renames the jar to `voicechat-group-tools-fabric-compat-test-<version>.jar`. This flavor exists only inside the compatibility jobs and is never uploaded as an artifact or attached to releases.
 

@@ -49,7 +49,7 @@ jobs:
       - name: Read tested Simple Voice Chat versions
         id: read
         run: |
-          tested=$(grep '^voicechat\.tested=' compatibility.properties | cut -d= -f2- \
+          tested=$(grep '^voicechat\.tested=' client-fabric/compatibility.properties | cut -d= -f2- \
             | jq -Rc 'split(",") | map(gsub("^\\s+|\\s+$"; ""))')
           echo "tested=$tested" >> "$GITHUB_OUTPUT"
 

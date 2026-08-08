@@ -30,9 +30,9 @@ jobs:
       - name: Query Modrinth for untested releases
         id: find
         run: |
-          minecraft=$(grep '^minecraft=' compatibility.properties | cut -d= -f2-)
-          tested=$(grep '^voicechat\.tested=' compatibility.properties | cut -d= -f2-)
-          minimum=$(grep '^voicechat\.compile=' compatibility.properties | cut -d= -f2-)
+          minecraft=$(grep '^minecraft=' client-fabric/compatibility.properties | cut -d= -f2-)
+          tested=$(grep '^voicechat\.tested=' client-fabric/compatibility.properties | cut -d= -f2-)
+          minimum=$(grep '^voicechat\.compile=' client-fabric/compatibility.properties | cut -d= -f2-)
           curl -fsSL -G 'https://api.modrinth.com/v2/project/simple-voice-chat/version' \
             -H 'User-Agent: Vanilla-Game/voicechat-group-tools discovery workflow' \
             --data-urlencode "loaders=[\"fabric\"]" \
@@ -86,7 +86,7 @@ jobs:
       - name: Compute contiguous green prefix
         id: widen
         run: |
-          current_upper=$(grep '^voicechat\.range=' compatibility.properties | cut -d= -f2- | awk '{print $2}')
+          current_upper=$(grep '^voicechat\.range=' client-fabric/compatibility.properties | cut -d= -f2- | awk '{print $2}')
           current_upper="${current_upper#<}"
           minor_line="${current_upper%.*}"
 
@@ -117,10 +117,10 @@ jobs:
           core="${core%%+*}"
           IFS=. read -r major minor patch <<< "$core"
           upper="$major.$minor.$((patch + 1))"
-          lower=$(grep '^voicechat\.range=' compatibility.properties | cut -d= -f2- | awk '{print $1}')
+          lower=$(grep '^voicechat\.range=' client-fabric/compatibility.properties | cut -d= -f2- | awk '{print $1}')
           new_range="$lower <$upper"
 
-          tested_old=$(grep '^voicechat\.tested=' compatibility.properties | cut -d= -f2-)
+          tested_old=$(grep '^voicechat\.tested=' client-fabric/compatibility.properties | cut -d= -f2-)
           green_joined=$(IFS=,; echo "${green[*]}")
           tested_new="$tested_old,$green_joined"
 
@@ -128,8 +128,8 @@ jobs:
             /^voicechat\.range=/ { print range; next }
             /^voicechat\.tested=/ { print tested; next }
             { print }
-          ' compatibility.properties > compatibility.properties.new
-          mv compatibility.properties.new compatibility.properties
+          ' client-fabric/compatibility.properties > client-fabric/compatibility.properties.new
+          mv client-fabric/compatibility.properties.new client-fabric/compatibility.properties
 
           human=$(echo "$green_joined" | sed -e 's/fabric-//g' -e 's/+[^,]*//g' -e 's/,/, /g')
           echo "updated=true" >> "$GITHUB_OUTPUT"
@@ -160,7 +160,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -B "$branch"
-          git add compatibility.properties
+          git add client-fabric/compatibility.properties
           git commit -m "$title"
           git push -f origin "$branch"
           existing=$(gh pr list --head "$branch" --state open --json number -q '.[0].number')
