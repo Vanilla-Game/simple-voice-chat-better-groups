@@ -45,7 +45,7 @@ The plugin declares a hard dependency on `voicechat`. If Simple Voice Chat is mi
 
 The client addon checks the server command tree and changes nothing when `/vcgroup` is unavailable. On supported servers it adds:
 
-- an invite button to the footer of the existing Simple Voice Chat group screen; it opens chat with `/vcgroup invite ` prefilled so normal command suggestions remain available;
+- an invite button to the footer of the existing Simple Voice Chat group screen; it opens a searchable player picker listing everyone connected to voice chat and not in a group, and clicking a player sends the invite;
 - a gold crown next to the current group leader;
 - a remove button next to each other group member's existing volume slider when the local player is the current leader; it executes `/vcgroup kick <player>`;
 - a request button on the password screen of a locked group; it executes `/vcgroup request <group UUID>` so the player can knock without knowing the password.

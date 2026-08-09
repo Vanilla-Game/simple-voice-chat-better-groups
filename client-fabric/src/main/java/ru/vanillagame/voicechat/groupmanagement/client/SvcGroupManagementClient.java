@@ -28,6 +28,11 @@ public final class SvcGroupManagementClient implements ClientModInitializer {
             Class.forName("de.maxhenkel.voicechat.gui.group.GroupScreen", false, loader);
             Class.forName("de.maxhenkel.voicechat.gui.group.GroupEntry", false, loader);
             Class.forName("de.maxhenkel.voicechat.gui.EnterPasswordScreen", false, loader);
+            // Loading our screen classes resolves their Simple Voice Chat
+            // superclasses, verifying the GUI base classes still exist.
+            Class.forName("ru.vanillagame.voicechat.groupmanagement.client.gui.InvitePlayerScreen", false, loader);
+            Class.forName("ru.vanillagame.voicechat.groupmanagement.client.gui.InvitePlayerList", false, loader);
+            Class.forName("ru.vanillagame.voicechat.groupmanagement.client.gui.InvitePlayerEntry", false, loader);
             System.out.println("[" + MOD_ID + "] compat check passed");
             System.exit(0);
         } catch (Throwable failure) {
