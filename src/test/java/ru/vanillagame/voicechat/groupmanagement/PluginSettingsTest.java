@@ -24,6 +24,8 @@ class PluginSettingsTest {
         config.set("requests.expiration-minutes", 7);
         config.set("requests.cooldown-seconds", 45);
         config.set("requests.sound", "entity.experience_orb.pickup");
+        config.set("requests.sound-volume", 0.5);
+        config.set("requests.sound-pitch", 1.5);
         when(plugin.getConfig()).thenReturn(config);
 
         PluginSettings settings = PluginSettings.load(plugin);
@@ -34,6 +36,8 @@ class PluginSettingsTest {
         assertEquals(Duration.ofMinutes(7), settings.requestExpiration());
         assertEquals(Duration.ofSeconds(45), settings.requestCooldown());
         assertEquals("entity.experience_orb.pickup", settings.requestSound());
+        assertEquals(0.5F, settings.requestSoundVolume());
+        assertEquals(1.5F, settings.requestSoundPitch());
     }
 
     @Test
@@ -45,6 +49,8 @@ class PluginSettingsTest {
         config.set("requests.expiration-minutes", 0);
         config.set("requests.cooldown-seconds", -1);
         config.set("requests.sound", "NOT A VALID KEY");
+        config.set("requests.sound-volume", -1.0);
+        config.set("requests.sound-pitch", 5.0);
         when(plugin.getConfig()).thenReturn(config);
         when(plugin.getLogger()).thenReturn(Logger.getAnonymousLogger());
 
@@ -67,6 +73,8 @@ class PluginSettingsTest {
                 settings.requestCooldown()
         );
         assertEquals(PluginSettings.DEFAULT_REQUEST_SOUND, settings.requestSound());
+        assertEquals(PluginSettings.DEFAULT_REQUEST_SOUND_VOLUME, settings.requestSoundVolume());
+        assertEquals(PluginSettings.DEFAULT_REQUEST_SOUND_PITCH, settings.requestSoundPitch());
     }
 
     @Test

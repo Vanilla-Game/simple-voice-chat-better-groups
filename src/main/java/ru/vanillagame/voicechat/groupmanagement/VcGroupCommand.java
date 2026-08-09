@@ -415,7 +415,12 @@ final class VcGroupCommand implements CommandExecutor, TabCompleter {
         );
         if (settings.requestSound() != null) {
             leader.playSound(
-                    Sound.sound(Key.key(settings.requestSound()), Sound.Source.MASTER, 1.0f, 1.0f),
+                    Sound.sound(
+                            Key.key(settings.requestSound()),
+                            Sound.Source.MASTER,
+                            settings.requestSoundVolume(),
+                            settings.requestSoundPitch()
+                    ),
                     Sound.Emitter.self()
             );
         }

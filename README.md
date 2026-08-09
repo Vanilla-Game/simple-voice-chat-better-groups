@@ -101,9 +101,11 @@ requests:
   expiration-minutes: 5
   cooldown-seconds: 30
   sound: block.anvil.land
+  sound-volume: 1.0
+  sound-pitch: 1.0
 ```
 
-`expiration-minutes` values must be at least `1`. `invites.cooldown-seconds` is applied per inviter and target pair, `requests.cooldown-seconds` per requester and group pair; either may be set to `0` to disable that cooldown. `requests.sound` is the sound event played to the leader when a join request arrives — any sound event id works, `none` disables it, and unknown-but-well-formed ids fail silently on the client. Invalid values are reported in the server log and replaced with safe defaults. Restart the plugin/server after changing the file; this MVP does not add a reload command.
+`expiration-minutes` values must be at least `1`. `invites.cooldown-seconds` is applied per inviter and target pair, `requests.cooldown-seconds` per requester and group pair; either may be set to `0` to disable that cooldown. `requests.sound` is the sound event played to the leader when a join request arrives — any sound event id works, `none` disables it, and unknown-but-well-formed ids fail silently on the client. `requests.sound-volume` accepts `0.0`–`10.0` and `requests.sound-pitch` accepts `0.5`–`2.0` (the range Minecraft supports); out-of-range values fall back to `1.0`. Invalid values are reported in the server log and replaced with safe defaults. Restart the plugin/server after changing the file; this MVP does not add a reload command.
 
 ## Permission
 

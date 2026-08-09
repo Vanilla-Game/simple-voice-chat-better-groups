@@ -17,3 +17,8 @@ requests:
   # Sound played to the group leader when a join request arrives. Any sound
   # event id works (e.g. entity.experience_orb.pickup); set to none to disable.
   sound: block.anvil.land
+
+  # Volume (0.0-10.0) and pitch (0.5-2.0, the range Minecraft supports) of
+  # that sound.
+  sound-volume: 1.0
+  sound-pitch: 1.0

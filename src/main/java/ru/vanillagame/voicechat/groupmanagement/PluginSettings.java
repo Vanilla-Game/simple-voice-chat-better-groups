@@ -13,7 +13,9 @@ record PluginSettings(
         int inviteCooldownSeconds,
         int requestExpirationMinutes,
         int requestCooldownSeconds,
-        String requestSound
+        String requestSound,
+        float requestSoundVolume,
+        float requestSoundPitch
 ) {
 
     static final int DEFAULT_INVITE_EXPIRATION_MINUTES = 5;
@@ -21,12 +23,16 @@ record PluginSettings(
     static final int DEFAULT_REQUEST_EXPIRATION_MINUTES = 5;
     static final int DEFAULT_REQUEST_COOLDOWN_SECONDS = 30;
     static final String DEFAULT_REQUEST_SOUND = "block.anvil.land";
+    static final float DEFAULT_REQUEST_SOUND_VOLUME = 1.0F;
+    static final float DEFAULT_REQUEST_SOUND_PITCH = 1.0F;
 
     private static final String INVITE_EXPIRATION_PATH = "invites.expiration-minutes";
     private static final String INVITE_COOLDOWN_PATH = "invites.cooldown-seconds";
     private static final String REQUEST_EXPIRATION_PATH = "requests.expiration-minutes";
     private static final String REQUEST_COOLDOWN_PATH = "requests.cooldown-seconds";
     private static final String REQUEST_SOUND_PATH = "requests.sound";
+    private static final String REQUEST_SOUND_VOLUME_PATH = "requests.sound-volume";
+    private static final String REQUEST_SOUND_PITCH_PATH = "requests.sound-pitch";
 
     PluginSettings {
         if (inviteExpirationMinutes <= 0) {
@@ -51,7 +57,13 @@ record PluginSettings(
                 readInt(plugin, config, INVITE_COOLDOWN_PATH, DEFAULT_INVITE_COOLDOWN_SECONDS, 0),
                 readInt(plugin, config, REQUEST_EXPIRATION_PATH, DEFAULT_REQUEST_EXPIRATION_MINUTES, 1),
                 readInt(plugin, config, REQUEST_COOLDOWN_PATH, DEFAULT_REQUEST_COOLDOWN_SECONDS, 0),
-                readSound(plugin, config)
+                readSound(plugin, config),
+                readFloat(plugin, config, REQUEST_SOUND_VOLUME_PATH,
+                        DEFAULT_REQUEST_SOUND_VOLUME, 0.0F, 10.0F),
+                // Minecraft clamps pitch to [0.5, 2.0]; values outside it would be
+                // silently distorted, so they are rejected up front.
+                readFloat(plugin, config, REQUEST_SOUND_PITCH_PATH,
+                        DEFAULT_REQUEST_SOUND_PITCH, 0.5F, 2.0F)
         );
     }
 
@@ -87,6 +99,27 @@ record PluginSettings(
         }
     }
 
+    private static float readFloat(
+            JavaPlugin plugin,
+            FileConfiguration config,
+            String path,
+            float defaultValue,
+            float minimum,
+            float maximum
+    ) {
+        Object raw = config.get(path);
+        if (!(raw instanceof Number number)) {
+            warn(plugin, path, defaultValue, "must be a number");
+            return defaultValue;
+        }
+        float value = number.floatValue();
+        if (value < minimum || value > maximum) {
+            warn(plugin, path, defaultValue, "must be between " + minimum + " and " + maximum);
+            return defaultValue;
+        }
+        return value;
+    }
+
     private static int readInt(
             JavaPlugin plugin,
             FileConfiguration config,
@@ -107,7 +140,7 @@ record PluginSettings(
         return value;
     }
 
-    private static void warn(JavaPlugin plugin, String path, int defaultValue, String reason) {
+    private static void warn(JavaPlugin plugin, String path, Object defaultValue, String reason) {
         plugin.getLogger().warning(
                 "Invalid config value for '" + path + "' (" + reason + "); using " + defaultValue + "."
         );
