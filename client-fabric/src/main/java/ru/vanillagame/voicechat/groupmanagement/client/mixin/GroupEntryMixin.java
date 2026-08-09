@@ -10,9 +10,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.FontDescription;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.Identifier;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -21,6 +19,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import ru.vanillagame.voicechat.groupmanagement.client.Icons;
 import ru.vanillagame.voicechat.groupmanagement.client.LeaderClientState;
 import ru.vanillagame.voicechat.groupmanagement.client.ServerSupport;
 
@@ -40,12 +39,6 @@ public abstract class GroupEntryMixin extends ListScreenEntryBase<GroupEntry> {
     @Final
     protected AdjustVolumeSlider volumeSlider;
 
-    // The default font renders non-ASCII glyphs from the squished unifont
-    // fallback, so the crown ships as a custom 8x8 bitmap glyph instead.
-    @Unique
-    private static final FontDescription SVC_GROUP_MANAGEMENT$CROWN_FONT = new FontDescription.Resource(
-            Identifier.fromNamespaceAndPath("svc_group_management_client", "crown"));
-
     @Unique
     private Button svcGroupManagement$kickButton;
 
@@ -62,8 +55,8 @@ public abstract class GroupEntryMixin extends ListScreenEntryBase<GroupEntry> {
             return Component.literal(playerName);
         }
         return Component.empty()
-                .append(Component.literal("\uE000").withStyle(style -> style
-                        .withFont(SVC_GROUP_MANAGEMENT$CROWN_FONT)
+                .append(Component.literal(Icons.CROWN).withStyle(style -> style
+                        .withFont(Icons.FONT)
                         .withColor(ChatFormatting.GOLD)))
                 .append(Component.literal(" " + playerName).withStyle(ChatFormatting.WHITE));
     }

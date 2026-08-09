@@ -8,6 +8,15 @@
       "chars": [
         "\ue000"
       ]
+    },
+    {
+      "type": "bitmap",
+      "file": "svc_group_management_client:font/door.png",
+      "height": 8,
+      "ascent": 7,
+      "chars": [
+        "\ue001"
+      ]
     }
   ]
 }

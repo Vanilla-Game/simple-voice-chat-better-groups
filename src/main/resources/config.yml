@@ -5,3 +5,22 @@ invites:
   # Delay between successfully validated invite attempts, applied per
   # inviter and target pair. Set to 0 to disable the cooldown.
   cooldown-seconds: 10
+
+  # Sound played to the invited player when an invite arrives, as
+  # <sound id>[:volume[:pitch]]. Set to none to disable.
+  sound: block.anvil.land:0.5:2
+
+# Join requests for password-protected groups.
+requests:
+  expiration-minutes: 5
+
+  # Delay between join requests, applied per requester and group pair.
+  # Set to 0 to disable the cooldown.
+  cooldown-seconds: 30
+
+  # Sound played to the group leader when a join request arrives, as
+  # <sound id>[:volume[:pitch]] - e.g. entity.experience_orb.pickup or
+  # block.bell.use:1:0.8. Volume is 0.0-10.0, pitch 0.5-2.0 (the range
+  # Minecraft supports); omitted values default to 0.5 and 2. Set to none
+  # to disable.
+  sound: block.anvil.land:0.5:2

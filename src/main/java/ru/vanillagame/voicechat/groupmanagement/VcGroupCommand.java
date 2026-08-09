@@ -3,6 +3,8 @@ package ru.vanillagame.voicechat.groupmanagement;
 import de.maxhenkel.voicechat.api.Group;
 import de.maxhenkel.voicechat.api.VoicechatConnection;
 import de.maxhenkel.voicechat.api.VoicechatServerApi;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -15,6 +17,7 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -27,20 +30,26 @@ final class VcGroupCommand implements CommandExecutor, TabCompleter {
     private final InviteStore invites;
     private final GroupLeadershipRegistry leadership;
     private final InviteCooldownStore inviteCooldowns;
-    private final int inviteExpirationMinutes;
+    private final RequestStore requests;
+    private final InviteCooldownStore requestCooldowns;
+    private final PluginSettings settings;
 
     VcGroupCommand(
             SvcGroupManagementPlugin plugin,
             InviteStore invites,
             GroupLeadershipRegistry leadership,
             InviteCooldownStore inviteCooldowns,
-            int inviteExpirationMinutes
+            RequestStore requests,
+            InviteCooldownStore requestCooldowns,
+            PluginSettings settings
     ) {
         this.plugin = plugin;
         this.invites = invites;
         this.leadership = leadership;
         this.inviteCooldowns = inviteCooldowns;
-        this.inviteExpirationMinutes = inviteExpirationMinutes;
+        this.requests = requests;
+        this.requestCooldowns = requestCooldowns;
+        this.settings = settings;
     }
 
     @Override
@@ -53,7 +62,10 @@ final class VcGroupCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(Messages.component(Messages.COMMAND_PLAYERS_ONLY, NamedTextColor.RED));
             return true;
         }
-        if (args.length != 2) {
+        // "request" accepts multi-word group names; every other subcommand takes
+        // exactly one argument.
+        boolean isRequest = args.length >= 1 && args[0].equalsIgnoreCase("request");
+        if (args.length < 2 || (!isRequest && args.length != 2)) {
             player.sendMessage(Messages.component(Messages.COMMAND_USAGE, NamedTextColor.YELLOW));
             return true;
         }
@@ -69,6 +81,8 @@ final class VcGroupCommand implements CommandExecutor, TabCompleter {
             case "accept" -> accept(player, args[1], api);
             case "kick" -> kick(player, args[1], api);
             case "transfer" -> transfer(player, args[1], api);
+            case "request" -> request(player, String.join(" ", Arrays.copyOfRange(args, 1, args.length)), api);
+            case "approve" -> approve(player, args[1], api);
             default -> player.sendMessage(Messages.component(Messages.COMMAND_USAGE, NamedTextColor.YELLOW));
         }
         return true;
@@ -145,14 +159,26 @@ final class VcGroupCommand implements CommandExecutor, TabCompleter {
                         .append(Messages.component(
                                 Messages.INVITE_EXPIRES,
                                 NamedTextColor.GRAY,
-                                Component.text(inviteExpirationMinutes)
+                                Component.text(settings.inviteExpirationMinutes())
                         ))
         );
+        playNotificationSound(target, settings.inviteSound(),
+                settings.inviteSoundVolume(), settings.inviteSoundPitch());
         inviter.sendMessage(Messages.component(
                 Messages.INVITE_SENT,
                 NamedTextColor.GREEN,
                 Component.text(target.getName())
         ));
+    }
+
+    private static void playNotificationSound(Player player, String soundKey, float volume, float pitch) {
+        if (soundKey == null) {
+            return;
+        }
+        player.playSound(
+                Sound.sound(Key.key(soundKey), Sound.Source.MASTER, volume, pitch),
+                Sound.Emitter.self()
+        );
     }
 
     private void accept(Player player, String token, VoicechatServerApi api) {
@@ -331,10 +357,198 @@ final class VcGroupCommand implements CommandExecutor, TabCompleter {
         }
     }
 
+    private void request(Player requester, String groupArg, VoicechatServerApi api) {
+        VoicechatConnection connection = api.getConnectionOf(requester.getUniqueId());
+        if (connection == null) {
+            requester.sendMessage(Messages.component(Messages.CONNECTION_SELF_UNAVAILABLE, NamedTextColor.RED));
+            return;
+        }
+        if (connection.getGroup() != null) {
+            requester.sendMessage(Messages.component(Messages.GROUP_ALREADY_IN_GROUP, NamedTextColor.RED));
+            return;
+        }
+
+        GroupResolution resolution = resolveVisibleGroup(groupArg, api);
+        if (resolution.ambiguous()) {
+            requester.sendMessage(Messages.component(Messages.REQUEST_GROUP_AMBIGUOUS, NamedTextColor.RED));
+            return;
+        }
+        Group group = resolution.group();
+        if (group == null) {
+            requester.sendMessage(Messages.component(Messages.REQUEST_GROUP_NOT_FOUND, NamedTextColor.RED));
+            return;
+        }
+        if (!group.hasPassword()) {
+            requester.sendMessage(Messages.component(Messages.REQUEST_NOT_NEEDED, NamedTextColor.YELLOW));
+            return;
+        }
+
+        UUID leaderId = leadership.leaderOf(group.getId());
+        if (leaderId == null) {
+            requester.sendMessage(Messages.component(Messages.REQUEST_UNKNOWN_LEADER, NamedTextColor.RED));
+            return;
+        }
+        Player leader = Bukkit.getPlayer(leaderId);
+        if (leader == null || !leader.isOnline()) {
+            requester.sendMessage(Messages.component(Messages.REQUEST_LEADER_OFFLINE, NamedTextColor.RED));
+            return;
+        }
+
+        InviteCooldownStore.Attempt cooldownAttempt =
+                requestCooldowns.tryAcquire(requester.getUniqueId(), group.getId());
+        if (!cooldownAttempt.allowed()) {
+            requester.sendMessage(Messages.component(
+                    Messages.REQUEST_COOLDOWN,
+                    NamedTextColor.RED,
+                    Component.text(cooldownAttempt.retryAfterSeconds())
+            ));
+            return;
+        }
+
+        String token = requests.create(requester.getUniqueId(), group.getId());
+        Component acceptButton = Messages.component(Messages.REQUEST_ACCEPT_LABEL, NamedTextColor.GREEN)
+                .decorate(TextDecoration.BOLD)
+                .clickEvent(ClickEvent.runCommand("/vcgroup approve " + token))
+                .hoverEvent(Messages.component(Messages.REQUEST_ACCEPT_HOVER, NamedTextColor.GRAY));
+        leader.sendMessage(
+                Messages.component(
+                                Messages.REQUEST_RECEIVED,
+                                NamedTextColor.YELLOW,
+                                Component.text(requester.getName())
+                        )
+                        .append(Component.space())
+                        .append(acceptButton)
+                        .append(Component.space())
+                        .append(Messages.component(
+                                Messages.REQUEST_EXPIRES,
+                                NamedTextColor.GRAY,
+                                Component.text(settings.requestExpirationMinutes())
+                        ))
+        );
+        playNotificationSound(leader, settings.requestSound(),
+                settings.requestSoundVolume(), settings.requestSoundPitch());
+        requester.sendMessage(Messages.component(Messages.REQUEST_SENT, NamedTextColor.GREEN));
+    }
+
+    private void approve(Player approver, String token, VoicechatServerApi api) {
+        RequestStore.Lookup lookup = requests.lookup(token);
+        switch (lookup.status()) {
+            case NOT_FOUND -> {
+                approver.sendMessage(Messages.component(Messages.REQUEST_NOT_FOUND, NamedTextColor.RED));
+                return;
+            }
+            case EXPIRED -> {
+                approver.sendMessage(Messages.component(Messages.REQUEST_EXPIRED, NamedTextColor.RED));
+                return;
+            }
+            case VALID -> {
+                // Continue with live validation below.
+            }
+        }
+
+        RequestStore.Request request = lookup.request();
+        Group group = api.getGroup(request.groupId());
+        if (group == null) {
+            requests.invalidateGroup(request.groupId());
+            approver.sendMessage(Messages.component(Messages.GROUP_NO_LONGER_EXISTS, NamedTextColor.RED));
+            return;
+        }
+
+        // Approval is bound to current leadership at click time, not to whoever
+        // received the request message.
+        GroupLeadershipRegistry.Authorization authorization =
+                leadership.authorize(request.groupId(), approver.getUniqueId());
+        if (authorization != GroupLeadershipRegistry.Authorization.LEADER) {
+            approver.sendMessage(Messages.component(Messages.APPROVE_NOT_LEADER, NamedTextColor.RED));
+            return;
+        }
+
+        Player requester = Bukkit.getPlayer(request.requesterId());
+        if (requester == null || !requester.isOnline()) {
+            requests.consume(token, request);
+            approver.sendMessage(Messages.component(Messages.APPROVE_REQUESTER_OFFLINE, NamedTextColor.RED));
+            return;
+        }
+        VoicechatConnection requesterConnection = api.getConnectionOf(requester.getUniqueId());
+        if (requesterConnection == null) {
+            approver.sendMessage(Messages.component(Messages.CONNECTION_TARGET_UNAVAILABLE, NamedTextColor.RED));
+            return;
+        }
+        if (requesterConnection.getGroup() != null) {
+            requests.consume(token, request);
+            approver.sendMessage(Messages.component(
+                    Messages.APPROVE_REQUESTER_IN_GROUP,
+                    NamedTextColor.RED,
+                    Component.text(requester.getName())
+            ));
+            return;
+        }
+
+        requesterConnection.setGroup(group);
+        // VoicechatConnection is a snapshot. Re-fetch it after a mutation to observe the new state.
+        VoicechatConnection updatedConnection = api.getConnectionOf(requester.getUniqueId());
+        Group joinedGroup = updatedConnection == null ? null : updatedConnection.getGroup();
+        if (joinedGroup == null || !joinedGroup.getId().equals(request.groupId())) {
+            approver.sendMessage(Messages.component(Messages.APPROVE_FAILED, NamedTextColor.RED));
+            return;
+        }
+
+        requests.consume(token, request);
+        requests.invalidateRequester(requester.getUniqueId());
+        approver.sendMessage(Messages.component(
+                Messages.APPROVE_SUCCESS,
+                NamedTextColor.GREEN,
+                Component.text(requester.getName())
+        ));
+        requester.sendMessage(Messages.component(Messages.APPROVE_JOINED, NamedTextColor.GREEN));
+    }
+
+    private record GroupResolution(Group group, boolean ambiguous) {
+
+        static final GroupResolution NOT_FOUND = new GroupResolution(null, false);
+        static final GroupResolution AMBIGUOUS = new GroupResolution(null, true);
+    }
+
+    private GroupResolution resolveVisibleGroup(String groupArg, VoicechatServerApi api) {
+        try {
+            Group byId = api.getGroup(UUID.fromString(groupArg));
+            return byId == null || byId.isHidden()
+                    ? GroupResolution.NOT_FOUND
+                    : new GroupResolution(byId, false);
+        } catch (IllegalArgumentException notAUuid) {
+            // Fall through to name resolution.
+        }
+
+        Group match = null;
+        for (Group candidate : api.getGroups()) {
+            if (candidate.isHidden() || !candidate.getName().equals(groupArg)) {
+                continue;
+            }
+            if (match != null) {
+                return GroupResolution.AMBIGUOUS;
+            }
+            match = candidate;
+        }
+        return match == null ? GroupResolution.NOT_FOUND : new GroupResolution(match, false);
+    }
+
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            return filter(List.of("invite", "accept", "kick", "transfer"), args[0]);
+            return filter(List.of("invite", "accept", "kick", "transfer", "request"), args[0]);
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("request")) {
+            VoicechatServerApi api = plugin.getVoicechatApi();
+            if (api == null) {
+                return List.of();
+            }
+            List<String> names = new ArrayList<>();
+            for (Group group : api.getGroups()) {
+                if (!group.isHidden() && group.hasPassword()) {
+                    names.add(group.getName());
+                }
+            }
+            return filter(names, args[1]);
         }
         if (args.length == 2
                 && (args[0].equalsIgnoreCase("invite")

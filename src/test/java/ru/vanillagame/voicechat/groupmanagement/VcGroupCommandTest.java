@@ -19,6 +19,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -54,7 +55,15 @@ class VcGroupCommandTest {
         when(api.getGroup(group.getId())).thenReturn(group);
         when(invites.create(target.getUniqueId(), group.getId())).thenReturn("token");
         when(invites.create(other.getUniqueId(), group.getId())).thenReturn("token2");
-        VcGroupCommand command = new VcGroupCommand(plugin, invites, leadership, cooldowns, 5);
+        VcGroupCommand command = new VcGroupCommand(
+                plugin,
+                invites,
+                leadership,
+                cooldowns,
+                new RequestStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ofMinutes(5)),
+                new InviteCooldownStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ZERO),
+                new PluginSettings(5, 10, "block.anvil.land", 1.0F, 1.0F, 5, 30, "block.anvil.land", 1.0F, 1.0F)
+        );
 
         try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
             bukkit.when(() -> Bukkit.getPlayerExact("Target")).thenReturn(target);
@@ -67,6 +76,10 @@ class VcGroupCommandTest {
 
         verify(invites, times(1)).create(target.getUniqueId(), group.getId());
         verify(target, times(1)).sendMessage(any(Component.class));
+        verify(target, times(1)).playSound(
+                any(net.kyori.adventure.sound.Sound.class),
+                any(net.kyori.adventure.sound.Sound.Emitter.class)
+        );
         verify(invites, times(1)).create(other.getUniqueId(), group.getId());
         verify(other, times(1)).sendMessage(any(Component.class));
     }
@@ -165,6 +178,90 @@ class VcGroupCommandTest {
     }
 
     @Test
+    void requestThenLeaderApproveJoinsTheRequester() {
+        SvcGroupManagementPlugin plugin = mock(SvcGroupManagementPlugin.class);
+        Player leader = player("Leader");
+        Player requester = player("Requester");
+        Group group = group();
+        when(group.getName()).thenReturn("Secret");
+        when(group.hasPassword()).thenReturn(true);
+        when(group.isHidden()).thenReturn(false);
+        GroupLeadershipRegistry leadership = new GroupLeadershipRegistry();
+        leadership.createGroup(group.getId(), leader.getUniqueId());
+        VoicechatConnection requesterBefore = connection(null);
+        VoicechatConnection requesterAfter = connection(group);
+        VoicechatServerApi api = mock(VoicechatServerApi.class);
+        when(plugin.getVoicechatApi()).thenReturn(api);
+        when(api.getGroups()).thenReturn(List.of(group));
+        when(api.getGroup(group.getId())).thenReturn(group);
+        when(api.getConnectionOf(requester.getUniqueId())).thenReturn(
+                requesterBefore, requesterBefore, requesterAfter);
+        RequestStore requests = new RequestStore(
+                Clock.fixed(NOW, ZoneOffset.UTC),
+                Duration.ofMinutes(5),
+                () -> "req-token"
+        );
+        VcGroupCommand command = new VcGroupCommand(
+                plugin,
+                mock(InviteStore.class),
+                leadership,
+                new InviteCooldownStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ZERO),
+                requests,
+                new InviteCooldownStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ZERO),
+                new PluginSettings(5, 10, "block.anvil.land", 1.0F, 1.0F, 5, 30, "block.anvil.land", 1.0F, 1.0F)
+        );
+
+        try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
+            bukkit.when(() -> Bukkit.getPlayer(leader.getUniqueId())).thenReturn(leader);
+            bukkit.when(() -> Bukkit.getPlayer(requester.getUniqueId())).thenReturn(requester);
+            when(leader.isOnline()).thenReturn(true);
+            when(requester.isOnline()).thenReturn(true);
+
+            command.onCommand(requester, mock(Command.class), "vcgroup", new String[]{"request", "Secret"});
+            verify(leader, atLeastOnce()).sendMessage(any(Component.class));
+            verify(leader).playSound(
+                    any(net.kyori.adventure.sound.Sound.class),
+                    any(net.kyori.adventure.sound.Sound.Emitter.class)
+            );
+
+            command.onCommand(leader, mock(Command.class), "vcgroup", new String[]{"approve", "req-token"});
+        }
+
+        verify(requesterBefore).setGroup(group);
+        assertEquals(RequestStore.LookupStatus.NOT_FOUND, requests.lookup("req-token").status());
+    }
+
+    @Test
+    void requestIsRejectedForGroupsWithoutPassword() {
+        SvcGroupManagementPlugin plugin = mock(SvcGroupManagementPlugin.class);
+        Player requester = player("Requester");
+        Group group = group();
+        when(group.getName()).thenReturn("Open");
+        when(group.hasPassword()).thenReturn(false);
+        when(group.isHidden()).thenReturn(false);
+        VoicechatServerApi api = mock(VoicechatServerApi.class);
+        when(plugin.getVoicechatApi()).thenReturn(api);
+        when(api.getGroups()).thenReturn(List.of(group));
+        VoicechatConnection requesterConnection = connection(null);
+        when(api.getConnectionOf(requester.getUniqueId())).thenReturn(requesterConnection);
+        RequestStore requests = mock(RequestStore.class);
+        VcGroupCommand command = new VcGroupCommand(
+                plugin,
+                mock(InviteStore.class),
+                new GroupLeadershipRegistry(),
+                new InviteCooldownStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ZERO),
+                requests,
+                new InviteCooldownStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ZERO),
+                new PluginSettings(5, 10, "block.anvil.land", 1.0F, 1.0F, 5, 30, "block.anvil.land", 1.0F, 1.0F)
+        );
+
+        command.onCommand(requester, mock(Command.class), "vcgroup", new String[]{"request", "Open"});
+
+        verify(requests, never()).create(any(), any());
+        verify(requester, times(1)).sendMessage(any(Component.class));
+    }
+
+    @Test
     void tabCompletionDoesNotRevealPlayersHiddenFromViewer() {
         Player viewer = player("Viewer");
         Player visible = player("Visible");
@@ -202,7 +299,9 @@ class VcGroupCommandTest {
                 invites,
                 leadership,
                 new InviteCooldownStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ZERO),
-                5
+                new RequestStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ofMinutes(5)),
+                new InviteCooldownStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ZERO),
+                new PluginSettings(5, 10, "block.anvil.land", 1.0F, 1.0F, 5, 30, "block.anvil.land", 1.0F, 1.0F)
         );
     }
 

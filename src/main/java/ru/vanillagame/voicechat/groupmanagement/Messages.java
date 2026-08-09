@@ -47,6 +47,25 @@ final class Messages {
     static final String TRANSFER_UNKNOWN_LEADER = key("transfer.unknown_leader");
     static final String TRANSFER_NOT_LEADER = key("transfer.not_leader");
     static final String TRANSFER_SUCCESS = key("transfer.success");
+    static final String REQUEST_NOT_NEEDED = key("request.not_needed");
+    static final String REQUEST_GROUP_NOT_FOUND = key("request.group_not_found");
+    static final String REQUEST_GROUP_AMBIGUOUS = key("request.group_ambiguous");
+    static final String REQUEST_UNKNOWN_LEADER = key("request.unknown_leader");
+    static final String REQUEST_LEADER_OFFLINE = key("request.leader_offline");
+    static final String REQUEST_COOLDOWN = key("request.cooldown");
+    static final String REQUEST_SENT = key("request.sent");
+    static final String REQUEST_RECEIVED = key("request.received");
+    static final String REQUEST_ACCEPT_LABEL = key("request.accept.label");
+    static final String REQUEST_ACCEPT_HOVER = key("request.accept.hover");
+    static final String REQUEST_EXPIRES = key("request.expires");
+    static final String REQUEST_NOT_FOUND = key("request.not_found");
+    static final String REQUEST_EXPIRED = key("request.expired");
+    static final String APPROVE_NOT_LEADER = key("approve.not_leader");
+    static final String APPROVE_REQUESTER_OFFLINE = key("approve.requester_offline");
+    static final String APPROVE_REQUESTER_IN_GROUP = key("approve.requester_in_group");
+    static final String APPROVE_FAILED = key("approve.failed");
+    static final String APPROVE_SUCCESS = key("approve.success");
+    static final String APPROVE_JOINED = key("approve.joined");
     static final String LEADER_PROMOTED = key("leader.promoted");
 
     private static final Set<String> KEYS = Set.of(
@@ -87,6 +106,25 @@ final class Messages {
             TRANSFER_UNKNOWN_LEADER,
             TRANSFER_NOT_LEADER,
             TRANSFER_SUCCESS,
+            REQUEST_NOT_NEEDED,
+            REQUEST_GROUP_NOT_FOUND,
+            REQUEST_GROUP_AMBIGUOUS,
+            REQUEST_UNKNOWN_LEADER,
+            REQUEST_LEADER_OFFLINE,
+            REQUEST_COOLDOWN,
+            REQUEST_SENT,
+            REQUEST_RECEIVED,
+            REQUEST_ACCEPT_LABEL,
+            REQUEST_ACCEPT_HOVER,
+            REQUEST_EXPIRES,
+            REQUEST_NOT_FOUND,
+            REQUEST_EXPIRED,
+            APPROVE_NOT_LEADER,
+            APPROVE_REQUESTER_OFFLINE,
+            APPROVE_REQUESTER_IN_GROUP,
+            APPROVE_FAILED,
+            APPROVE_SUCCESS,
+            APPROVE_JOINED,
             LEADER_PROMOTED
     );
 
