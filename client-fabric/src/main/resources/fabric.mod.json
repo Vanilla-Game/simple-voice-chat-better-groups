@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "svc_group_management_client",
   "version": "${version}",
-  "name": "Simple Voice Chat Group Management (Client)",
+  "name": "Simple Voice Chat Better Groups (Client)",
   "description": "Adds Vanilla Game group actions and current-leader status to the Simple Voice Chat group screen.",
   "authors": [
     "Vanilla Game"

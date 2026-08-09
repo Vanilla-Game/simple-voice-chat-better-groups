@@ -1,4 +1,4 @@
-# Simple Voice Chat Group Management
+# Simple Voice Chat Better Groups
 
 A Bukkit/Paper addon and companion Fabric client mod for [Simple Voice Chat](https://modrepo.de/minecraft/voicechat/). The server plugin adds password-free, one-time group invites and leader-authorized member removal. The optional client mod integrates those actions and a current-leader marker into the existing Simple Voice Chat group screen.
 
