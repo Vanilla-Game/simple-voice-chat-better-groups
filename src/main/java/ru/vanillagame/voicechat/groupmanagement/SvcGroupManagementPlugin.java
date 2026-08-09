@@ -21,6 +21,7 @@ public final class SvcGroupManagementPlugin extends JavaPlugin implements Listen
     private InviteCooldownStore requestCooldowns;
     private GroupLeadershipRegistry leadership;
     private LeaderSyncService leaderSync;
+    private JoinNotifier joinNotifier;
     private PluginTranslations translations;
 
     @Override
@@ -33,6 +34,7 @@ public final class SvcGroupManagementPlugin extends JavaPlugin implements Listen
         requestCooldowns = new InviteCooldownStore(clock, settings.requestCooldown());
         leadership = new GroupLeadershipRegistry();
         leaderSync = new LeaderSyncService(this, leadership);
+        joinNotifier = new JoinNotifier(this, leadership);
 
         BukkitVoicechatService service = getServer().getServicesManager().load(BukkitVoicechatService.class);
         if (service == null) {
@@ -135,6 +137,9 @@ public final class SvcGroupManagementPlugin extends JavaPlugin implements Listen
         if (requestCooldowns != null) {
             requestCooldowns.clear();
         }
+        if (joinNotifier != null) {
+            joinNotifier.clear();
+        }
     }
 
     private void cleanupExpiredState() {
@@ -147,6 +152,24 @@ public final class SvcGroupManagementPlugin extends JavaPlugin implements Listen
     void publishLeadership(GroupLeadershipRegistry.Transition transition) {
         if (leaderSync != null) {
             leaderSync.publish(transition);
+        }
+    }
+
+    void notifyGroupJoin(java.util.UUID groupId, java.util.UUID joinerId) {
+        if (joinNotifier != null) {
+            joinNotifier.onJoin(groupId, joinerId);
+        }
+    }
+
+    void attributeInvite(java.util.UUID joinerId, String inviterName) {
+        if (joinNotifier != null) {
+            joinNotifier.attributeInvite(joinerId, inviterName);
+        }
+    }
+
+    void clearInviteAttribution(java.util.UUID joinerId) {
+        if (joinNotifier != null) {
+            joinNotifier.clearAttribution(joinerId);
         }
     }
 }

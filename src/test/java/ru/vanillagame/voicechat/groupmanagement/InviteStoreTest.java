@@ -36,7 +36,7 @@ class InviteStoreTest {
         InviteStore store = new InviteStore(clock, Duration.ofMinutes(5), () -> "token");
         UUID playerId = UUID.randomUUID();
 
-        store.create(playerId, UUID.randomUUID());
+        store.create(playerId, UUID.randomUUID(), UUID.randomUUID(), "Inviter");
         clock.advance(Duration.ofMinutes(5).minusMillis(1));
         assertEquals(InviteStore.LookupStatus.VALID, store.lookup("token", playerId).status());
 
@@ -53,7 +53,7 @@ class InviteStoreTest {
                 () -> "one-time-token"
         );
         UUID playerId = UUID.randomUUID();
-        store.create(playerId, UUID.randomUUID());
+        store.create(playerId, UUID.randomUUID(), UUID.randomUUID(), "Inviter");
         InviteStore.Invite invite = store.lookup("one-time-token", playerId).invite();
 
         assertTrue(store.consume("one-time-token", invite));
@@ -71,7 +71,7 @@ class InviteStoreTest {
         UUID invitedPlayerId = UUID.randomUUID();
         UUID otherPlayerId = UUID.randomUUID();
         UUID groupId = UUID.randomUUID();
-        store.create(invitedPlayerId, groupId);
+        store.create(invitedPlayerId, groupId, UUID.randomUUID(), "Inviter");
 
         assertEquals(
                 InviteStore.LookupStatus.WRONG_PLAYER,
@@ -95,8 +95,8 @@ class InviteStoreTest {
         UUID playerId = UUID.randomUUID();
         UUID groupId = UUID.randomUUID();
 
-        store.create(playerId, groupId);
-        store.create(playerId, groupId);
+        store.create(playerId, groupId, UUID.randomUUID(), "Inviter");
+        store.create(playerId, groupId, UUID.randomUUID(), "Inviter");
 
         assertEquals(InviteStore.LookupStatus.NOT_FOUND, store.lookup("old-token", playerId).status());
         assertEquals(InviteStore.LookupStatus.VALID, store.lookup("new-token", playerId).status());

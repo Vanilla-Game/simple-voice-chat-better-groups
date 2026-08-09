@@ -33,9 +33,11 @@ final class InviteStore {
         }
     }
 
-    synchronized String create(UUID invitedPlayerId, UUID groupId) {
+    synchronized String create(UUID invitedPlayerId, UUID groupId, UUID inviterId, String inviterName) {
         Objects.requireNonNull(invitedPlayerId, "invitedPlayerId");
         Objects.requireNonNull(groupId, "groupId");
+        Objects.requireNonNull(inviterId, "inviterId");
+        Objects.requireNonNull(inviterName, "inviterName");
         cleanupExpired();
 
         invites.entrySet().removeIf(entry -> {
@@ -48,7 +50,7 @@ final class InviteStore {
             token = tokenGenerator.generate();
         } while (invites.containsKey(token));
 
-        invites.put(token, new Invite(invitedPlayerId, groupId, clock.instant().plus(ttl)));
+        invites.put(token, new Invite(invitedPlayerId, groupId, inviterId, inviterName, clock.instant().plus(ttl)));
         return token;
     }
 
@@ -93,10 +95,12 @@ final class InviteStore {
         invites.clear();
     }
 
-    record Invite(UUID invitedPlayerId, UUID groupId, Instant expiresAt) {
+    record Invite(UUID invitedPlayerId, UUID groupId, UUID inviterId, String inviterName, Instant expiresAt) {
         Invite {
             Objects.requireNonNull(invitedPlayerId, "invitedPlayerId");
             Objects.requireNonNull(groupId, "groupId");
+            Objects.requireNonNull(inviterId, "inviterId");
+            Objects.requireNonNull(inviterName, "inviterName");
             Objects.requireNonNull(expiresAt, "expiresAt");
         }
     }

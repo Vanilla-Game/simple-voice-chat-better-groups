@@ -19,11 +19,15 @@ final class Messages {
     static final String PLAYER_NOT_ONLINE = key("player.not_online");
     static final String GROUP_NO_LONGER_EXISTS = key("group.no_longer_exists");
     static final String GROUP_ALREADY_IN_GROUP = key("group.already_in_group");
-    static final String GROUP_TARGET_ALREADY_IN_GROUP = key("group.target_already_in_group");
     static final String GROUP_JOIN_FAILED = key("group.join_failed");
     static final String GROUP_JOINED = key("group.joined");
+    static final String GROUP_SWITCHED = key("group.switched");
+    static final String GROUP_MEMBER_JOINED = key("group.member_joined");
+    static final String GROUP_MEMBER_JOINED_INVITED = key("group.member_joined_invited");
     static final String INVITE_SENDER_NOT_IN_GROUP = key("invite.sender_not_in_group");
     static final String INVITE_SELF = key("invite.self");
+    static final String INVITE_TARGET_IN_YOUR_GROUP = key("invite.target_in_your_group");
+    static final String INVITE_SWITCH_WARNING = key("invite.switch_warning");
     static final String INVITE_ACCEPT_LABEL = key("invite.accept.label");
     static final String INVITE_ACCEPT_HOVER = key("invite.accept.hover");
     static final String INVITE_RECEIVED = key("invite.received");
@@ -78,11 +82,15 @@ final class Messages {
             PLAYER_NOT_ONLINE,
             GROUP_NO_LONGER_EXISTS,
             GROUP_ALREADY_IN_GROUP,
-            GROUP_TARGET_ALREADY_IN_GROUP,
             GROUP_JOIN_FAILED,
             GROUP_JOINED,
+            GROUP_SWITCHED,
+            GROUP_MEMBER_JOINED,
+            GROUP_MEMBER_JOINED_INVITED,
             INVITE_SENDER_NOT_IN_GROUP,
             INVITE_SELF,
+            INVITE_TARGET_IN_YOUR_GROUP,
+            INVITE_SWITCH_WARNING,
             INVITE_ACCEPT_LABEL,
             INVITE_ACCEPT_HOVER,
             INVITE_RECEIVED,

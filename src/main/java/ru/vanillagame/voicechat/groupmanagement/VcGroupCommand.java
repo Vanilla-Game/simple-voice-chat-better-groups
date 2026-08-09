@@ -116,16 +116,17 @@ final class VcGroupCommand implements CommandExecutor, TabCompleter {
             inviter.sendMessage(Messages.component(Messages.CONNECTION_TARGET_UNAVAILABLE, NamedTextColor.RED));
             return;
         }
-        if (targetConnection.getGroup() != null) {
+        UUID groupId = inviterGroup.getId();
+        Group targetGroup = targetConnection.getGroup();
+        if (targetGroup != null && targetGroup.getId().equals(groupId)) {
             inviter.sendMessage(Messages.component(
-                    Messages.GROUP_TARGET_ALREADY_IN_GROUP,
+                    Messages.INVITE_TARGET_IN_YOUR_GROUP,
                     NamedTextColor.RED,
                     Component.text(target.getName())
             ));
             return;
         }
 
-        UUID groupId = inviterGroup.getId();
         if (api.getGroup(groupId) == null) {
             inviter.sendMessage(Messages.component(Messages.GROUP_NO_LONGER_EXISTS, NamedTextColor.RED));
             return;
@@ -142,26 +143,30 @@ final class VcGroupCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
-        String token = invites.create(target.getUniqueId(), groupId);
+        String token = invites.create(target.getUniqueId(), groupId, inviter.getUniqueId(), inviter.getName());
         Component acceptButton = Messages.component(Messages.INVITE_ACCEPT_LABEL, NamedTextColor.GREEN)
                 .decorate(TextDecoration.BOLD)
                 .clickEvent(ClickEvent.runCommand("/vcgroup accept " + token))
                 .hoverEvent(Messages.component(Messages.INVITE_ACCEPT_HOVER, NamedTextColor.GRAY));
-        target.sendMessage(
-                Messages.component(
-                                Messages.INVITE_RECEIVED,
-                                NamedTextColor.YELLOW,
-                                Component.text(inviter.getName())
-                        )
-                        .append(Component.space())
-                        .append(acceptButton)
-                        .append(Component.space())
-                        .append(Messages.component(
-                                Messages.INVITE_EXPIRES,
-                                NamedTextColor.GRAY,
-                                Component.text(settings.inviteExpirationMinutes())
-                        ))
-        );
+        Component inviteMessage = Messages.component(
+                        Messages.INVITE_RECEIVED,
+                        NamedTextColor.YELLOW,
+                        Component.text(inviter.getName())
+                )
+                .append(Component.space())
+                .append(acceptButton)
+                .append(Component.space())
+                .append(Messages.component(
+                        Messages.INVITE_EXPIRES,
+                        NamedTextColor.GRAY,
+                        Component.text(settings.inviteExpirationMinutes())
+                ));
+        if (targetGroup != null) {
+            inviteMessage = inviteMessage
+                    .append(Component.space())
+                    .append(Messages.component(Messages.INVITE_SWITCH_WARNING, NamedTextColor.GOLD));
+        }
+        target.sendMessage(inviteMessage);
         playNotificationSound(target, settings.inviteSound(),
                 settings.inviteSoundVolume(), settings.inviteSoundPitch());
         inviter.sendMessage(Messages.component(
@@ -214,24 +219,30 @@ final class VcGroupCommand implements CommandExecutor, TabCompleter {
             player.sendMessage(Messages.component(Messages.CONNECTION_SELF_UNAVAILABLE, NamedTextColor.RED));
             return;
         }
-        if (connection.getGroup() != null) {
-            invites.invalidatePlayer(player.getUniqueId());
-            player.sendMessage(Messages.component(Messages.GROUP_ALREADY_IN_GROUP, NamedTextColor.RED));
+        Group previousGroup = connection.getGroup();
+        if (previousGroup != null && previousGroup.getId().equals(invite.groupId())) {
+            invites.consume(token, invite);
+            player.sendMessage(Messages.component(Messages.GROUP_JOINED, NamedTextColor.GREEN));
             return;
         }
 
+        plugin.attributeInvite(player.getUniqueId(), invite.inviterName());
         connection.setGroup(group);
         // VoicechatConnection is a snapshot. Re-fetch it after a mutation to observe the new state.
         VoicechatConnection updatedConnection = api.getConnectionOf(player.getUniqueId());
         Group joinedGroup = updatedConnection == null ? null : updatedConnection.getGroup();
         if (joinedGroup == null || !joinedGroup.getId().equals(invite.groupId())) {
+            plugin.clearInviteAttribution(player.getUniqueId());
             player.sendMessage(Messages.component(Messages.GROUP_JOIN_FAILED, NamedTextColor.RED));
             return;
         }
 
         invites.consume(token, invite);
         invites.invalidatePlayer(player.getUniqueId());
-        player.sendMessage(Messages.component(Messages.GROUP_JOINED, NamedTextColor.GREEN));
+        player.sendMessage(Messages.component(
+                previousGroup != null ? Messages.GROUP_SWITCHED : Messages.GROUP_JOINED,
+                NamedTextColor.GREEN
+        ));
     }
 
     private void kick(Player leader, String targetName, VoicechatServerApi api) {
@@ -550,20 +561,45 @@ final class VcGroupCommand implements CommandExecutor, TabCompleter {
             }
             return filter(names, args[1]);
         }
-        if (args.length == 2
-                && (args[0].equalsIgnoreCase("invite")
-                        || args[0].equalsIgnoreCase("kick")
-                        || args[0].equalsIgnoreCase("transfer"))) {
-            List<String> names = new ArrayList<>();
+        boolean inviteCompletion = args.length == 2 && args[0].equalsIgnoreCase("invite");
+        boolean memberCompletion = args.length == 2
+                && (args[0].equalsIgnoreCase("kick") || args[0].equalsIgnoreCase("transfer"));
+        if (inviteCompletion || memberCompletion) {
             Player viewer = sender instanceof Player player ? player : null;
+            UUID viewerGroupId = groupIdOf(viewer);
+            List<String> names = new ArrayList<>();
             for (Player candidate : Bukkit.getOnlinePlayers()) {
-                if (viewer == null || viewer.canSee(candidate)) {
-                    names.add(candidate.getName());
+                if (viewer != null && !viewer.canSee(candidate)) {
+                    continue;
                 }
+                if (viewer != null && candidate.getUniqueId().equals(viewer.getUniqueId())) {
+                    continue;
+                }
+                // invite: hide own-group members (the only rejected targets);
+                // kick/transfer: offer own-group members only.
+                if (viewerGroupId != null) {
+                    boolean sameGroup = viewerGroupId.equals(groupIdOf(candidate));
+                    if (inviteCompletion == sameGroup) {
+                        continue;
+                    }
+                } else if (memberCompletion) {
+                    continue;
+                }
+                names.add(candidate.getName());
             }
             return filter(names, args[1]);
         }
         return List.of();
+    }
+
+    private UUID groupIdOf(Player player) {
+        VoicechatServerApi api = plugin.getVoicechatApi();
+        if (api == null || player == null) {
+            return null;
+        }
+        VoicechatConnection connection = api.getConnectionOf(player.getUniqueId());
+        Group group = connection == null ? null : connection.getGroup();
+        return group == null ? null : group.getId();
     }
 
     private static List<String> filter(List<String> values, String prefix) {

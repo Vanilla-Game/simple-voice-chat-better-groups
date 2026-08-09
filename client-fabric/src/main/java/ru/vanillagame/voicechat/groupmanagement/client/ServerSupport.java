@@ -15,6 +15,13 @@ public final class ServerSupport {
         return connection != null && connection.getCommands().getRoot().getChild(COMMAND) != null;
     }
 
+    public static void invite(String playerName) {
+        ClientPacketListener connection = Minecraft.getInstance().getConnection();
+        if (connection != null && isAvailable()) {
+            connection.sendCommand(COMMAND + " invite " + playerName);
+        }
+    }
+
     public static void requestJoin(java.util.UUID groupId) {
         ClientPacketListener connection = Minecraft.getInstance().getConnection();
         if (connection != null && isAvailable()) {

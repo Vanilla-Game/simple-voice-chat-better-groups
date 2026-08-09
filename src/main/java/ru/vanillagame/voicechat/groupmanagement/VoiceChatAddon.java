@@ -90,6 +90,7 @@ final class VoiceChatAddon implements VoicechatPlugin {
                 event.getGroup().getId(),
                 event.getConnection().getPlayer().getUuid()
         ));
+        plugin.notifyGroupJoin(event.getGroup().getId(), event.getConnection().getPlayer().getUuid());
     }
 
     private void onGroupLeft(LeaveGroupEvent event) {

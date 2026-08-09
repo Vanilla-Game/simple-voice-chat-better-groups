@@ -128,6 +128,11 @@ final class GroupLeadershipRegistry {
         return new TransferResult(TransferStatus.TRANSFERRED, transition.build());
     }
 
+    synchronized List<UUID> membersOf(UUID groupId) {
+        GroupState state = groups.get(Objects.requireNonNull(groupId, "groupId"));
+        return state == null ? List.of() : List.copyOf(state.members);
+    }
+
     synchronized UUID leaderOf(UUID groupId) {
         GroupState state = groups.get(Objects.requireNonNull(groupId, "groupId"));
         return state == null ? null : state.leaderId;
