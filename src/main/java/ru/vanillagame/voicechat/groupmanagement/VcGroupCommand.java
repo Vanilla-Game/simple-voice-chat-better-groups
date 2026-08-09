@@ -146,7 +146,7 @@ final class VcGroupCommand implements CommandExecutor, TabCompleter {
         String token = invites.create(target.getUniqueId(), groupId, inviter.getUniqueId(), inviter.getName());
         Component acceptButton = Messages.component(Messages.INVITE_ACCEPT_LABEL, NamedTextColor.GREEN)
                 .decorate(TextDecoration.BOLD)
-                .clickEvent(ClickEvent.runCommand("/vcgroup accept " + token))
+                .clickEvent(ClickEvent.runCommand("/voicegroup accept " + token))
                 .hoverEvent(Messages.component(Messages.INVITE_ACCEPT_HOVER, NamedTextColor.GRAY));
         Component inviteMessage = Messages.component(
                         Messages.INVITE_RECEIVED,
@@ -419,7 +419,7 @@ final class VcGroupCommand implements CommandExecutor, TabCompleter {
         String token = requests.create(requester.getUniqueId(), group.getId());
         Component acceptButton = Messages.component(Messages.REQUEST_ACCEPT_LABEL, NamedTextColor.GREEN)
                 .decorate(TextDecoration.BOLD)
-                .clickEvent(ClickEvent.runCommand("/vcgroup approve " + token))
+                .clickEvent(ClickEvent.runCommand("/voicegroup approve " + token))
                 .hoverEvent(Messages.component(Messages.REQUEST_ACCEPT_HOVER, NamedTextColor.GRAY));
         leader.sendMessage(
                 Messages.component(

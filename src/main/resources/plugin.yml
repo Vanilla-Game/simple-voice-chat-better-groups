@@ -7,11 +7,12 @@ website: "https://vanilla-game.ru"
 depend: [voicechat]
 
 commands:
-  vcgroup:
+  voicegroup:
     description: Manage Simple Voice Chat group invites and members.
-    usage: "/vcgroup <invite <player>|accept <token>|kick <player>|transfer <player>>"
+    usage: "/voicegroup <invite <player>|accept <token>|kick <player>|transfer <player>|request <group>>"
+    aliases: [vcgroup]
 
 permissions:
   vanillagame.svc_group_management.use:
-    description: Allows use of /vcgroup. Kick still requires current group leadership.
+    description: Allows use of /voicegroup. Kick still requires current group leadership.
     default: true
