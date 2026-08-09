@@ -117,6 +117,69 @@ class VcGroupCommandTest {
     }
 
     @Test
+    void inviteReachesTargetsInOtherGroupsButNotOwnGroupMembers() {
+        SvcGroupManagementPlugin plugin = mock(SvcGroupManagementPlugin.class);
+        InviteStore invites = mock(InviteStore.class);
+        Player inviter = player("Inviter");
+        Player busy = player("Busy");
+        Player member = player("Member");
+        Group ownGroup = group();
+        Group otherGroup = group();
+        VoicechatConnection inviterConnection = connection(ownGroup);
+        VoicechatConnection busyConnection = connection(otherGroup);
+        VoicechatConnection memberConnection = connection(ownGroup);
+        VoicechatServerApi api = mock(VoicechatServerApi.class);
+        when(plugin.getVoicechatApi()).thenReturn(api);
+        when(api.getConnectionOf(inviter.getUniqueId())).thenReturn(inviterConnection);
+        when(api.getConnectionOf(busy.getUniqueId())).thenReturn(busyConnection);
+        when(api.getConnectionOf(member.getUniqueId())).thenReturn(memberConnection);
+        when(api.getGroup(ownGroup.getId())).thenReturn(ownGroup);
+        when(invites.create(busy.getUniqueId(), ownGroup.getId())).thenReturn("token");
+        VcGroupCommand command = command(plugin, invites, new GroupLeadershipRegistry());
+
+        try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
+            bukkit.when(() -> Bukkit.getPlayerExact("Busy")).thenReturn(busy);
+            bukkit.when(() -> Bukkit.getPlayerExact("Member")).thenReturn(member);
+
+            command.onCommand(inviter, mock(Command.class), "vcgroup", new String[]{"invite", "Busy"});
+            command.onCommand(inviter, mock(Command.class), "vcgroup", new String[]{"invite", "Member"});
+        }
+
+        verify(invites, times(1)).create(busy.getUniqueId(), ownGroup.getId());
+        verify(busy, times(1)).sendMessage(any(Component.class));
+        verify(invites, never()).create(member.getUniqueId(), ownGroup.getId());
+        verify(member, never()).sendMessage(any(Component.class));
+    }
+
+    @Test
+    void acceptSwitchesGroupsWhenAlreadyInAnotherOne() {
+        SvcGroupManagementPlugin plugin = mock(SvcGroupManagementPlugin.class);
+        UUID playerId = UUID.randomUUID();
+        UUID newGroupId = UUID.randomUUID();
+        Player player = player("Switcher", playerId);
+        Group oldGroup = group();
+        Group newGroup = group(newGroupId);
+        VoicechatConnection beforeSwitch = connection(oldGroup);
+        VoicechatConnection afterSwitch = connection(newGroup);
+        VoicechatServerApi api = mock(VoicechatServerApi.class);
+        when(plugin.getVoicechatApi()).thenReturn(api);
+        when(api.getGroup(newGroupId)).thenReturn(newGroup);
+        when(api.getConnectionOf(playerId)).thenReturn(beforeSwitch, afterSwitch);
+        InviteStore invites = new InviteStore(
+                Clock.fixed(NOW, ZoneOffset.UTC),
+                Duration.ofMinutes(5),
+                () -> "switch-token"
+        );
+        invites.create(playerId, newGroupId);
+        VcGroupCommand command = command(plugin, invites, new GroupLeadershipRegistry());
+
+        command.onCommand(player, mock(Command.class), "vcgroup", new String[]{"accept", "switch-token"});
+
+        verify(beforeSwitch).setGroup(newGroup);
+        assertEquals(InviteStore.LookupStatus.NOT_FOUND, invites.lookup("switch-token", playerId).status());
+    }
+
+    @Test
     void leaderKickMutatesThenRechecksSnapshot() {
         SvcGroupManagementPlugin plugin = mock(SvcGroupManagementPlugin.class);
         Player leader = player("Leader");

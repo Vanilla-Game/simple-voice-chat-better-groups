@@ -116,16 +116,17 @@ final class VcGroupCommand implements CommandExecutor, TabCompleter {
             inviter.sendMessage(Messages.component(Messages.CONNECTION_TARGET_UNAVAILABLE, NamedTextColor.RED));
             return;
         }
-        if (targetConnection.getGroup() != null) {
+        UUID groupId = inviterGroup.getId();
+        Group targetGroup = targetConnection.getGroup();
+        if (targetGroup != null && targetGroup.getId().equals(groupId)) {
             inviter.sendMessage(Messages.component(
-                    Messages.GROUP_TARGET_ALREADY_IN_GROUP,
+                    Messages.INVITE_TARGET_IN_YOUR_GROUP,
                     NamedTextColor.RED,
                     Component.text(target.getName())
             ));
             return;
         }
 
-        UUID groupId = inviterGroup.getId();
         if (api.getGroup(groupId) == null) {
             inviter.sendMessage(Messages.component(Messages.GROUP_NO_LONGER_EXISTS, NamedTextColor.RED));
             return;
@@ -147,21 +148,25 @@ final class VcGroupCommand implements CommandExecutor, TabCompleter {
                 .decorate(TextDecoration.BOLD)
                 .clickEvent(ClickEvent.runCommand("/vcgroup accept " + token))
                 .hoverEvent(Messages.component(Messages.INVITE_ACCEPT_HOVER, NamedTextColor.GRAY));
-        target.sendMessage(
-                Messages.component(
-                                Messages.INVITE_RECEIVED,
-                                NamedTextColor.YELLOW,
-                                Component.text(inviter.getName())
-                        )
-                        .append(Component.space())
-                        .append(acceptButton)
-                        .append(Component.space())
-                        .append(Messages.component(
-                                Messages.INVITE_EXPIRES,
-                                NamedTextColor.GRAY,
-                                Component.text(settings.inviteExpirationMinutes())
-                        ))
-        );
+        Component inviteMessage = Messages.component(
+                        Messages.INVITE_RECEIVED,
+                        NamedTextColor.YELLOW,
+                        Component.text(inviter.getName())
+                )
+                .append(Component.space())
+                .append(acceptButton)
+                .append(Component.space())
+                .append(Messages.component(
+                        Messages.INVITE_EXPIRES,
+                        NamedTextColor.GRAY,
+                        Component.text(settings.inviteExpirationMinutes())
+                ));
+        if (targetGroup != null) {
+            inviteMessage = inviteMessage
+                    .append(Component.space())
+                    .append(Messages.component(Messages.INVITE_SWITCH_WARNING, NamedTextColor.GOLD));
+        }
+        target.sendMessage(inviteMessage);
         playNotificationSound(target, settings.inviteSound(),
                 settings.inviteSoundVolume(), settings.inviteSoundPitch());
         inviter.sendMessage(Messages.component(
@@ -214,9 +219,10 @@ final class VcGroupCommand implements CommandExecutor, TabCompleter {
             player.sendMessage(Messages.component(Messages.CONNECTION_SELF_UNAVAILABLE, NamedTextColor.RED));
             return;
         }
-        if (connection.getGroup() != null) {
-            invites.invalidatePlayer(player.getUniqueId());
-            player.sendMessage(Messages.component(Messages.GROUP_ALREADY_IN_GROUP, NamedTextColor.RED));
+        Group previousGroup = connection.getGroup();
+        if (previousGroup != null && previousGroup.getId().equals(invite.groupId())) {
+            invites.consume(token, invite);
+            player.sendMessage(Messages.component(Messages.GROUP_JOINED, NamedTextColor.GREEN));
             return;
         }
 
@@ -231,7 +237,10 @@ final class VcGroupCommand implements CommandExecutor, TabCompleter {
 
         invites.consume(token, invite);
         invites.invalidatePlayer(player.getUniqueId());
-        player.sendMessage(Messages.component(Messages.GROUP_JOINED, NamedTextColor.GREEN));
+        player.sendMessage(Messages.component(
+                previousGroup != null ? Messages.GROUP_SWITCHED : Messages.GROUP_JOINED,
+                NamedTextColor.GREEN
+        ));
     }
 
     private void kick(Player leader, String targetName, VoicechatServerApi api) {
