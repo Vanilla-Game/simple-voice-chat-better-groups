@@ -23,16 +23,14 @@ record PluginSettings(
     static final int DEFAULT_REQUEST_EXPIRATION_MINUTES = 5;
     static final int DEFAULT_REQUEST_COOLDOWN_SECONDS = 30;
     static final String DEFAULT_REQUEST_SOUND = "block.anvil.land";
-    static final float DEFAULT_REQUEST_SOUND_VOLUME = 1.0F;
-    static final float DEFAULT_REQUEST_SOUND_PITCH = 1.0F;
+    static final float DEFAULT_REQUEST_SOUND_VOLUME = 0.5F;
+    static final float DEFAULT_REQUEST_SOUND_PITCH = 2.0F;
 
     private static final String INVITE_EXPIRATION_PATH = "invites.expiration-minutes";
     private static final String INVITE_COOLDOWN_PATH = "invites.cooldown-seconds";
     private static final String REQUEST_EXPIRATION_PATH = "requests.expiration-minutes";
     private static final String REQUEST_COOLDOWN_PATH = "requests.cooldown-seconds";
     private static final String REQUEST_SOUND_PATH = "requests.sound";
-    private static final String REQUEST_SOUND_VOLUME_PATH = "requests.sound-volume";
-    private static final String REQUEST_SOUND_PITCH_PATH = "requests.sound-pitch";
 
     PluginSettings {
         if (inviteExpirationMinutes <= 0) {
@@ -52,18 +50,15 @@ record PluginSettings(
     static PluginSettings load(JavaPlugin plugin) {
         plugin.saveDefaultConfig();
         FileConfiguration config = plugin.getConfig();
+        SoundSetting sound = readSound(plugin, config);
         return new PluginSettings(
                 readInt(plugin, config, INVITE_EXPIRATION_PATH, DEFAULT_INVITE_EXPIRATION_MINUTES, 1),
                 readInt(plugin, config, INVITE_COOLDOWN_PATH, DEFAULT_INVITE_COOLDOWN_SECONDS, 0),
                 readInt(plugin, config, REQUEST_EXPIRATION_PATH, DEFAULT_REQUEST_EXPIRATION_MINUTES, 1),
                 readInt(plugin, config, REQUEST_COOLDOWN_PATH, DEFAULT_REQUEST_COOLDOWN_SECONDS, 0),
-                readSound(plugin, config),
-                readFloat(plugin, config, REQUEST_SOUND_VOLUME_PATH,
-                        DEFAULT_REQUEST_SOUND_VOLUME, 0.0F, 10.0F),
-                // Minecraft clamps pitch to [0.5, 2.0]; values outside it would be
-                // silently distorted, so they are rejected up front.
-                readFloat(plugin, config, REQUEST_SOUND_PITCH_PATH,
-                        DEFAULT_REQUEST_SOUND_PITCH, 0.5F, 2.0F)
+                sound.key(),
+                sound.volume(),
+                sound.pitch()
         );
     }
 
@@ -83,41 +78,72 @@ record PluginSettings(
         return Duration.ofSeconds(requestCooldownSeconds);
     }
 
-    private static String readSound(JavaPlugin plugin, FileConfiguration config) {
-        String value = config.getString(REQUEST_SOUND_PATH, DEFAULT_REQUEST_SOUND);
-        if (value == null || value.isBlank() || value.equalsIgnoreCase("none")) {
-            return null;
-        }
-        try {
-            Key.key(value);
-            return value;
-        } catch (InvalidKeyException invalidKey) {
-            plugin.getLogger().warning(
-                    "Invalid config value for '" + REQUEST_SOUND_PATH + "' (must be a sound event id like "
-                            + DEFAULT_REQUEST_SOUND + ", or none); using " + DEFAULT_REQUEST_SOUND + ".");
-            return DEFAULT_REQUEST_SOUND;
-        }
+    private record SoundSetting(String key, float volume, float pitch) {
     }
 
-    private static float readFloat(
-            JavaPlugin plugin,
-            FileConfiguration config,
-            String path,
-            float defaultValue,
-            float minimum,
-            float maximum
-    ) {
-        Object raw = config.get(path);
-        if (!(raw instanceof Number number)) {
-            warn(plugin, path, defaultValue, "must be a number");
-            return defaultValue;
+    // CMI-style single line: <sound id>[:volume[:pitch]]. Trailing numeric
+    // segments are volume and pitch; the rest is the sound id, which may itself
+    // contain one namespace colon (vanilla sound path segments are never purely
+    // numeric, so the split is unambiguous).
+    private static SoundSetting readSound(JavaPlugin plugin, FileConfiguration config) {
+        String value = config.getString(REQUEST_SOUND_PATH, DEFAULT_REQUEST_SOUND);
+        if (value == null || value.isBlank() || value.equalsIgnoreCase("none")) {
+            return new SoundSetting(null, DEFAULT_REQUEST_SOUND_VOLUME, DEFAULT_REQUEST_SOUND_PITCH);
         }
-        float value = number.floatValue();
-        if (value < minimum || value > maximum) {
-            warn(plugin, path, defaultValue, "must be between " + minimum + " and " + maximum);
-            return defaultValue;
+
+        String[] parts = value.split(":");
+        java.util.List<Float> numbers = new java.util.ArrayList<>();
+        int keyParts = parts.length;
+        while (keyParts > 1 && numbers.size() < 2) {
+            Float parsed = tryParseFloat(parts[keyParts - 1]);
+            if (parsed == null) {
+                break;
+            }
+            numbers.add(0, parsed);
+            keyParts--;
         }
-        return value;
+
+        String keyValue = String.join(":", java.util.Arrays.copyOfRange(parts, 0, keyParts));
+        try {
+            Key.key(keyValue);
+        } catch (InvalidKeyException invalidKey) {
+            warn(plugin, REQUEST_SOUND_PATH, DEFAULT_REQUEST_SOUND,
+                    "must be <sound id>[:volume[:pitch]] like " + DEFAULT_REQUEST_SOUND + ":0.5:2, or none");
+            return new SoundSetting(DEFAULT_REQUEST_SOUND,
+                    DEFAULT_REQUEST_SOUND_VOLUME, DEFAULT_REQUEST_SOUND_PITCH);
+        }
+
+        float volume = DEFAULT_REQUEST_SOUND_VOLUME;
+        if (!numbers.isEmpty()) {
+            float candidate = numbers.get(0);
+            if (candidate < 0.0F || candidate > 10.0F) {
+                warn(plugin, REQUEST_SOUND_PATH, DEFAULT_REQUEST_SOUND_VOLUME,
+                        "volume must be between 0.0 and 10.0");
+            } else {
+                volume = candidate;
+            }
+        }
+        // Minecraft clamps pitch to [0.5, 2.0]; values outside it would be
+        // silently distorted, so they are rejected up front.
+        float pitch = DEFAULT_REQUEST_SOUND_PITCH;
+        if (numbers.size() == 2) {
+            float candidate = numbers.get(1);
+            if (candidate < 0.5F || candidate > 2.0F) {
+                warn(plugin, REQUEST_SOUND_PATH, DEFAULT_REQUEST_SOUND_PITCH,
+                        "pitch must be between 0.5 and 2.0");
+            } else {
+                pitch = candidate;
+            }
+        }
+        return new SoundSetting(keyValue, volume, pitch);
+    }
+
+    private static Float tryParseFloat(String value) {
+        try {
+            return Float.parseFloat(value);
+        } catch (NumberFormatException notANumber) {
+            return null;
+        }
     }
 
     private static int readInt(

@@ -14,11 +14,9 @@ requests:
   # Set to 0 to disable the cooldown.
   cooldown-seconds: 30
 
-  # Sound played to the group leader when a join request arrives. Any sound
-  # event id works (e.g. entity.experience_orb.pickup); set to none to disable.
-  sound: block.anvil.land
-
-  # Volume (0.0-10.0) and pitch (0.5-2.0, the range Minecraft supports) of
-  # that sound.
-  sound-volume: 1.0
-  sound-pitch: 1.0
+  # Sound played to the group leader when a join request arrives, as
+  # <sound id>[:volume[:pitch]] - e.g. entity.experience_orb.pickup or
+  # block.bell.use:1:0.8. Volume is 0.0-10.0, pitch 0.5-2.0 (the range
+  # Minecraft supports); omitted values default to 0.5 and 2. Set to none
+  # to disable.
+  sound: block.anvil.land:0.5:2

@@ -23,9 +23,7 @@ class PluginSettingsTest {
         config.set("invites.cooldown-seconds", 3);
         config.set("requests.expiration-minutes", 7);
         config.set("requests.cooldown-seconds", 45);
-        config.set("requests.sound", "entity.experience_orb.pickup");
-        config.set("requests.sound-volume", 0.5);
-        config.set("requests.sound-pitch", 1.5);
+        config.set("requests.sound", "entity.experience_orb.pickup:0.7:1.5");
         when(plugin.getConfig()).thenReturn(config);
 
         PluginSettings settings = PluginSettings.load(plugin);
@@ -36,7 +34,7 @@ class PluginSettingsTest {
         assertEquals(Duration.ofMinutes(7), settings.requestExpiration());
         assertEquals(Duration.ofSeconds(45), settings.requestCooldown());
         assertEquals("entity.experience_orb.pickup", settings.requestSound());
-        assertEquals(0.5F, settings.requestSoundVolume());
+        assertEquals(0.7F, settings.requestSoundVolume());
         assertEquals(1.5F, settings.requestSoundPitch());
     }
 
@@ -48,9 +46,7 @@ class PluginSettingsTest {
         config.set("invites.cooldown-seconds", -1);
         config.set("requests.expiration-minutes", 0);
         config.set("requests.cooldown-seconds", -1);
-        config.set("requests.sound", "NOT A VALID KEY");
-        config.set("requests.sound-volume", -1.0);
-        config.set("requests.sound-pitch", 5.0);
+        config.set("requests.sound", "NOT A VALID KEY:-1:5");
         when(plugin.getConfig()).thenReturn(config);
         when(plugin.getLogger()).thenReturn(Logger.getAnonymousLogger());
 
@@ -74,6 +70,21 @@ class PluginSettingsTest {
         );
         assertEquals(PluginSettings.DEFAULT_REQUEST_SOUND, settings.requestSound());
         assertEquals(PluginSettings.DEFAULT_REQUEST_SOUND_VOLUME, settings.requestSoundVolume());
+        assertEquals(PluginSettings.DEFAULT_REQUEST_SOUND_PITCH, settings.requestSoundPitch());
+    }
+
+    @Test
+    void namespacedSoundWithPartialNumbersParses() {
+        JavaPlugin plugin = mock(JavaPlugin.class);
+        YamlConfiguration config = new YamlConfiguration();
+        config.set("requests.sound", "minecraft:block.bell.use:2");
+        when(plugin.getConfig()).thenReturn(config);
+        when(plugin.getLogger()).thenReturn(Logger.getAnonymousLogger());
+
+        PluginSettings settings = PluginSettings.load(plugin);
+
+        assertEquals("minecraft:block.bell.use", settings.requestSound());
+        assertEquals(2.0F, settings.requestSoundVolume());
         assertEquals(PluginSettings.DEFAULT_REQUEST_SOUND_PITCH, settings.requestSoundPitch());
     }
 
