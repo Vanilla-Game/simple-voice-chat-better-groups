@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.4.0](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/compare/svc-better-groups-fabric-v0.3.0...svc-better-groups-fabric-v0.4.0) (2026-08-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* rename internals and artifacts to svc-better-groups ([#29](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/issues/29))
+
+### Features
+
+* rename the command to /voicegroup with a permanent /vcgroup alias ([#24](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/issues/24)) ([161772a](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/commit/161772a9b6615c57040d95ae1d93fedf0d0b6864))
+
+
+### Code Refactoring
+
+* rename internals and artifacts to svc-better-groups ([#29](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/issues/29)) ([161fcae](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/commit/161fcae7c200f34e1a617dc1e43831acbed1b9f3))
+
 ## [0.3.0](https://github.com/Vanilla-Game/svc-better-groups/compare/svc-better-groups-fabric-v0.2.0...svc-better-groups-fabric-v0.3.0) (2026-08-09)
 
 
