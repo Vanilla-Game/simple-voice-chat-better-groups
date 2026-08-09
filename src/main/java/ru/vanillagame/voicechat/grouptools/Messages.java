@@ -34,13 +34,14 @@ final class Messages {
     static final String INVITE_EXPIRED = key("invite.expired");
     static final String INVITE_WRONG_PLAYER = key("invite.wrong_player");
     static final String KICK_SENDER_NOT_IN_GROUP = key("kick.sender_not_in_group");
-    static final String KICK_UNKNOWN_CREATOR = key("kick.unknown_creator");
-    static final String KICK_NOT_CREATOR = key("kick.not_creator");
+    static final String KICK_UNKNOWN_LEADER = key("kick.unknown_leader");
+    static final String KICK_NOT_LEADER = key("kick.not_leader");
     static final String KICK_SELF = key("kick.self");
     static final String KICK_TARGET_NOT_MEMBER = key("kick.target_not_member");
     static final String KICK_FAILED = key("kick.failed");
     static final String KICK_SUCCESS = key("kick.success");
     static final String KICK_TARGET_NOTIFICATION = key("kick.target_notification");
+    static final String LEADER_PROMOTED = key("leader.promoted");
 
     private static final Set<String> KEYS = Set.of(
             COMMAND_PLAYERS_ONLY,
@@ -67,13 +68,14 @@ final class Messages {
             INVITE_EXPIRED,
             INVITE_WRONG_PLAYER,
             KICK_SENDER_NOT_IN_GROUP,
-            KICK_UNKNOWN_CREATOR,
-            KICK_NOT_CREATOR,
+            KICK_UNKNOWN_LEADER,
+            KICK_NOT_LEADER,
             KICK_SELF,
             KICK_TARGET_NOT_MEMBER,
             KICK_FAILED,
             KICK_SUCCESS,
-            KICK_TARGET_NOTIFICATION
+            KICK_TARGET_NOTIFICATION,
+            LEADER_PROMOTED
     );
 
     private Messages() {

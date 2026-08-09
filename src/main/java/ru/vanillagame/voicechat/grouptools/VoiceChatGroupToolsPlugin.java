@@ -9,6 +9,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.time.Clock;
+import java.util.UUID;
 import java.util.logging.Level;
 
 public final class VoiceChatGroupToolsPlugin extends JavaPlugin implements Listener {
@@ -16,7 +17,8 @@ public final class VoiceChatGroupToolsPlugin extends JavaPlugin implements Liste
     private volatile VoicechatServerApi voicechatApi;
     private InviteStore invites;
     private InviteCooldownStore inviteCooldowns;
-    private GroupOwnershipRegistry ownership;
+    private GroupLeadershipRegistry leadership;
+    private LeaderSyncService leaderSync;
     private PluginTranslations translations;
 
     @Override
@@ -25,7 +27,8 @@ public final class VoiceChatGroupToolsPlugin extends JavaPlugin implements Liste
         Clock clock = Clock.systemUTC();
         invites = new InviteStore(clock, settings.inviteExpiration(), new InviteStore.SecureTokenGenerator());
         inviteCooldowns = new InviteCooldownStore(clock, settings.inviteCooldown());
-        ownership = new GroupOwnershipRegistry();
+        leadership = new GroupLeadershipRegistry();
+        leaderSync = new LeaderSyncService(this, leadership);
 
         BukkitVoicechatService service = getServer().getServicesManager().load(BukkitVoicechatService.class);
         if (service == null) {
@@ -43,12 +46,12 @@ public final class VoiceChatGroupToolsPlugin extends JavaPlugin implements Liste
             return;
         }
 
-        service.registerPlugin(new VoiceChatAddon(this, ownership, invites));
+        service.registerPlugin(new VoiceChatAddon(this, leadership, invites));
 
         VcGroupCommand commandHandler = new VcGroupCommand(
                 this,
                 invites,
-                ownership,
+                leadership,
                 inviteCooldowns,
                 settings.inviteExpirationMinutes()
         );
@@ -61,6 +64,7 @@ public final class VoiceChatGroupToolsPlugin extends JavaPlugin implements Liste
         command.setExecutor(commandHandler);
         command.setTabCompleter(commandHandler);
 
+        leaderSync.register();
         getServer().getPluginManager().registerEvents(this, this);
         getServer().getScheduler().runTaskTimer(this, this::cleanupExpiredState, 20L * 60L, 20L * 60L);
         getLogger().info("Voice Chat Group Tools enabled.");
@@ -72,15 +76,25 @@ public final class VoiceChatGroupToolsPlugin extends JavaPlugin implements Liste
             translations.unregister();
         }
         clearVoicechatState();
+        if (leaderSync != null) {
+            leaderSync.unregister();
+        }
     }
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
+        UUID playerId = event.getPlayer().getUniqueId();
+        if (leadership != null) {
+            publishLeadership(leadership.disconnect(playerId));
+        }
+        if (leaderSync != null) {
+            leaderSync.forget(playerId);
+        }
         if (invites != null) {
-            invites.invalidatePlayer(event.getPlayer().getUniqueId());
+            invites.invalidatePlayer(playerId);
         }
         if (inviteCooldowns != null) {
-            inviteCooldowns.invalidate(event.getPlayer().getUniqueId());
+            inviteCooldowns.invalidate(playerId);
         }
     }
 
@@ -97,8 +111,8 @@ public final class VoiceChatGroupToolsPlugin extends JavaPlugin implements Liste
         if (invites != null) {
             invites.clear();
         }
-        if (ownership != null) {
-            ownership.clear();
+        if (leadership != null) {
+            publishLeadership(leadership.clear());
         }
         if (inviteCooldowns != null) {
             inviteCooldowns.clear();
@@ -108,5 +122,11 @@ public final class VoiceChatGroupToolsPlugin extends JavaPlugin implements Liste
     private void cleanupExpiredState() {
         invites.cleanupExpired();
         inviteCooldowns.cleanupExpired();
+    }
+
+    void publishLeadership(GroupLeadershipRegistry.Transition transition) {
+        if (leaderSync != null) {
+            leaderSync.publish(transition);
+        }
     }
 }

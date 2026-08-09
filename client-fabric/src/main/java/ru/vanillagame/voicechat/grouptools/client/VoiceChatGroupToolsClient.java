@@ -12,6 +12,7 @@ public final class VoiceChatGroupToolsClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         // Mixins provide the UI integration. Server-side commands remain authoritative.
+        ClientNetworking.initialize();
         if (Boolean.getBoolean(COMPAT_CHECK_PROPERTY)) {
             runCompatCheckAndExit();
         }

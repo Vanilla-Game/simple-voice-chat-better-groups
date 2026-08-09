@@ -3,7 +3,7 @@
   "id": "voicechat_group_tools_client",
   "version": "${version}",
   "name": "Voice Chat Group Tools Client",
-  "description": "Adds Vanilla Game group actions to the existing Simple Voice Chat group screen.",
+  "description": "Adds Vanilla Game group actions and current-leader status to the Simple Voice Chat group screen.",
   "authors": [
     "Vanilla Game"
   ],
@@ -23,6 +23,7 @@
   ],
   "depends": {
     "fabricloader": ">=0.19.3",
+    "fabric-api": ">=${fabric_api_version}",
     "java": ">=25",
     "minecraft": "${minecraft_version}",
     "voicechat": "${voicechat_range}"

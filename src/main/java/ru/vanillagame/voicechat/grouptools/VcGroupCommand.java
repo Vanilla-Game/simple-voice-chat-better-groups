@@ -25,20 +25,20 @@ final class VcGroupCommand implements CommandExecutor, TabCompleter {
 
     private final VoiceChatGroupToolsPlugin plugin;
     private final InviteStore invites;
-    private final GroupOwnershipRegistry ownership;
+    private final GroupLeadershipRegistry leadership;
     private final InviteCooldownStore inviteCooldowns;
     private final int inviteExpirationMinutes;
 
     VcGroupCommand(
             VoiceChatGroupToolsPlugin plugin,
             InviteStore invites,
-            GroupOwnershipRegistry ownership,
+            GroupLeadershipRegistry leadership,
             InviteCooldownStore inviteCooldowns,
             int inviteExpirationMinutes
     ) {
         this.plugin = plugin;
         this.invites = invites;
-        this.ownership = ownership;
+        this.leadership = leadership;
         this.inviteCooldowns = inviteCooldowns;
         this.inviteExpirationMinutes = inviteExpirationMinutes;
     }
@@ -207,44 +207,44 @@ final class VcGroupCommand implements CommandExecutor, TabCompleter {
         player.sendMessage(Messages.component(Messages.GROUP_JOINED, NamedTextColor.GREEN));
     }
 
-    private void kick(Player creator, String targetName, VoicechatServerApi api) {
-        VoicechatConnection creatorConnection = api.getConnectionOf(creator.getUniqueId());
-        if (creatorConnection == null) {
-            creator.sendMessage(Messages.component(Messages.CONNECTION_SELF_UNAVAILABLE, NamedTextColor.RED));
+    private void kick(Player leader, String targetName, VoicechatServerApi api) {
+        VoicechatConnection leaderConnection = api.getConnectionOf(leader.getUniqueId());
+        if (leaderConnection == null) {
+            leader.sendMessage(Messages.component(Messages.CONNECTION_SELF_UNAVAILABLE, NamedTextColor.RED));
             return;
         }
 
-        Group creatorGroup = creatorConnection.getGroup();
-        if (creatorGroup == null) {
-            creator.sendMessage(Messages.component(Messages.KICK_SENDER_NOT_IN_GROUP, NamedTextColor.RED));
+        Group leaderGroup = leaderConnection.getGroup();
+        if (leaderGroup == null) {
+            leader.sendMessage(Messages.component(Messages.KICK_SENDER_NOT_IN_GROUP, NamedTextColor.RED));
             return;
         }
 
-        GroupOwnershipRegistry.Authorization authorization =
-                ownership.authorize(creatorGroup.getId(), creator.getUniqueId());
-        if (authorization == GroupOwnershipRegistry.Authorization.UNKNOWN_CREATOR) {
-            creator.sendMessage(Messages.component(Messages.KICK_UNKNOWN_CREATOR, NamedTextColor.RED));
+        GroupLeadershipRegistry.Authorization authorization =
+                leadership.authorize(leaderGroup.getId(), leader.getUniqueId());
+        if (authorization == GroupLeadershipRegistry.Authorization.UNKNOWN_LEADER) {
+            leader.sendMessage(Messages.component(Messages.KICK_UNKNOWN_LEADER, NamedTextColor.RED));
             return;
         }
-        if (authorization == GroupOwnershipRegistry.Authorization.NOT_CREATOR) {
-            creator.sendMessage(Messages.component(Messages.KICK_NOT_CREATOR, NamedTextColor.RED));
+        if (authorization == GroupLeadershipRegistry.Authorization.NOT_LEADER) {
+            leader.sendMessage(Messages.component(Messages.KICK_NOT_LEADER, NamedTextColor.RED));
             return;
         }
 
         Player target = Bukkit.getPlayerExact(targetName);
         if (target == null) {
-            creator.sendMessage(Messages.component(Messages.PLAYER_NOT_ONLINE, NamedTextColor.RED));
+            leader.sendMessage(Messages.component(Messages.PLAYER_NOT_ONLINE, NamedTextColor.RED));
             return;
         }
-        if (target.getUniqueId().equals(creator.getUniqueId())) {
-            creator.sendMessage(Messages.component(Messages.KICK_SELF, NamedTextColor.RED));
+        if (target.getUniqueId().equals(leader.getUniqueId())) {
+            leader.sendMessage(Messages.component(Messages.KICK_SELF, NamedTextColor.RED));
             return;
         }
 
         VoicechatConnection targetConnection = api.getConnectionOf(target.getUniqueId());
         Group targetGroup = targetConnection == null ? null : targetConnection.getGroup();
-        if (targetGroup == null || !targetGroup.getId().equals(creatorGroup.getId())) {
-            creator.sendMessage(Messages.component(
+        if (targetGroup == null || !targetGroup.getId().equals(leaderGroup.getId())) {
+            leader.sendMessage(Messages.component(
                     Messages.KICK_TARGET_NOT_MEMBER,
                     NamedTextColor.RED,
                     Component.text(target.getName())
@@ -256,11 +256,11 @@ final class VcGroupCommand implements CommandExecutor, TabCompleter {
         // VoicechatConnection is a snapshot. Re-fetch it after a mutation to observe the new state.
         VoicechatConnection updatedTargetConnection = api.getConnectionOf(target.getUniqueId());
         if (updatedTargetConnection == null || updatedTargetConnection.getGroup() != null) {
-            creator.sendMessage(Messages.component(Messages.KICK_FAILED, NamedTextColor.RED));
+            leader.sendMessage(Messages.component(Messages.KICK_FAILED, NamedTextColor.RED));
             return;
         }
 
-        creator.sendMessage(Messages.component(
+        leader.sendMessage(Messages.component(
                 Messages.KICK_SUCCESS,
                 NamedTextColor.GREEN,
                 Component.text(target.getName())

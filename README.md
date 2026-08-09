@@ -1,6 +1,6 @@
 # Voice Chat Group Tools
 
-A Bukkit/Paper addon and companion Fabric client mod for [Simple Voice Chat](https://modrepo.de/minecraft/voicechat/). The server plugin adds password-free, one-time group invites and creator-authorized member removal. The optional client mod integrates those actions into the existing Simple Voice Chat group screen.
+A Bukkit/Paper addon and companion Fabric client mod for [Simple Voice Chat](https://modrepo.de/minecraft/voicechat/). The server plugin adds password-free, one-time group invites and leader-authorized member removal. The optional client mod integrates those actions and a current-leader marker into the existing Simple Voice Chat group screen.
 
 Developed for [Vanilla Game](https://vanilla-game.ru).
 
@@ -21,6 +21,7 @@ The optional client module additionally requires:
 
 - Minecraft `26.2`
 - Fabric Loader `0.19.3` or newer
+- Fabric API `0.156.0` or newer for Minecraft `26.2`
 - Simple Voice Chat Fabric `2.6.18` or newer within the supported range
 
 The server project compiles against Paper API `26.2.build.84-stable` and emits Java 25 bytecode. Paper's 26.2 development documentation specifies Java 25 and the `26.2.build.*` API line. Simple Voice Chat 2.6.21 exposes the separately published public API artifact `voicechat-api:2.6.20`, which is used as a compile-only dependency by the server plugin.
@@ -38,16 +39,17 @@ The plugin declares a hard dependency on `voicechat`. If Simple Voice Chat is mi
 
 ### Optional Fabric client
 
-1. Install Fabric Loader and Simple Voice Chat `2.6.21` for Minecraft `26.2` on the client.
+1. Install Fabric Loader, Fabric API, and Simple Voice Chat `2.6.21` for Minecraft `26.2` on the client.
 2. Copy `client-fabric/build/libs/voicechat-group-tools-fabric-*.jar` into the client's `mods` directory.
 3. Connect to a server that runs the matching Paper plugin.
 
 The client addon checks the server command tree and changes nothing when `/vcgroup` is unavailable. On supported servers it adds:
 
 - an invite button to the footer of the existing Simple Voice Chat group screen; it opens chat with `/vcgroup invite ` prefilled so normal command suggestions remain available;
-- a remove button next to each other group member's existing volume slider; it executes `/vcgroup kick <player>`.
+- a gold crown next to the current group leader;
+- a remove button next to each other group member's existing volume slider when the local player is the current leader; it executes `/vcgroup kick <player>`.
 
-The server still performs every permission, ownership, membership, and live-state check. Installing or modifying the client cannot grant kick authority. Players without the client addon retain the complete command workflow. Invite acceptance stays in the existing clickable server chat message because an invited player is not yet inside the group screen.
+The server still performs every permission, leadership, membership, and live-state check. The client sends only a versioned capability message; it never sends a player or leader UUID. Installing or modifying the client cannot grant kick authority. Players without the client addon retain the complete command workflow. Invite acceptance stays in the existing clickable server chat message because an invited player is not yet inside the group screen.
 
 ## Releases
 
@@ -55,15 +57,23 @@ Releases follow the same Release Please workflow used by other Vanilla Game plug
 
 Each component starts at `0.1.0`. Pull request titles are checked for Conventional Commit format, and every pull request to `main` runs the Gradle build and unit tests.
 
+After the client release is published, manually update its Modrinth listing: replace any "creator only" wording with "current leader", and add Fabric API as a Required dependency for the released client version. This is a post-release metadata step and is not performed by the repository release workflow.
+
 ## Commands
 
 All commands are player-only.
 
 - `/vcgroup invite <player>` — sends an online player a clickable, password-free invite to the sender's current voice chat group. The target must not already be in a group. A configurable cooldown per inviter and target pair prevents chat spam.
 - `/vcgroup accept <token>` — accepts an invite that belongs to the executing player's UUID. Tokens expire after the configured lifetime and are removed after successful use.
-- `/vcgroup kick <player>` — removes an online member from the caller's current voice chat group. Only the UUID observed in `CreateGroupEvent#getConnection()` for that group is authorized.
+- `/vcgroup kick <player>` — removes an online member from the caller's current voice chat group. Only the current leader tracked by the server is authorized.
 
 Invites contain a random 192-bit URL-safe token. They never contain, log, or display a group password.
+
+## Group leadership
+
+The player observed in `CreateGroupEvent#getConnection()` becomes the initial leader. Members are tracked in join order. When the leader leaves the group, moves to another group, or quits the Minecraft server, leadership passes to the longest-standing remaining member. A former leader who rejoins is appended to the end of that order and does not reclaim leadership automatically.
+
+A transient Simple Voice Chat connection loss does not change leadership: Simple Voice Chat keeps the player's group UUID and marks only the voice connection as disconnected. Membership-changing events and Bukkit player quit are handled idempotently, so duplicate leave/disconnect signals are harmless.
 
 ## Configuration
 
@@ -79,7 +89,7 @@ invites:
 
 ## Permission
 
-- `vanillagame.voicechat_group_tools.use` — allows `/vcgroup`; granted to all players by default. This permission does not grant kick authority: `/vcgroup kick` always checks the recorded creator UUID for the exact group.
+- `vanillagame.voicechat_group_tools.use` — allows `/vcgroup`; granted to all players by default. This permission does not grant kick authority: `/vcgroup kick` always checks the current leader UUID for the exact group.
 
 ## Localization
 
@@ -90,8 +100,8 @@ Translations are bundled in `src/main/resources/lang/Messages_en_US.properties` 
 ## State and public API limitations
 
 - Invites and cooldowns are deliberately in memory only. Invites expire after the configured lifetime and are invalidated when used, superseded for the same player/group pair, when the invited player disconnects, when the group is removed, or when the plugin/voice chat server stops.
-- Group ownership is learned only from public `CreateGroupEvent` events observed while this addon is active and is removed on `RemoveGroupEvent`.
-- The public API does not expose the creator of an already existing group. After a plugin reload, or for a persistent group created before this addon observed its creation event, ownership cannot be safely reconstructed. In that case `/vcgroup kick` is denied with a clear message; the plugin never guesses or grants fallback ownership.
+- Initial leadership is learned only from public `CreateGroupEvent` events observed while this addon is active. Membership and succession are mirrored through `JoinGroupEvent`, `LeaveGroupEvent`, `RemoveGroupEvent`, and Bukkit player quit.
+- The public API does not expose the creator or historical join order of an already existing group. After a plugin reload, or for a persistent group created before this addon observed its creation event, leadership cannot be safely reconstructed. In that case no crown is shown and `/vcgroup kick` is denied with a clear message; the plugin never guesses or grants fallback leadership.
 - The plugin only acts on online Bukkit players and current public `VoicechatConnection` objects.
 
 ## Simple Voice Chat compatibility automation
@@ -99,6 +109,7 @@ Translations are bundled in `src/main/resources/lang/Messages_en_US.properties` 
 `client-fabric/compatibility.properties` is the single source of truth for the client module:
 
 - `minecraft` — the targeted Minecraft version, used by Gradle and `fabric.mod.json`.
+- `fabric-api` — the Fabric API version used to compile and run the client networking channel, including compatibility-harness launches.
 - `voicechat.compile` — the minimum supported Simple Voice Chat artifact; the client always compiles against it so newer-only APIs cannot creep in.
 - `voicechat.range` — the dependency range shipped in `fabric.mod.json`.
 - `voicechat.tested` — every Simple Voice Chat version verified by CI.
@@ -118,4 +129,4 @@ Run the focused server unit tests and build both artifacts:
 ./gradlew build
 ```
 
-The unit tests cover secure token shape/randomness, configurable expiry, one-time consumption, player/group UUID binding, replacement of stale invites, cooldown timing, command accept/kick mutation checks, per-target invite throttling, vanish-aware tab completion, fail-closed creator authorization, translation-key parity, configured lifetime rendering, per-player Russian/English rendering, and English fallback.
+The unit tests cover secure token shape/randomness, configurable expiry, one-time consumption, player/group UUID binding, replacement of stale invites, cooldown timing, command accept/kick mutation checks, ordered leader succession, group moves without a leave event, idempotent leave/disconnect handling, fail-closed unknown leadership, sync-protocol encoding, per-target invite throttling, vanish-aware tab completion, translation-key parity, configured lifetime rendering, per-player Russian/English rendering, and English fallback.

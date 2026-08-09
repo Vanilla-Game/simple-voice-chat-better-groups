@@ -11,6 +11,7 @@ val compatibility = Properties().apply {
     file("compatibility.properties").inputStream().use { load(it) }
 }
 val minecraftVersion: String = compatibility.getProperty("minecraft")
+val fabricApiVersion: String = compatibility.getProperty("fabric-api")
 val voicechatVersion: String = providers.gradleProperty("voicechatVersion")
     .getOrElse(compatibility.getProperty("voicechat.compile"))
 
@@ -41,6 +42,7 @@ dependencies {
     minecraft("com.mojang:minecraft:$minecraftVersion")
 
     implementation("net.fabricmc:fabric-loader:0.19.3")
+    implementation("net.fabricmc.fabric-api:fabric-api:$fabricApiVersion")
     compileOnly("maven.modrinth:simple-voice-chat:$voicechatVersion")
     runtimeOnly("maven.modrinth:simple-voice-chat:$voicechatVersion")
 }
@@ -60,11 +62,13 @@ val clientVersion = version.toString()
 tasks.processResources {
     inputs.property("version", clientVersion)
     inputs.property("minecraftVersion", minecraftVersion)
+    inputs.property("fabricApiVersion", fabricApiVersion)
     inputs.property("voicechatRange", voicechatRange)
     filesMatching("fabric.mod.json") {
         expand(
             "version" to clientVersion,
             "minecraft_version" to minecraftVersion,
+            "fabric_api_version" to fabricApiVersion.substringBefore('+'),
             "voicechat_range" to voicechatRange
         )
     }

@@ -6,6 +6,8 @@ import de.maxhenkel.voicechat.api.VoicechatPlugin;
 import de.maxhenkel.voicechat.api.VoicechatServerApi;
 import de.maxhenkel.voicechat.api.events.CreateGroupEvent;
 import de.maxhenkel.voicechat.api.events.EventRegistration;
+import de.maxhenkel.voicechat.api.events.JoinGroupEvent;
+import de.maxhenkel.voicechat.api.events.LeaveGroupEvent;
 import de.maxhenkel.voicechat.api.events.RemoveGroupEvent;
 import de.maxhenkel.voicechat.api.events.VoicechatServerStartedEvent;
 import de.maxhenkel.voicechat.api.events.VoicechatServerStoppedEvent;
@@ -15,16 +17,16 @@ final class VoiceChatAddon implements VoicechatPlugin {
     static final String PLUGIN_ID = "vanilla_game_voicechat_group_tools";
 
     private final VoiceChatGroupToolsPlugin plugin;
-    private final GroupOwnershipRegistry ownership;
+    private final GroupLeadershipRegistry leadership;
     private final InviteStore invites;
 
     VoiceChatAddon(
             VoiceChatGroupToolsPlugin plugin,
-            GroupOwnershipRegistry ownership,
+            GroupLeadershipRegistry leadership,
             InviteStore invites
     ) {
         this.plugin = plugin;
-        this.ownership = ownership;
+        this.leadership = leadership;
         this.invites = invites;
     }
 
@@ -45,6 +47,8 @@ final class VoiceChatAddon implements VoicechatPlugin {
         registration.registerEvent(VoicechatServerStartedEvent.class, this::onServerStarted);
         registration.registerEvent(VoicechatServerStoppedEvent.class, this::onServerStopped);
         registration.registerEvent(CreateGroupEvent.class, this::onGroupCreated, -1000);
+        registration.registerEvent(JoinGroupEvent.class, this::onGroupJoined, -1000);
+        registration.registerEvent(LeaveGroupEvent.class, this::onGroupLeft, -1000);
         registration.registerEvent(RemoveGroupEvent.class, this::onGroupRemoved, -1000);
     }
 
@@ -69,7 +73,31 @@ final class VoiceChatAddon implements VoicechatPlugin {
         if (connection == null || connection.getPlayer() == null) {
             return;
         }
-        ownership.recordCreator(event.getGroup().getId(), connection.getPlayer().getUuid());
+        plugin.publishLeadership(leadership.createGroup(
+                event.getGroup().getId(),
+                connection.getPlayer().getUuid()
+        ));
+    }
+
+    private void onGroupJoined(JoinGroupEvent event) {
+        if (!plugin.isEnabled() || event.isCancelled() || event.getConnection().getPlayer() == null) {
+            return;
+        }
+        plugin.publishLeadership(leadership.join(
+                event.getGroup().getId(),
+                event.getConnection().getPlayer().getUuid()
+        ));
+    }
+
+    private void onGroupLeft(LeaveGroupEvent event) {
+        if (!plugin.isEnabled() || event.isCancelled() || event.getGroup() == null
+                || event.getConnection().getPlayer() == null) {
+            return;
+        }
+        plugin.publishLeadership(leadership.leave(
+                event.getGroup().getId(),
+                event.getConnection().getPlayer().getUuid()
+        ));
     }
 
     private void onGroupRemoved(RemoveGroupEvent event) {
@@ -77,7 +105,7 @@ final class VoiceChatAddon implements VoicechatPlugin {
             return;
         }
 
-        ownership.remove(event.getGroup().getId());
+        plugin.publishLeadership(leadership.removeGroup(event.getGroup().getId()));
         invites.invalidateGroup(event.getGroup().getId());
     }
 }

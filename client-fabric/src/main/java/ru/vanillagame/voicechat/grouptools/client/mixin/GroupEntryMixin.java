@@ -5,10 +5,12 @@ import de.maxhenkel.voicechat.gui.volume.AdjustVolumeSlider;
 import de.maxhenkel.voicechat.gui.widgets.ListScreenEntryBase;
 import de.maxhenkel.voicechat.voice.client.ClientManager;
 import de.maxhenkel.voicechat.voice.common.PlayerState;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -17,6 +19,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import ru.vanillagame.voicechat.grouptools.client.LeaderClientState;
 import ru.vanillagame.voicechat.grouptools.client.ServerSupport;
 
 @Mixin(value = GroupEntry.class, remap = false)
@@ -38,6 +41,23 @@ public abstract class GroupEntryMixin extends ListScreenEntryBase<GroupEntry> {
     @Unique
     private Button voiceChatGroupTools$kickButton;
 
+    @Redirect(
+            method = "extractContent",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/network/chat/Component;literal(Ljava/lang/String;)Lnet/minecraft/network/chat/MutableComponent;"
+            ),
+            remap = true
+    )
+    private MutableComponent voiceChatGroupTools$markLeader(String playerName) {
+        if (!LeaderClientState.isLeader(state.getUuid())) {
+            return Component.literal(playerName);
+        }
+        return Component.literal("♛ ")
+                .withStyle(ChatFormatting.GOLD)
+                .append(Component.literal(playerName).withStyle(ChatFormatting.WHITE));
+    }
+
     @Inject(method = "<init>", at = @At("RETURN"), remap = false)
     private void voiceChatGroupTools$addKickButton(CallbackInfo callbackInfo) {
         voiceChatGroupTools$kickButton = Button.builder(Component.literal("×"), button -> {
@@ -58,7 +78,7 @@ public abstract class GroupEntryMixin extends ListScreenEntryBase<GroupEntry> {
             remap = false
     )
     private void voiceChatGroupTools$leaveSpaceForKickButton(AdjustVolumeSlider slider, int width) {
-        if (!ServerSupport.isAvailable()) {
+        if (!ServerSupport.isAvailable() || !LeaderClientState.isLocalPlayerLeader()) {
             slider.setWidth(width);
             return;
         }
@@ -76,7 +96,10 @@ public abstract class GroupEntryMixin extends ListScreenEntryBase<GroupEntry> {
             CallbackInfo callbackInfo
     ) {
         boolean isSelf = ClientManager.getPlayerStateManager().getOwnID().equals(state.getUuid());
-        boolean visible = hovered && !isSelf && ServerSupport.isAvailable();
+        boolean visible = hovered
+                && !isSelf
+                && ServerSupport.isAvailable()
+                && LeaderClientState.isLocalPlayerLeader();
         voiceChatGroupTools$kickButton.visible = visible;
         if (!visible) {
             return;

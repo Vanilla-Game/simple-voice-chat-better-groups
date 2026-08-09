@@ -34,7 +34,7 @@ class VcGroupCommandTest {
     void inviteCooldownThrottlesRepeatInvitesToSameTargetOnly() {
         VoiceChatGroupToolsPlugin plugin = mock(VoiceChatGroupToolsPlugin.class);
         InviteStore invites = mock(InviteStore.class);
-        GroupOwnershipRegistry ownership = new GroupOwnershipRegistry();
+        GroupLeadershipRegistry leadership = new GroupLeadershipRegistry();
         InviteCooldownStore cooldowns = new InviteCooldownStore(
                 Clock.fixed(NOW, ZoneOffset.UTC),
                 Duration.ofSeconds(10)
@@ -54,7 +54,7 @@ class VcGroupCommandTest {
         when(api.getGroup(group.getId())).thenReturn(group);
         when(invites.create(target.getUniqueId(), group.getId())).thenReturn("token");
         when(invites.create(other.getUniqueId(), group.getId())).thenReturn("token2");
-        VcGroupCommand command = new VcGroupCommand(plugin, invites, ownership, cooldowns, 5);
+        VcGroupCommand command = new VcGroupCommand(plugin, invites, leadership, cooldowns, 5);
 
         try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
             bukkit.when(() -> Bukkit.getPlayerExact("Target")).thenReturn(target);
@@ -90,7 +90,7 @@ class VcGroupCommandTest {
                 () -> "one-time-token"
         );
         invites.create(playerId, groupId);
-        VcGroupCommand command = command(plugin, invites, new GroupOwnershipRegistry());
+        VcGroupCommand command = command(plugin, invites, new GroupLeadershipRegistry());
 
         command.onCommand(
                 player,
@@ -104,29 +104,29 @@ class VcGroupCommandTest {
     }
 
     @Test
-    void creatorKickMutatesThenRechecksSnapshot() {
+    void leaderKickMutatesThenRechecksSnapshot() {
         VoiceChatGroupToolsPlugin plugin = mock(VoiceChatGroupToolsPlugin.class);
-        Player creator = player("Creator");
+        Player leader = player("Leader");
         Player target = player("Target");
         Group group = group();
-        GroupOwnershipRegistry ownership = new GroupOwnershipRegistry();
-        ownership.recordCreator(group.getId(), creator.getUniqueId());
-        VoicechatConnection creatorConnection = connection(group);
+        GroupLeadershipRegistry leadership = new GroupLeadershipRegistry();
+        leadership.createGroup(group.getId(), leader.getUniqueId());
+        VoicechatConnection leaderConnection = connection(group);
         VoicechatConnection targetBeforeKick = connection(group);
         VoicechatConnection targetAfterKick = connection(null);
         VoicechatServerApi api = mock(VoicechatServerApi.class);
         when(plugin.getVoicechatApi()).thenReturn(api);
-        when(api.getConnectionOf(creator.getUniqueId())).thenReturn(creatorConnection);
+        when(api.getConnectionOf(leader.getUniqueId())).thenReturn(leaderConnection);
         when(api.getConnectionOf(target.getUniqueId())).thenReturn(targetBeforeKick, targetAfterKick);
-        VcGroupCommand command = command(plugin, mock(InviteStore.class), ownership);
+        VcGroupCommand command = command(plugin, mock(InviteStore.class), leadership);
 
         try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
             bukkit.when(() -> Bukkit.getPlayerExact("Target")).thenReturn(target);
-            command.onCommand(creator, mock(Command.class), "vcgroup", new String[]{"kick", "Target"});
+            command.onCommand(leader, mock(Command.class), "vcgroup", new String[]{"kick", "Target"});
         }
 
         verify(targetBeforeKick).setGroup(null);
-        verify(creator).sendMessage(any(Component.class));
+        verify(leader).sendMessage(any(Component.class));
         verify(target).sendMessage(any(Component.class));
     }
 
@@ -140,7 +140,7 @@ class VcGroupCommandTest {
         VcGroupCommand command = command(
                 mock(VoiceChatGroupToolsPlugin.class),
                 mock(InviteStore.class),
-                new GroupOwnershipRegistry()
+                new GroupLeadershipRegistry()
         );
 
         List<String> completions;
@@ -161,12 +161,12 @@ class VcGroupCommandTest {
     private static VcGroupCommand command(
             VoiceChatGroupToolsPlugin plugin,
             InviteStore invites,
-            GroupOwnershipRegistry ownership
+            GroupLeadershipRegistry leadership
     ) {
         return new VcGroupCommand(
                 plugin,
                 invites,
-                ownership,
+                leadership,
                 new InviteCooldownStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ZERO),
                 5
         );
