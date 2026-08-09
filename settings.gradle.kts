@@ -6,6 +6,6 @@ pluginManagement {
     }
 }
 
-rootProject.name = "simple-voice-chat-group-management"
+rootProject.name = "svc-better-groups"
 
 include("client-fabric")

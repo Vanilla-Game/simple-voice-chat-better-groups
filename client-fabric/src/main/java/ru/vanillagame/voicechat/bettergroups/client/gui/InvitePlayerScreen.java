@@ -1,0 +1,125 @@
+package ru.vanillagame.voicechat.bettergroups.client.gui;
+
+import de.maxhenkel.voicechat.Voicechat;
+import de.maxhenkel.voicechat.gui.VoiceChatScreenBase;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.Mth;
+
+import java.util.Locale;
+
+// Modeled on Simple Voice Chat's AdjustVolumesScreen so the invite picker looks
+// native next to it; reuses their background texture and search hint.
+public class InvitePlayerScreen extends VoiceChatScreenBase {
+
+    protected static final Identifier TEXTURE =
+            Identifier.fromNamespaceAndPath(Voicechat.MODID, "textures/gui/gui_volumes.png");
+    protected static final Component TITLE =
+            Component.translatable("gui.svc_better_groups.invite_screen_title");
+    protected static final Component SEARCH_HINT =
+            Component.translatable("message.voicechat.search_hint")
+                    .withStyle(ChatFormatting.ITALIC).withStyle(ChatFormatting.GRAY);
+    protected static final Component EMPTY =
+            Component.translatable("gui.svc_better_groups.invite_screen_empty")
+                    .withStyle(ChatFormatting.GRAY);
+
+    protected static final int HEADER_SIZE = 16;
+    protected static final int FOOTER_SIZE = 8;
+    protected static final int SEARCH_HEIGHT = 16;
+    protected static final int UNIT_SIZE = 18;
+    protected static final int CELL_HEIGHT = 36;
+
+    protected InvitePlayerList playerList;
+    protected EditBox searchBox;
+    protected String lastSearch;
+    protected int units;
+    protected int refreshTimer;
+
+    public InvitePlayerScreen() {
+        super(TITLE, 236, 0);
+        this.lastSearch = "";
+    }
+
+    // Simple Voice Chat pushes state updates only to its own screens, so this
+    // one refreshes by polling the client state registry once a second.
+    @Override
+    public void tick() {
+        super.tick();
+        if (++refreshTimer >= 20) {
+            refreshTimer = 0;
+            playerList.updateEntryList();
+        }
+    }
+
+    @Override
+    protected void init() {
+        super.init();
+        guiLeft = guiLeft + 2;
+        guiTop = 32;
+        int minUnits = Mth.ceil((float) (CELL_HEIGHT + SEARCH_HEIGHT + 4) / (float) UNIT_SIZE);
+        units = Math.max(minUnits, (height - HEADER_SIZE - FOOTER_SIZE - guiTop * 2 - SEARCH_HEIGHT) / UNIT_SIZE);
+        ySize = HEADER_SIZE + units * UNIT_SIZE + FOOTER_SIZE;
+
+        if (playerList != null) {
+            playerList.updateSize(width, units * UNIT_SIZE - SEARCH_HEIGHT, 0, guiTop + HEADER_SIZE + SEARCH_HEIGHT);
+        } else {
+            playerList = new InvitePlayerList(width, units * UNIT_SIZE - SEARCH_HEIGHT,
+                    guiTop + HEADER_SIZE + SEARCH_HEIGHT, CELL_HEIGHT);
+        }
+        String search = searchBox != null ? searchBox.getValue() : "";
+        searchBox = new EditBox(font, guiLeft + 28, guiTop + HEADER_SIZE + 6, 196, SEARCH_HEIGHT, SEARCH_HINT);
+        searchBox.setMaxLength(16);
+        searchBox.setBordered(false);
+        searchBox.setVisible(true);
+        searchBox.setTextColor(-1);
+        searchBox.setValue(search);
+        searchBox.setResponder(this::checkSearchStringUpdate);
+        addWidget(searchBox);
+        addWidget(playerList);
+    }
+
+    @Override
+    public void extractBackgroundRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float delta) {
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, guiLeft, guiTop, 0, 0, xSize, HEADER_SIZE, 256, 256);
+        for (int i = 0; i < units; i++) {
+            guiGraphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, guiLeft, guiTop + HEADER_SIZE + UNIT_SIZE * i, 0, HEADER_SIZE, xSize, UNIT_SIZE, 256, 256);
+        }
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, guiLeft, guiTop + HEADER_SIZE + UNIT_SIZE * units, 0, HEADER_SIZE + UNIT_SIZE, xSize, FOOTER_SIZE, 256, 256);
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, guiLeft + 10, guiTop + HEADER_SIZE + 6 - 2, xSize, 0, 12, 12, 256, 256);
+    }
+
+    @Override
+    public void extractForegroundRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float delta) {
+        guiGraphics.text(font, TITLE, width / 2 - font.width(TITLE) / 2, guiTop + 5, VoiceChatScreenBase.FONT_COLOR, false);
+        if (!playerList.isEmpty()) {
+            playerList.extractRenderState(guiGraphics, mouseX, mouseY, delta);
+        } else {
+            guiGraphics.centeredText(font, EMPTY, width / 2, guiTop + HEADER_SIZE + (units * UNIT_SIZE) / 2 - font.lineHeight / 2, -1);
+        }
+        if (!searchBox.isFocused() && searchBox.getValue().isEmpty()) {
+            guiGraphics.text(font, SEARCH_HINT, searchBox.getX(), searchBox.getY(), -1, false);
+        } else {
+            searchBox.extractRenderState(guiGraphics, mouseX, mouseY, delta);
+        }
+    }
+
+    @Override
+    public boolean mouseClicked(MouseButtonEvent mouseButtonEvent, boolean bl) {
+        if (searchBox.isFocused()) {
+            searchBox.mouseClicked(mouseButtonEvent, bl);
+        }
+        return super.mouseClicked(mouseButtonEvent, bl);
+    }
+
+    private void checkSearchStringUpdate(String search) {
+        if (!(search = search.toLowerCase(Locale.ROOT)).equals(lastSearch)) {
+            playerList.setFilter(search);
+            lastSearch = search;
+        }
+    }
+}

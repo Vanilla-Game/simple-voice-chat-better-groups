@@ -5,7 +5,7 @@
   "packages": {
     ".": {
       "release-type": "simple",
-      "package-name": "simple-voice-chat-group-management",
+      "package-name": "svc-better-groups",
       "initial-version": "0.1.0",
       "include-component-in-tag": true,
       "include-v-in-tag": true,
@@ -23,7 +23,7 @@
     },
     "client-fabric": {
       "release-type": "simple",
-      "package-name": "simple-voice-chat-group-management-fabric",
+      "package-name": "svc-better-groups-fabric",
       "initial-version": "0.1.0",
       "include-component-in-tag": true,
       "include-v-in-tag": true,

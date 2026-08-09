@@ -1,7 +1,0 @@
-{
-  "gui.svc_group_management.invite": "Пригласить игрока",
-  "gui.svc_group_management.kick": "Исключить %s из голосовой группы (только лидер)",
-  "gui.svc_group_management.request": "Не знаете пароль? Попроситесь к лидеру группы.",
-  "gui.svc_group_management.invite_screen_title": "Пригласить игрока",
-  "gui.svc_group_management.invite_screen_empty": "Сейчас некого пригласить."
-}

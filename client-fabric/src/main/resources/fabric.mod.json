@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "id": "svc_group_management_client",
+  "id": "svc_better_groups_client",
   "version": "${version}",
   "name": "Simple Voice Chat Better Groups (Client)",
   "description": "Adds Vanilla Game group actions and current-leader status to the Simple Voice Chat group screen.",
@@ -15,11 +15,11 @@
   "environment": "client",
   "entrypoints": {
     "client": [
-      "ru.vanillagame.voicechat.groupmanagement.client.SvcGroupManagementClient"
+      "ru.vanillagame.voicechat.bettergroups.client.BetterGroupsClient"
     ]
   },
   "mixins": [
-    "svc-group-management-client.mixins.json"
+    "svc-better-groups-client.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=0.19.3",
