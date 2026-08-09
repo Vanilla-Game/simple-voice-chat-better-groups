@@ -54,7 +54,7 @@ The server still performs every permission, leadership, membership, and live-sta
 
 ## Releases
 
-Releases follow the same Release Please workflow used by other Vanilla Game plugins. The server plugin and the client mod share one release cycle and one version: every `svc-better-groups-v<version>` GitHub Release carries both jars, and the matching Modrinth versions (`paper-…` and `fabric-…`) use the same number — installing the same number on both sides is always a compatible pairing. Client versions `fabric-v0.1.0`–`v0.3.0` predate the unification and remain as history.
+Releases follow the same Release Please workflow used by other Vanilla Game plugins. The server plugin and the client mod share one release cycle and one version: every `v<version>` GitHub Release carries both jars, and the matching Modrinth versions (`paper-…` and `fabric-…`) use the same number — installing the same number on both sides is always a compatible pairing. Historical client releases keep their `svc-better-groups-fabric-v*` tags.
 
 Pull request titles are checked for Conventional Commit format, and every pull request to `main` runs the Gradle build and unit tests.
 
