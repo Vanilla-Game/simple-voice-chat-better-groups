@@ -20,6 +20,8 @@ class PluginSettingsTest {
         YamlConfiguration config = new YamlConfiguration();
         config.set("invites.expiration-minutes", 12);
         config.set("invites.cooldown-seconds", 3);
+        config.set("requests.expiration-minutes", 7);
+        config.set("requests.cooldown-seconds", 45);
         when(plugin.getConfig()).thenReturn(config);
 
         PluginSettings settings = PluginSettings.load(plugin);
@@ -27,6 +29,8 @@ class PluginSettingsTest {
         verify(plugin).saveDefaultConfig();
         assertEquals(Duration.ofMinutes(12), settings.inviteExpiration());
         assertEquals(Duration.ofSeconds(3), settings.inviteCooldown());
+        assertEquals(Duration.ofMinutes(7), settings.requestExpiration());
+        assertEquals(Duration.ofSeconds(45), settings.requestCooldown());
     }
 
     @Test
@@ -35,6 +39,8 @@ class PluginSettingsTest {
         YamlConfiguration config = new YamlConfiguration();
         config.set("invites.expiration-minutes", 0);
         config.set("invites.cooldown-seconds", -1);
+        config.set("requests.expiration-minutes", 0);
+        config.set("requests.cooldown-seconds", -1);
         when(plugin.getConfig()).thenReturn(config);
         when(plugin.getLogger()).thenReturn(Logger.getAnonymousLogger());
 
@@ -47,6 +53,14 @@ class PluginSettingsTest {
         assertEquals(
                 Duration.ofSeconds(PluginSettings.DEFAULT_INVITE_COOLDOWN_SECONDS),
                 settings.inviteCooldown()
+        );
+        assertEquals(
+                Duration.ofMinutes(PluginSettings.DEFAULT_REQUEST_EXPIRATION_MINUTES),
+                settings.requestExpiration()
+        );
+        assertEquals(
+                Duration.ofSeconds(PluginSettings.DEFAULT_REQUEST_COOLDOWN_SECONDS),
+                settings.requestCooldown()
         );
     }
 }

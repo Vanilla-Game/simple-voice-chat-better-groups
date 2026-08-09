@@ -27,6 +27,7 @@ public final class SvcGroupManagementClient implements ClientModInitializer {
         try {
             Class.forName("de.maxhenkel.voicechat.gui.group.GroupScreen", false, loader);
             Class.forName("de.maxhenkel.voicechat.gui.group.GroupEntry", false, loader);
+            Class.forName("de.maxhenkel.voicechat.gui.EnterPasswordScreen", false, loader);
             System.out.println("[" + MOD_ID + "] compat check passed");
             System.exit(0);
         } catch (Throwable failure) {

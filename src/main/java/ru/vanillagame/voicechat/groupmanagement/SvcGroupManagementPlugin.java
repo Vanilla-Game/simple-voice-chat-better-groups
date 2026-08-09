@@ -17,6 +17,8 @@ public final class SvcGroupManagementPlugin extends JavaPlugin implements Listen
     private volatile VoicechatServerApi voicechatApi;
     private InviteStore invites;
     private InviteCooldownStore inviteCooldowns;
+    private RequestStore requests;
+    private InviteCooldownStore requestCooldowns;
     private GroupLeadershipRegistry leadership;
     private LeaderSyncService leaderSync;
     private PluginTranslations translations;
@@ -27,6 +29,8 @@ public final class SvcGroupManagementPlugin extends JavaPlugin implements Listen
         Clock clock = Clock.systemUTC();
         invites = new InviteStore(clock, settings.inviteExpiration(), new InviteStore.SecureTokenGenerator());
         inviteCooldowns = new InviteCooldownStore(clock, settings.inviteCooldown());
+        requests = new RequestStore(clock, settings.requestExpiration());
+        requestCooldowns = new InviteCooldownStore(clock, settings.requestCooldown());
         leadership = new GroupLeadershipRegistry();
         leaderSync = new LeaderSyncService(this, leadership);
 
@@ -46,14 +50,16 @@ public final class SvcGroupManagementPlugin extends JavaPlugin implements Listen
             return;
         }
 
-        service.registerPlugin(new VoiceChatAddon(this, leadership, invites));
+        service.registerPlugin(new VoiceChatAddon(this, leadership, invites, requests));
 
         VcGroupCommand commandHandler = new VcGroupCommand(
                 this,
                 invites,
                 leadership,
                 inviteCooldowns,
-                settings.inviteExpirationMinutes()
+                requests,
+                requestCooldowns,
+                settings
         );
         PluginCommand command = getCommand("vcgroup");
         if (command == null) {
@@ -96,6 +102,12 @@ public final class SvcGroupManagementPlugin extends JavaPlugin implements Listen
         if (inviteCooldowns != null) {
             inviteCooldowns.invalidate(playerId);
         }
+        if (requests != null) {
+            requests.invalidateRequester(playerId);
+        }
+        if (requestCooldowns != null) {
+            requestCooldowns.invalidate(playerId);
+        }
     }
 
     VoicechatServerApi getVoicechatApi() {
@@ -117,11 +129,19 @@ public final class SvcGroupManagementPlugin extends JavaPlugin implements Listen
         if (inviteCooldowns != null) {
             inviteCooldowns.clear();
         }
+        if (requests != null) {
+            requests.clear();
+        }
+        if (requestCooldowns != null) {
+            requestCooldowns.clear();
+        }
     }
 
     private void cleanupExpiredState() {
         invites.cleanupExpired();
         inviteCooldowns.cleanupExpired();
+        requests.cleanupExpired();
+        requestCooldowns.cleanupExpired();
     }
 
     void publishLeadership(GroupLeadershipRegistry.Transition transition) {

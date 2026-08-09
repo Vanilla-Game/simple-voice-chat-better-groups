@@ -19,15 +19,18 @@ final class VoiceChatAddon implements VoicechatPlugin {
     private final SvcGroupManagementPlugin plugin;
     private final GroupLeadershipRegistry leadership;
     private final InviteStore invites;
+    private final RequestStore requests;
 
     VoiceChatAddon(
             SvcGroupManagementPlugin plugin,
             GroupLeadershipRegistry leadership,
-            InviteStore invites
+            InviteStore invites,
+            RequestStore requests
     ) {
         this.plugin = plugin;
         this.leadership = leadership;
         this.invites = invites;
+        this.requests = requests;
     }
 
     @Override
@@ -107,5 +110,6 @@ final class VoiceChatAddon implements VoicechatPlugin {
 
         plugin.publishLeadership(leadership.removeGroup(event.getGroup().getId()));
         invites.invalidateGroup(event.getGroup().getId());
+        requests.invalidateGroup(event.getGroup().getId());
     }
 }

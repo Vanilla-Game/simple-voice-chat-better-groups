@@ -128,6 +128,11 @@ final class GroupLeadershipRegistry {
         return new TransferResult(TransferStatus.TRANSFERRED, transition.build());
     }
 
+    synchronized UUID leaderOf(UUID groupId) {
+        GroupState state = groups.get(Objects.requireNonNull(groupId, "groupId"));
+        return state == null ? null : state.leaderId;
+    }
+
     synchronized Authorization authorize(UUID groupId, UUID playerId) {
         GroupState state = groups.get(Objects.requireNonNull(groupId, "groupId"));
         if (state == null || state.leaderId == null) {

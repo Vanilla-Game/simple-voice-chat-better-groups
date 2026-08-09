@@ -47,7 +47,8 @@ The client addon checks the server command tree and changes nothing when `/vcgro
 
 - an invite button to the footer of the existing Simple Voice Chat group screen; it opens chat with `/vcgroup invite ` prefilled so normal command suggestions remain available;
 - a gold crown next to the current group leader;
-- a remove button next to each other group member's existing volume slider when the local player is the current leader; it executes `/vcgroup kick <player>`.
+- a remove button next to each other group member's existing volume slider when the local player is the current leader; it executes `/vcgroup kick <player>`;
+- a request button on the password screen of a locked group; it executes `/vcgroup request <group UUID>` so the player can knock without knowing the password.
 
 The server still performs every permission, leadership, membership, and live-state check. The client sends only a versioned capability message; it never sends a player or leader UUID. Installing or modifying the client cannot grant kick authority. Players without the client addon retain the complete command workflow. Invite acceptance stays in the existing clickable server chat message because an invited player is not yet inside the group screen.
 
@@ -67,6 +68,7 @@ All commands are player-only.
 - `/vcgroup accept <token>` — accepts an invite that belongs to the executing player's UUID. Tokens expire after the configured lifetime and are removed after successful use.
 - `/vcgroup kick <player>` — removes an online member from the caller's current voice chat group. Only the current leader tracked by the server is authorized.
 - `/vcgroup transfer <player>` — hands leadership to another online member of the caller's current voice chat group. Only the current leader is authorized; the new leader is notified and synced to compatible clients immediately.
+- `/vcgroup request <group>` — asks the leader of a password-protected, visible group to let the caller in; the group is matched by name or UUID. The leader receives a clickable one-time request that expires after the configured lifetime; approving it puts the requester into the group without revealing the password. Approval is bound to whoever holds leadership at click time and is only offered for groups whose leader is known.
 
 Invites contain a random 192-bit URL-safe token. They never contain, log, or display a group password.
 
@@ -94,9 +96,13 @@ The generated `plugins/SimpleVoiceChatGroupManagement/config.yml` file contains:
 invites:
   expiration-minutes: 5
   cooldown-seconds: 10
+
+requests:
+  expiration-minutes: 5
+  cooldown-seconds: 30
 ```
 
-`expiration-minutes` must be at least `1`. `cooldown-seconds` is applied per inviter and target pair, so inviting a different player is not throttled, and may be set to `0` to disable it. Invalid values are reported in the server log and replaced with safe defaults. Restart the plugin/server after changing the file; this MVP does not add a reload command.
+`expiration-minutes` values must be at least `1`. `invites.cooldown-seconds` is applied per inviter and target pair, `requests.cooldown-seconds` per requester and group pair; either may be set to `0` to disable that cooldown. Invalid values are reported in the server log and replaced with safe defaults. Restart the plugin/server after changing the file; this MVP does not add a reload command.
 
 ## Permission
 

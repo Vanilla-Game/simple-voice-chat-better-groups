@@ -5,13 +5,22 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.time.Duration;
 
-record PluginSettings(int inviteExpirationMinutes, int inviteCooldownSeconds) {
+record PluginSettings(
+        int inviteExpirationMinutes,
+        int inviteCooldownSeconds,
+        int requestExpirationMinutes,
+        int requestCooldownSeconds
+) {
 
     static final int DEFAULT_INVITE_EXPIRATION_MINUTES = 5;
     static final int DEFAULT_INVITE_COOLDOWN_SECONDS = 10;
+    static final int DEFAULT_REQUEST_EXPIRATION_MINUTES = 5;
+    static final int DEFAULT_REQUEST_COOLDOWN_SECONDS = 30;
 
-    private static final String EXPIRATION_PATH = "invites.expiration-minutes";
-    private static final String COOLDOWN_PATH = "invites.cooldown-seconds";
+    private static final String INVITE_EXPIRATION_PATH = "invites.expiration-minutes";
+    private static final String INVITE_COOLDOWN_PATH = "invites.cooldown-seconds";
+    private static final String REQUEST_EXPIRATION_PATH = "requests.expiration-minutes";
+    private static final String REQUEST_COOLDOWN_PATH = "requests.cooldown-seconds";
 
     PluginSettings {
         if (inviteExpirationMinutes <= 0) {
@@ -20,26 +29,23 @@ record PluginSettings(int inviteExpirationMinutes, int inviteCooldownSeconds) {
         if (inviteCooldownSeconds < 0) {
             throw new IllegalArgumentException("inviteCooldownSeconds must not be negative");
         }
+        if (requestExpirationMinutes <= 0) {
+            throw new IllegalArgumentException("requestExpirationMinutes must be positive");
+        }
+        if (requestCooldownSeconds < 0) {
+            throw new IllegalArgumentException("requestCooldownSeconds must not be negative");
+        }
     }
 
     static PluginSettings load(JavaPlugin plugin) {
         plugin.saveDefaultConfig();
         FileConfiguration config = plugin.getConfig();
-        int expirationMinutes = readInt(
-                plugin,
-                config,
-                EXPIRATION_PATH,
-                DEFAULT_INVITE_EXPIRATION_MINUTES,
-                1
+        return new PluginSettings(
+                readInt(plugin, config, INVITE_EXPIRATION_PATH, DEFAULT_INVITE_EXPIRATION_MINUTES, 1),
+                readInt(plugin, config, INVITE_COOLDOWN_PATH, DEFAULT_INVITE_COOLDOWN_SECONDS, 0),
+                readInt(plugin, config, REQUEST_EXPIRATION_PATH, DEFAULT_REQUEST_EXPIRATION_MINUTES, 1),
+                readInt(plugin, config, REQUEST_COOLDOWN_PATH, DEFAULT_REQUEST_COOLDOWN_SECONDS, 0)
         );
-        int cooldownSeconds = readInt(
-                plugin,
-                config,
-                COOLDOWN_PATH,
-                DEFAULT_INVITE_COOLDOWN_SECONDS,
-                0
-        );
-        return new PluginSettings(expirationMinutes, cooldownSeconds);
     }
 
     Duration inviteExpiration() {
@@ -48,6 +54,14 @@ record PluginSettings(int inviteExpirationMinutes, int inviteCooldownSeconds) {
 
     Duration inviteCooldown() {
         return Duration.ofSeconds(inviteCooldownSeconds);
+    }
+
+    Duration requestExpiration() {
+        return Duration.ofMinutes(requestExpirationMinutes);
+    }
+
+    Duration requestCooldown() {
+        return Duration.ofSeconds(requestCooldownSeconds);
     }
 
     private static int readInt(

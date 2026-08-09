@@ -4,6 +4,7 @@
   "package": "ru.vanillagame.voicechat.groupmanagement.client.mixin",
   "compatibilityLevel": "JAVA_25",
   "client": [
+    "EnterPasswordScreenMixin",
     "GroupEntryMixin",
     "GroupScreenMixin"
   ],

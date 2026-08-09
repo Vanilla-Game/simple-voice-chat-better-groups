@@ -5,3 +5,11 @@ invites:
   # Delay between successfully validated invite attempts, applied per
   # inviter and target pair. Set to 0 to disable the cooldown.
   cooldown-seconds: 10
+
+# Join requests for password-protected groups.
+requests:
+  expiration-minutes: 5
+
+  # Delay between join requests, applied per requester and group pair.
+  # Set to 0 to disable the cooldown.
+  cooldown-seconds: 30
