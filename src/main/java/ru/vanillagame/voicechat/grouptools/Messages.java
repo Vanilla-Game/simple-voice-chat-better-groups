@@ -41,6 +41,12 @@ final class Messages {
     static final String KICK_FAILED = key("kick.failed");
     static final String KICK_SUCCESS = key("kick.success");
     static final String KICK_TARGET_NOTIFICATION = key("kick.target_notification");
+    static final String TRANSFER_SENDER_NOT_IN_GROUP = key("transfer.sender_not_in_group");
+    static final String TRANSFER_SELF = key("transfer.self");
+    static final String TRANSFER_TARGET_NOT_MEMBER = key("transfer.target_not_member");
+    static final String TRANSFER_UNKNOWN_LEADER = key("transfer.unknown_leader");
+    static final String TRANSFER_NOT_LEADER = key("transfer.not_leader");
+    static final String TRANSFER_SUCCESS = key("transfer.success");
     static final String LEADER_PROMOTED = key("leader.promoted");
 
     private static final Set<String> KEYS = Set.of(
@@ -75,6 +81,12 @@ final class Messages {
             KICK_FAILED,
             KICK_SUCCESS,
             KICK_TARGET_NOTIFICATION,
+            TRANSFER_SENDER_NOT_IN_GROUP,
+            TRANSFER_SELF,
+            TRANSFER_TARGET_NOT_MEMBER,
+            TRANSFER_UNKNOWN_LEADER,
+            TRANSFER_NOT_LEADER,
+            TRANSFER_SUCCESS,
             LEADER_PROMOTED
     );
 

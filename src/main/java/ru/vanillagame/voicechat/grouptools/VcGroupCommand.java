@@ -68,6 +68,7 @@ final class VcGroupCommand implements CommandExecutor, TabCompleter {
             case "invite" -> invite(player, args[1], api);
             case "accept" -> accept(player, args[1], api);
             case "kick" -> kick(player, args[1], api);
+            case "transfer" -> transfer(player, args[1], api);
             default -> player.sendMessage(Messages.component(Messages.COMMAND_USAGE, NamedTextColor.YELLOW));
         }
         return true;
@@ -268,12 +269,77 @@ final class VcGroupCommand implements CommandExecutor, TabCompleter {
         target.sendMessage(Messages.component(Messages.KICK_TARGET_NOTIFICATION, NamedTextColor.YELLOW));
     }
 
+    private void transfer(Player leader, String targetName, VoicechatServerApi api) {
+        VoicechatConnection leaderConnection = api.getConnectionOf(leader.getUniqueId());
+        if (leaderConnection == null) {
+            leader.sendMessage(Messages.component(Messages.CONNECTION_SELF_UNAVAILABLE, NamedTextColor.RED));
+            return;
+        }
+
+        Group leaderGroup = leaderConnection.getGroup();
+        if (leaderGroup == null) {
+            leader.sendMessage(Messages.component(Messages.TRANSFER_SENDER_NOT_IN_GROUP, NamedTextColor.RED));
+            return;
+        }
+
+        Player target = Bukkit.getPlayerExact(targetName);
+        if (target == null) {
+            leader.sendMessage(Messages.component(Messages.PLAYER_NOT_ONLINE, NamedTextColor.RED));
+            return;
+        }
+        if (target.getUniqueId().equals(leader.getUniqueId())) {
+            leader.sendMessage(Messages.component(Messages.TRANSFER_SELF, NamedTextColor.RED));
+            return;
+        }
+
+        VoicechatConnection targetConnection = api.getConnectionOf(target.getUniqueId());
+        Group targetGroup = targetConnection == null ? null : targetConnection.getGroup();
+        if (targetGroup == null || !targetGroup.getId().equals(leaderGroup.getId())) {
+            leader.sendMessage(Messages.component(
+                    Messages.TRANSFER_TARGET_NOT_MEMBER,
+                    NamedTextColor.RED,
+                    Component.text(target.getName())
+            ));
+            return;
+        }
+
+        GroupLeadershipRegistry.TransferResult result = leadership.transferLeadership(
+                leaderGroup.getId(),
+                leader.getUniqueId(),
+                target.getUniqueId()
+        );
+        switch (result.status()) {
+            case UNKNOWN_LEADER -> leader.sendMessage(
+                    Messages.component(Messages.TRANSFER_UNKNOWN_LEADER, NamedTextColor.RED));
+            case NOT_LEADER -> leader.sendMessage(
+                    Messages.component(Messages.TRANSFER_NOT_LEADER, NamedTextColor.RED));
+            case TARGET_NOT_MEMBER -> leader.sendMessage(Messages.component(
+                    Messages.TRANSFER_TARGET_NOT_MEMBER,
+                    NamedTextColor.RED,
+                    Component.text(target.getName())
+            ));
+            case TRANSFERRED -> {
+                // The promotion notice to the new leader is sent by the leadership
+                // sync pipeline together with the state broadcast.
+                plugin.publishLeadership(result.transition());
+                leader.sendMessage(Messages.component(
+                        Messages.TRANSFER_SUCCESS,
+                        NamedTextColor.GREEN,
+                        Component.text(target.getName())
+                ));
+            }
+        }
+    }
+
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            return filter(List.of("invite", "accept", "kick"), args[0]);
+            return filter(List.of("invite", "accept", "kick", "transfer"), args[0]);
         }
-        if (args.length == 2 && (args[0].equalsIgnoreCase("invite") || args[0].equalsIgnoreCase("kick"))) {
+        if (args.length == 2
+                && (args[0].equalsIgnoreCase("invite")
+                        || args[0].equalsIgnoreCase("kick")
+                        || args[0].equalsIgnoreCase("transfer"))) {
             List<String> names = new ArrayList<>();
             Player viewer = sender instanceof Player player ? player : null;
             for (Player candidate : Bukkit.getOnlinePlayers()) {

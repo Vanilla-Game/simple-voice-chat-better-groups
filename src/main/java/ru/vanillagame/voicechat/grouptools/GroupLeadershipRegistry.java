@@ -102,6 +102,32 @@ final class GroupLeadershipRegistry {
         return transition.build();
     }
 
+    synchronized TransferResult transferLeadership(UUID groupId, UUID fromId, UUID toId) {
+        Objects.requireNonNull(groupId, "groupId");
+        Objects.requireNonNull(fromId, "fromId");
+        Objects.requireNonNull(toId, "toId");
+
+        GroupState state = groups.get(groupId);
+        if (state == null || state.leaderId == null) {
+            return new TransferResult(TransferStatus.UNKNOWN_LEADER, Transition.none());
+        }
+        if (!state.leaderId.equals(fromId)) {
+            return new TransferResult(TransferStatus.NOT_LEADER, Transition.none());
+        }
+        if (!state.members.contains(toId)) {
+            return new TransferResult(TransferStatus.TARGET_NOT_MEMBER, Transition.none());
+        }
+        if (fromId.equals(toId)) {
+            return new TransferResult(TransferStatus.TRANSFERRED, Transition.none());
+        }
+
+        state.leaderId = toId;
+        TransitionBuilder transition = new TransitionBuilder();
+        transition.affectAll(state.members);
+        transition.leadershipChanged(groupId, fromId, toId);
+        return new TransferResult(TransferStatus.TRANSFERRED, transition.build());
+    }
+
     synchronized Authorization authorize(UUID groupId, UUID playerId) {
         GroupState state = groups.get(Objects.requireNonNull(groupId, "groupId"));
         if (state == null || state.leaderId == null) {
@@ -167,6 +193,16 @@ final class GroupLeadershipRegistry {
         LEADER,
         NOT_LEADER,
         UNKNOWN_LEADER
+    }
+
+    enum TransferStatus {
+        TRANSFERRED,
+        UNKNOWN_LEADER,
+        NOT_LEADER,
+        TARGET_NOT_MEMBER
+    }
+
+    record TransferResult(TransferStatus status, Transition transition) {
     }
 
     record PlayerLeadershipState(UUID groupId, UUID leaderId) {

@@ -66,12 +66,13 @@ All commands are player-only.
 - `/vcgroup invite <player>` — sends an online player a clickable, password-free invite to the sender's current voice chat group. The target must not already be in a group. A configurable cooldown per inviter and target pair prevents chat spam.
 - `/vcgroup accept <token>` — accepts an invite that belongs to the executing player's UUID. Tokens expire after the configured lifetime and are removed after successful use.
 - `/vcgroup kick <player>` — removes an online member from the caller's current voice chat group. Only the current leader tracked by the server is authorized.
+- `/vcgroup transfer <player>` — hands leadership to another online member of the caller's current voice chat group. Only the current leader is authorized; the new leader is notified and synced to compatible clients immediately.
 
 Invites contain a random 192-bit URL-safe token. They never contain, log, or display a group password.
 
 ## Group leadership
 
-The player observed in `CreateGroupEvent#getConnection()` becomes the initial leader. Members are tracked in join order. When the leader leaves the group, moves to another group, or quits the Minecraft server, leadership passes to the longest-standing remaining member. A former leader who rejoins is appended to the end of that order and does not reclaim leadership automatically.
+The player observed in `CreateGroupEvent#getConnection()` becomes the initial leader. Members are tracked in join order. When the leader leaves the group, moves to another group, or quits the Minecraft server, leadership passes to the longest-standing remaining member. A former leader who rejoins is appended to the end of that order and does not reclaim leadership automatically. The current leader can also hand the role to another member with `/vcgroup transfer <player>`; the transfer does not change the join order used for later automatic passes.
 
 A transient Simple Voice Chat connection loss does not change leadership: Simple Voice Chat keeps the player's group UUID and marks only the voice connection as disconnected. Membership-changing events and Bukkit player quit are handled idempotently, so duplicate leave/disconnect signals are harmless.
 

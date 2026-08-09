@@ -138,6 +138,59 @@ class GroupLeadershipRegistryTest {
     }
 
     @Test
+    void transferMovesLeadershipWithoutChangingJoinOrder() {
+        GroupLeadershipRegistry registry = new GroupLeadershipRegistry();
+        UUID groupId = UUID.randomUUID();
+        UUID creatorId = UUID.randomUUID();
+        UUID secondId = UUID.randomUUID();
+        UUID thirdId = UUID.randomUUID();
+        registry.createGroup(groupId, creatorId);
+        registry.join(groupId, secondId);
+        registry.join(groupId, thirdId);
+
+        GroupLeadershipRegistry.TransferResult result =
+                registry.transferLeadership(groupId, creatorId, thirdId);
+
+        assertEquals(GroupLeadershipRegistry.TransferStatus.TRANSFERRED, result.status());
+        assertEquals(1, result.transition().leadershipChanges().size());
+        assertEquals(3, result.transition().affectedPlayerIds().size());
+        assertEquals(GroupLeadershipRegistry.Authorization.LEADER, registry.authorize(groupId, thirdId));
+        assertEquals(GroupLeadershipRegistry.Authorization.NOT_LEADER, registry.authorize(groupId, creatorId));
+
+        // The new leader leaving passes leadership by the original join order.
+        registry.leave(groupId, thirdId);
+        assertEquals(GroupLeadershipRegistry.Authorization.LEADER, registry.authorize(groupId, creatorId));
+    }
+
+    @Test
+    void transferRefusesNonLeaderNonMemberAndUnknownLeader() {
+        GroupLeadershipRegistry registry = new GroupLeadershipRegistry();
+        UUID groupId = UUID.randomUUID();
+        UUID creatorId = UUID.randomUUID();
+        UUID memberId = UUID.randomUUID();
+        UUID outsiderId = UUID.randomUUID();
+        registry.createGroup(groupId, creatorId);
+        registry.join(groupId, memberId);
+
+        assertEquals(
+                GroupLeadershipRegistry.TransferStatus.NOT_LEADER,
+                registry.transferLeadership(groupId, memberId, creatorId).status()
+        );
+        assertEquals(
+                GroupLeadershipRegistry.TransferStatus.TARGET_NOT_MEMBER,
+                registry.transferLeadership(groupId, creatorId, outsiderId).status()
+        );
+        assertEquals(GroupLeadershipRegistry.Authorization.LEADER, registry.authorize(groupId, creatorId));
+
+        UUID unknownLeaderGroupId = UUID.randomUUID();
+        registry.join(unknownLeaderGroupId, outsiderId);
+        assertEquals(
+                GroupLeadershipRegistry.TransferStatus.UNKNOWN_LEADER,
+                registry.transferLeadership(unknownLeaderGroupId, outsiderId, outsiderId).status()
+        );
+    }
+
+    @Test
     void removingGroupClearsAllTrackedMembers() {
         GroupLeadershipRegistry registry = new GroupLeadershipRegistry();
         UUID groupId = UUID.randomUUID();

@@ -131,6 +131,40 @@ class VcGroupCommandTest {
     }
 
     @Test
+    void transferCommandPromotesGroupMember() {
+        VoiceChatGroupToolsPlugin plugin = mock(VoiceChatGroupToolsPlugin.class);
+        Player leader = player("Leader");
+        Player target = player("Target");
+        Group group = group();
+        GroupLeadershipRegistry leadership = new GroupLeadershipRegistry();
+        leadership.createGroup(group.getId(), leader.getUniqueId());
+        leadership.join(group.getId(), target.getUniqueId());
+        VoicechatConnection leaderConnection = connection(group);
+        VoicechatConnection targetConnection = connection(group);
+        VoicechatServerApi api = mock(VoicechatServerApi.class);
+        when(plugin.getVoicechatApi()).thenReturn(api);
+        when(api.getConnectionOf(leader.getUniqueId())).thenReturn(leaderConnection);
+        when(api.getConnectionOf(target.getUniqueId())).thenReturn(targetConnection);
+        VcGroupCommand command = command(plugin, mock(InviteStore.class), leadership);
+
+        try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
+            bukkit.when(() -> Bukkit.getPlayerExact("Target")).thenReturn(target);
+            command.onCommand(leader, mock(Command.class), "vcgroup", new String[]{"transfer", "Target"});
+        }
+
+        assertEquals(
+                GroupLeadershipRegistry.Authorization.LEADER,
+                leadership.authorize(group.getId(), target.getUniqueId())
+        );
+        assertEquals(
+                GroupLeadershipRegistry.Authorization.NOT_LEADER,
+                leadership.authorize(group.getId(), leader.getUniqueId())
+        );
+        verify(plugin).publishLeadership(any(GroupLeadershipRegistry.Transition.class));
+        verify(leader).sendMessage(any(Component.class));
+    }
+
+    @Test
     void tabCompletionDoesNotRevealPlayersHiddenFromViewer() {
         Player viewer = player("Viewer");
         Player visible = player("Visible");

@@ -9,7 +9,7 @@ depend: [voicechat]
 commands:
   vcgroup:
     description: Manage Simple Voice Chat group invites and members.
-    usage: "/vcgroup <invite <player>|accept <token>|kick <player>>"
+    usage: "/vcgroup <invite <player>|accept <token>|kick <player>|transfer <player>>"
 
 permissions:
   vanillagame.voicechat_group_tools.use:
