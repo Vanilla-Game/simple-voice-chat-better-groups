@@ -54,9 +54,9 @@ The server still performs every permission, leadership, membership, and live-sta
 
 ## Releases
 
-Releases follow the same Release Please workflow used by other Vanilla Game plugins, with the server plugin and the client mod versioned independently. Commits touching the repository outside `client-fabric/` attribute to the server plugin; commits touching `client-fabric/` attribute to the client mod. Each component gets its own release pull request, changelog, and GitHub Release: the server releases as `svc-better-groups-v<version>` with the server jar attached, the client as `svc-better-groups-fabric-v<version>` with the Fabric jar attached.
+Releases follow the same Release Please workflow used by other Vanilla Game plugins. The server plugin and the client mod share one release cycle and one version: every `svc-better-groups-v<version>` GitHub Release carries both jars, and the matching Modrinth versions (`paper-…` and `fabric-…`) use the same number — installing the same number on both sides is always a compatible pairing. Client versions `fabric-v0.1.0`–`v0.3.0` predate the unification and remain as history.
 
-Each component starts at `0.1.0`. Pull request titles are checked for Conventional Commit format, and every pull request to `main` runs the Gradle build and unit tests.
+Pull request titles are checked for Conventional Commit format, and every pull request to `main` runs the Gradle build and unit tests.
 
 After the client release is published, manually update its Modrinth listing: replace any "creator only" wording with "current leader", add Fabric API as a Required dependency for the released client version, and note in the version changelog that the full leader UI requires the server plugin `0.3.0` or newer. This is a post-release metadata step and is not performed by the repository release workflow.
 

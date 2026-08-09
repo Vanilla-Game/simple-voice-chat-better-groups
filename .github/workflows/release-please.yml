@@ -13,7 +13,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - name: Create or update release PRs
+      - name: Create or update the release PR
         uses: googleapis/release-please-action@v5
         id: release
         with:
@@ -21,48 +21,43 @@ jobs:
           manifest-file: .release-please-manifest.json
 
       # A tag created by the repository GITHUB_TOKEN does not trigger build.yml.
-      # Build the released revision here and attach each jar to its own release.
+      # Build the released revision here; the server and client jars share one
+      # release and one version.
       - name: Checkout
-        if: ${{ steps.release.outputs.releases_created == 'true' }}
+        if: ${{ steps.release.outputs.release_created == 'true' }}
         uses: actions/checkout@v7
 
       - name: Set up JDK 25
-        if: ${{ steps.release.outputs.releases_created == 'true' }}
+        if: ${{ steps.release.outputs.release_created == 'true' }}
         uses: actions/setup-java@v5
         with:
           java-version: '25'
           distribution: temurin
 
       - name: Set up Gradle
-        if: ${{ steps.release.outputs.releases_created == 'true' }}
+        if: ${{ steps.release.outputs.release_created == 'true' }}
         uses: gradle/actions/setup-gradle@v5
 
       - name: Build server and client jars
-        if: ${{ steps.release.outputs.releases_created == 'true' }}
+        if: ${{ steps.release.outputs.release_created == 'true' }}
         run: ./gradlew --no-daemon clean build --warning-mode all
 
-      - name: Attach server jar to server release
+      - name: Attach jars to the release
         if: ${{ steps.release.outputs.release_created == 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "${{ steps.release.outputs.tag_name }}" build/libs/*.jar --clobber
-
-      - name: Attach client jar to client release
-        if: ${{ steps.release.outputs['client-fabric--release_created'] == 'true' }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "${{ steps.release.outputs['client-fabric--tag_name'] }}" client-fabric/build/libs/*.jar --clobber
+        run: gh release upload "${{ steps.release.outputs.tag_name }}" build/libs/*.jar client-fabric/build/libs/*.jar --clobber
 
       - name: Read Minecraft version
-        if: ${{ steps.release.outputs.releases_created == 'true' }}
+        if: ${{ steps.release.outputs.release_created == 'true' }}
         id: mc
         run: echo "version=$(grep '^minecraft=' client-fabric/compatibility.properties | cut -d= -f2-)" >> "$GITHUB_OUTPUT"
 
-      - name: Fetch server release notes
+      - name: Fetch release notes
         if: ${{ steps.release.outputs.release_created == 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release view "${{ steps.release.outputs.tag_name }}" --json body -q .body > server-changelog.md
+        run: gh release view "${{ steps.release.outputs.tag_name }}" --json body -q .body > changelog.md
 
       - name: Publish server plugin to Modrinth
         if: ${{ steps.release.outputs.release_created == 'true' }}
@@ -80,27 +75,21 @@ jobs:
           game-versions: ${{ steps.mc.outputs.version }}
           dependencies: |
             simple-voice-chat(required)
-          changelog-file: server-changelog.md
-
-      - name: Fetch client release notes
-        if: ${{ steps.release.outputs['client-fabric--release_created'] == 'true' }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release view "${{ steps.release.outputs['client-fabric--tag_name'] }}" --json body -q .body > client-changelog.md
+          changelog-file: changelog.md
 
       - name: Publish client mod to Modrinth
-        if: ${{ steps.release.outputs['client-fabric--release_created'] == 'true' }}
+        if: ${{ steps.release.outputs.release_created == 'true' }}
         uses: Kir-Antipov/mc-publish@v3.3
         with:
           modrinth-id: scOrYDTf
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
           files: client-fabric/build/libs/*.jar
-          name: "[FABRIC][${{ steps.mc.outputs.version }}] Simple Voice Chat Better Groups ${{ steps.release.outputs['client-fabric--version'] }}"
-          version: fabric-${{ steps.release.outputs['client-fabric--version'] }}+${{ steps.mc.outputs.version }}
+          name: "[FABRIC][${{ steps.mc.outputs.version }}] Simple Voice Chat Better Groups ${{ steps.release.outputs.version }}"
+          version: fabric-${{ steps.release.outputs.version }}+${{ steps.mc.outputs.version }}
           version-type: release
           loaders: fabric
           game-versions: ${{ steps.mc.outputs.version }}
           dependencies: |
             simple-voice-chat(required)
             fabric-api(required)
-          changelog-file: client-changelog.md
+          changelog-file: changelog.md
