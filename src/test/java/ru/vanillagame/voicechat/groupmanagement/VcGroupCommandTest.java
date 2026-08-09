@@ -325,6 +325,40 @@ class VcGroupCommandTest {
     }
 
     @Test
+    void tabCompletionIsGroupAware() {
+        SvcGroupManagementPlugin plugin = mock(SvcGroupManagementPlugin.class);
+        Player viewer = player("Viewer");
+        Player groupmate = player("Groupmate");
+        Player outsider = player("Outsider");
+        when(viewer.canSee(groupmate)).thenReturn(true);
+        when(viewer.canSee(outsider)).thenReturn(true);
+        Group ownGroup = group();
+        VoicechatServerApi api = mock(VoicechatServerApi.class);
+        when(plugin.getVoicechatApi()).thenReturn(api);
+        when(api.getConnectionOf(viewer.getUniqueId())).thenReturn(connection(ownGroup));
+        when(api.getConnectionOf(groupmate.getUniqueId())).thenReturn(connection(ownGroup));
+        when(api.getConnectionOf(outsider.getUniqueId())).thenReturn(connection(null));
+        VcGroupCommand command = command(plugin, mock(InviteStore.class), new GroupLeadershipRegistry());
+
+        try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
+            bukkit.when(Bukkit::getOnlinePlayers).thenReturn(List.of(viewer, groupmate, outsider));
+
+            assertEquals(
+                    List.of("Outsider"),
+                    command.onTabComplete(viewer, mock(Command.class), "vcgroup", new String[]{"invite", ""})
+            );
+            assertEquals(
+                    List.of("Groupmate"),
+                    command.onTabComplete(viewer, mock(Command.class), "vcgroup", new String[]{"kick", ""})
+            );
+            assertEquals(
+                    List.of("Groupmate"),
+                    command.onTabComplete(viewer, mock(Command.class), "vcgroup", new String[]{"transfer", ""})
+            );
+        }
+    }
+
+    @Test
     void tabCompletionDoesNotRevealPlayersHiddenFromViewer() {
         Player viewer = player("Viewer");
         Player visible = player("Visible");
