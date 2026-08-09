@@ -19,6 +19,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -53,8 +54,11 @@ class VcGroupCommandTest {
         when(api.getConnectionOf(target.getUniqueId())).thenReturn(targetConnection);
         when(api.getConnectionOf(other.getUniqueId())).thenReturn(otherConnection);
         when(api.getGroup(group.getId())).thenReturn(group);
-        when(invites.create(target.getUniqueId(), group.getId())).thenReturn("token");
-        when(invites.create(other.getUniqueId(), group.getId())).thenReturn("token2");
+        UUID targetId = target.getUniqueId();
+        UUID otherId = other.getUniqueId();
+        UUID groupIdValue = group.getId();
+        when(invites.create(eq(targetId), eq(groupIdValue), any(), any())).thenReturn("token");
+        when(invites.create(eq(otherId), eq(groupIdValue), any(), any())).thenReturn("token2");
         VcGroupCommand command = new VcGroupCommand(
                 plugin,
                 invites,
@@ -74,13 +78,13 @@ class VcGroupCommandTest {
             command.onCommand(inviter, mock(Command.class), "vcgroup", new String[]{"invite", "Other"});
         }
 
-        verify(invites, times(1)).create(target.getUniqueId(), group.getId());
+        verify(invites, times(1)).create(eq(targetId), eq(groupIdValue), any(), any());
         verify(target, times(1)).sendMessage(any(Component.class));
         verify(target, times(1)).playSound(
                 any(net.kyori.adventure.sound.Sound.class),
                 any(net.kyori.adventure.sound.Sound.Emitter.class)
         );
-        verify(invites, times(1)).create(other.getUniqueId(), group.getId());
+        verify(invites, times(1)).create(eq(otherId), eq(groupIdValue), any(), any());
         verify(other, times(1)).sendMessage(any(Component.class));
     }
 
@@ -102,7 +106,7 @@ class VcGroupCommandTest {
                 Duration.ofMinutes(5),
                 () -> "one-time-token"
         );
-        invites.create(playerId, groupId);
+        invites.create(playerId, groupId, UUID.randomUUID(), "Inviter");
         VcGroupCommand command = command(plugin, invites, new GroupLeadershipRegistry());
 
         command.onCommand(
@@ -134,7 +138,10 @@ class VcGroupCommandTest {
         when(api.getConnectionOf(busy.getUniqueId())).thenReturn(busyConnection);
         when(api.getConnectionOf(member.getUniqueId())).thenReturn(memberConnection);
         when(api.getGroup(ownGroup.getId())).thenReturn(ownGroup);
-        when(invites.create(busy.getUniqueId(), ownGroup.getId())).thenReturn("token");
+        UUID busyId = busy.getUniqueId();
+        UUID memberId = member.getUniqueId();
+        UUID ownGroupId = ownGroup.getId();
+        when(invites.create(eq(busyId), eq(ownGroupId), any(), any())).thenReturn("token");
         VcGroupCommand command = command(plugin, invites, new GroupLeadershipRegistry());
 
         try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
@@ -145,9 +152,9 @@ class VcGroupCommandTest {
             command.onCommand(inviter, mock(Command.class), "vcgroup", new String[]{"invite", "Member"});
         }
 
-        verify(invites, times(1)).create(busy.getUniqueId(), ownGroup.getId());
+        verify(invites, times(1)).create(eq(busyId), eq(ownGroupId), any(), any());
         verify(busy, times(1)).sendMessage(any(Component.class));
-        verify(invites, never()).create(member.getUniqueId(), ownGroup.getId());
+        verify(invites, never()).create(eq(memberId), eq(ownGroupId), any(), any());
         verify(member, never()).sendMessage(any(Component.class));
     }
 
@@ -170,7 +177,7 @@ class VcGroupCommandTest {
                 Duration.ofMinutes(5),
                 () -> "switch-token"
         );
-        invites.create(playerId, newGroupId);
+        invites.create(playerId, newGroupId, UUID.randomUUID(), "Inviter");
         VcGroupCommand command = command(plugin, invites, new GroupLeadershipRegistry());
 
         command.onCommand(player, mock(Command.class), "vcgroup", new String[]{"accept", "switch-token"});

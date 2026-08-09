@@ -143,7 +143,7 @@ final class VcGroupCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
-        String token = invites.create(target.getUniqueId(), groupId);
+        String token = invites.create(target.getUniqueId(), groupId, inviter.getUniqueId(), inviter.getName());
         Component acceptButton = Messages.component(Messages.INVITE_ACCEPT_LABEL, NamedTextColor.GREEN)
                 .decorate(TextDecoration.BOLD)
                 .clickEvent(ClickEvent.runCommand("/vcgroup accept " + token))
@@ -226,11 +226,13 @@ final class VcGroupCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
+        plugin.attributeInvite(player.getUniqueId(), invite.inviterName());
         connection.setGroup(group);
         // VoicechatConnection is a snapshot. Re-fetch it after a mutation to observe the new state.
         VoicechatConnection updatedConnection = api.getConnectionOf(player.getUniqueId());
         Group joinedGroup = updatedConnection == null ? null : updatedConnection.getGroup();
         if (joinedGroup == null || !joinedGroup.getId().equals(invite.groupId())) {
+            plugin.clearInviteAttribution(player.getUniqueId());
             player.sendMessage(Messages.component(Messages.GROUP_JOIN_FAILED, NamedTextColor.RED));
             return;
         }
