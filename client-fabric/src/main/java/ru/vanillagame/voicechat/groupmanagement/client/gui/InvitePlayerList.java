@@ -25,13 +25,15 @@ public class InvitePlayerList extends ListScreenListBase<InvitePlayerEntry> {
         updateEntryList();
     }
 
-    // Candidates: connected to voice chat, not in any group, not ourselves
-    // (getPlayerStates(false) already excludes the local player). The server
-    // re-validates all of this on /vcgroup invite anyway.
+    // Candidates: not in any group, not ourselves (getPlayerStates(false)
+    // already excludes the local player). Players whose voice connection is
+    // temporarily down stay in the list — the invite arrives in chat and can
+    // be accepted once their voice reconnects. The server re-validates
+    // everything on /vcgroup invite anyway.
     public void updateEntryList() {
         entries.clear();
         for (PlayerState state : ClientManager.getPlayerStateManager().getPlayerStates(false)) {
-            if (state.isDisconnected() || state.hasGroup()) {
+            if (state.hasGroup()) {
                 continue;
             }
             entries.add(new InvitePlayerEntry(state));

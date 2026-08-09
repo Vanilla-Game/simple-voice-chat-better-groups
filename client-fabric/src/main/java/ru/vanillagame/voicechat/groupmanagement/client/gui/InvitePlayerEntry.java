@@ -3,6 +3,7 @@ package ru.vanillagame.voicechat.groupmanagement.client.gui;
 import de.maxhenkel.voicechat.gui.GameProfileUtils;
 import de.maxhenkel.voicechat.gui.widgets.ListScreenEntryBase;
 import de.maxhenkel.voicechat.voice.common.PlayerState;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -44,7 +45,10 @@ public class InvitePlayerEntry extends ListScreenEntryBase<InvitePlayerEntry> {
         guiGraphics.blit(RenderPipelines.GUI_TEXTURED, skin.body().texturePath(), skinX, skinY, 8, 8, SKIN_SIZE, SKIN_SIZE, 8, 8, 64, 64);
         guiGraphics.blit(RenderPipelines.GUI_TEXTURED, skin.body().texturePath(), skinX, skinY, 40, 8, SKIN_SIZE, SKIN_SIZE, 8, 8, 64, 64);
 
-        Component name = Component.literal(state.getName());
+        // A gray name marks a player whose voice connection is currently down.
+        Component name = state.isDisconnected()
+                ? Component.literal(state.getName()).withStyle(ChatFormatting.GRAY)
+                : Component.literal(state.getName());
         int textX = skinX + SKIN_SIZE + PADDING;
         int textY = top + (height - minecraft.font.lineHeight) / 2;
         int textSpace = width - PADDING - SKIN_SIZE - PADDING - PADDING;
