@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/Vanilla-Game/simple-voice-chat-group-management/compare/simple-voice-chat-group-management-fabric-v0.2.0...simple-voice-chat-group-management-fabric-v0.3.0) (2026-08-09)
+
+
+### Features
+
+* open a player picker from the invite button ([#19](https://github.com/Vanilla-Game/simple-voice-chat-group-management/issues/19)) ([2296ad9](https://github.com/Vanilla-Game/simple-voice-chat-group-management/commit/2296ad9bc058c06efe5cca19a99b685df718bf16))
+
 ## [0.2.0](https://github.com/Vanilla-Game/simple-voice-chat-group-management/compare/simple-voice-chat-group-management-fabric-v0.1.0...simple-voice-chat-group-management-fabric-v0.2.0) (2026-08-09)
 
 
