@@ -7,6 +7,11 @@ import net.minecraft.resources.Identifier;
 
 import java.util.UUID;
 
+// Wire format: [version u8][flags u8][group uuid][leader uuid], flags bit 0 =
+// group present, bit 1 = leader present, uuids as two big-endian longs. The
+// byte layout is the compatibility contract with the server plugin, pinned by
+// the golden vectors in the server-side LeaderSyncProtocolTest; change it only
+// together with those vectors and a protocol version bump.
 public record LeaderStatePayload(int protocolVersion, UUID groupId, UUID leaderId)
         implements CustomPacketPayload {
 

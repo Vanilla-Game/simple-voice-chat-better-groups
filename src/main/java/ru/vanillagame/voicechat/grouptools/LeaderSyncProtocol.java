@@ -3,6 +3,13 @@ package ru.vanillagame.voicechat.grouptools;
 import java.nio.ByteBuffer;
 import java.util.UUID;
 
+// Wire format (version 1), shared with the Fabric client payload codecs:
+//   hello:        [version u8]
+//   leader_state: [version u8][flags u8][group uuid][leader uuid]
+// flags bit 0 = in group (group uuid present), bit 1 = leader known (leader
+// uuid present); a uuid is two big-endian longs. The format is pinned by the
+// golden vectors in LeaderSyncProtocolTest: version 1 semantics never change,
+// any format change ships as a new VERSION.
 final class LeaderSyncProtocol {
 
     static final int VERSION = 1;

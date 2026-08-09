@@ -57,7 +57,7 @@ Releases follow the same Release Please workflow used by other Vanilla Game plug
 
 Each component starts at `0.1.0`. Pull request titles are checked for Conventional Commit format, and every pull request to `main` runs the Gradle build and unit tests.
 
-After the client release is published, manually update its Modrinth listing: replace any "creator only" wording with "current leader", and add Fabric API as a Required dependency for the released client version. This is a post-release metadata step and is not performed by the repository release workflow.
+After the client release is published, manually update its Modrinth listing: replace any "creator only" wording with "current leader", add Fabric API as a Required dependency for the released client version, and note in the version changelog that the full leader UI requires the server plugin `0.3.0` or newer. This is a post-release metadata step and is not performed by the repository release workflow.
 
 ## Commands
 
@@ -75,6 +75,16 @@ Invites contain a random 192-bit URL-safe token. They never contain, log, or dis
 The player observed in `CreateGroupEvent#getConnection()` becomes the initial leader. Members are tracked in join order. When the leader leaves the group, moves to another group, or quits the Minecraft server, leadership passes to the longest-standing remaining member. A former leader who rejoins is appended to the end of that order and does not reclaim leadership automatically. The current leader can also hand the role to another member with `/vcgroup transfer <player>`; the transfer does not change the join order used for later automatic passes.
 
 A transient Simple Voice Chat connection loss does not change leadership: Simple Voice Chat keeps the player's group UUID and marks only the voice connection as disconnected. Membership-changing events and Bukkit player quit are handled idempotently, so duplicate leave/disconnect signals are harmless.
+
+## Leader sync protocol
+
+The server plugin and the client mod exchange two plugin messages: the client sends a one-byte versioned `voicechat_group_tools:hello`, and the server answers on `voicechat_group_tools:leader_state` with a version byte, a flags byte, and optional group and leader UUIDs. This byte layout is the compatibility contract between the two components. It is pinned by golden vectors in `LeaderSyncProtocolTest`, and the Fabric payload codecs must match those vectors exactly.
+
+Evolution rules:
+
+- Version 1 byte semantics never change. Any format change ships as a new protocol version, together with an explicit decision about older clients: keep answering them in their format, or stay silent so they degrade to the command workflow.
+- Mixed client versions are the normal operating state, not an error. The server answers only compatible hellos; clients facing an incompatible or absent server keep the complete command workflow and simply show no leader UI.
+- Deploy the server plugin before shipping client updates. A newer client against an older server stays inactive until the server catches up; the reverse pairing is fully supported.
 
 ## Configuration
 
