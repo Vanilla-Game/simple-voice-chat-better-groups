@@ -1,0 +1,7 @@
+{
+  "gui.svc_better_groups.invite": "Пригласить игрока",
+  "gui.svc_better_groups.kick": "Исключить %s из голосовой группы (только лидер)",
+  "gui.svc_better_groups.request": "Не знаете пароль? Попроситесь к лидеру группы.",
+  "gui.svc_better_groups.invite_screen_title": "Пригласить игрока",
+  "gui.svc_better_groups.invite_screen_empty": "Сейчас некого пригласить."
+}

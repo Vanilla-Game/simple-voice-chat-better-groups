@@ -1,0 +1,7 @@
+{
+  "gui.svc_better_groups.invite": "Invite player",
+  "gui.svc_better_groups.kick": "Remove %s from the voice group (leader only)",
+  "gui.svc_better_groups.request": "Don't know the password? Ask the group leader to let you in.",
+  "gui.svc_better_groups.invite_screen_title": "Invite a player",
+  "gui.svc_better_groups.invite_screen_empty": "No one to invite right now."
+}
