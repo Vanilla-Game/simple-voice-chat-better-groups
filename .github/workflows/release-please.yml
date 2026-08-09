@@ -52,3 +52,55 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh release upload "${{ steps.release.outputs['client-fabric--tag_name'] }}" client-fabric/build/libs/*.jar --clobber
+
+      - name: Read Minecraft version
+        if: ${{ steps.release.outputs.releases_created == 'true' }}
+        id: mc
+        run: echo "version=$(grep '^minecraft=' client-fabric/compatibility.properties | cut -d= -f2-)" >> "$GITHUB_OUTPUT"
+
+      - name: Fetch server release notes
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release view "${{ steps.release.outputs.tag_name }}" --json body -q .body > server-changelog.md
+
+      - name: Publish server plugin to Modrinth
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          modrinth-id: scOrYDTf
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          files: build/libs/*.jar
+          name: "[PAPER][${{ steps.mc.outputs.version }}] Simple Voice Chat Group Management ${{ steps.release.outputs.version }}"
+          version: paper-${{ steps.release.outputs.version }}+${{ steps.mc.outputs.version }}
+          version-type: release
+          loaders: |
+            paper
+            purpur
+          game-versions: ${{ steps.mc.outputs.version }}
+          dependencies: |
+            simple-voice-chat(required)
+          changelog-file: server-changelog.md
+
+      - name: Fetch client release notes
+        if: ${{ steps.release.outputs['client-fabric--release_created'] == 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release view "${{ steps.release.outputs['client-fabric--tag_name'] }}" --json body -q .body > client-changelog.md
+
+      - name: Publish client mod to Modrinth
+        if: ${{ steps.release.outputs['client-fabric--release_created'] == 'true' }}
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          modrinth-id: scOrYDTf
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          files: client-fabric/build/libs/*.jar
+          name: "[FABRIC][${{ steps.mc.outputs.version }}] Simple Voice Chat Group Management ${{ steps.release.outputs['client-fabric--version'] }}"
+          version: fabric-${{ steps.release.outputs['client-fabric--version'] }}+${{ steps.mc.outputs.version }}
+          version-type: release
+          loaders: fabric
+          game-versions: ${{ steps.mc.outputs.version }}
+          dependencies: |
+            simple-voice-chat(required)
+            fabric-api(required)
+          changelog-file: client-changelog.md
