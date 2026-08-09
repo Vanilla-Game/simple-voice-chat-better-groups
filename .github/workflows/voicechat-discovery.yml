@@ -34,7 +34,7 @@ jobs:
           tested=$(grep '^voicechat\.tested=' client-fabric/compatibility.properties | cut -d= -f2-)
           minimum=$(grep '^voicechat\.compile=' client-fabric/compatibility.properties | cut -d= -f2-)
           curl -fsSL -G 'https://api.modrinth.com/v2/project/simple-voice-chat/version' \
-            -H 'User-Agent: Vanilla-Game/voicechat-group-tools discovery workflow' \
+            -H 'User-Agent: Vanilla-Game/simple-voice-chat-group-management discovery workflow' \
             --data-urlencode "loaders=[\"fabric\"]" \
             --data-urlencode "game_versions=[\"$minecraft\"]" > versions.json
           # Versions below voicechat.compile are deliberately unsupported and

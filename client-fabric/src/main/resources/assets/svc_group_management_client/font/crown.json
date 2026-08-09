@@ -1,0 +1,13 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "svc_group_management_client:font/crown.png",
+      "height": 8,
+      "ascent": 7,
+      "chars": [
+        "\ue000"
+      ]
+    }
+  ]
+}

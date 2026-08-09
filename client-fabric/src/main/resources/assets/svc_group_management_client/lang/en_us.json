@@ -1,0 +1,4 @@
+{
+  "gui.svc_group_management.invite": "Invite player",
+  "gui.svc_group_management.kick": "Remove %s from the voice group (leader only)"
+}

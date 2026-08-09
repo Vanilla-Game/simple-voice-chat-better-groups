@@ -5,7 +5,7 @@
   "packages": {
     ".": {
       "release-type": "simple",
-      "package-name": "voicechat-group-tools",
+      "package-name": "simple-voice-chat-group-management",
       "initial-version": "0.1.0",
       "include-component-in-tag": true,
       "include-v-in-tag": true,
@@ -23,7 +23,7 @@
     },
     "client-fabric": {
       "release-type": "simple",
-      "package-name": "voicechat-group-tools-fabric",
+      "package-name": "simple-voice-chat-group-management-fabric",
       "initial-version": "0.1.0",
       "include-component-in-tag": true,
       "include-v-in-tag": true,
