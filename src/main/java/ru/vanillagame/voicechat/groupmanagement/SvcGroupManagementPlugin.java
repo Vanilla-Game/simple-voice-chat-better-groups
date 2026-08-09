@@ -63,9 +63,9 @@ public final class SvcGroupManagementPlugin extends JavaPlugin implements Listen
                 requestCooldowns,
                 settings
         );
-        PluginCommand command = getCommand("vcgroup");
+        PluginCommand command = getCommand("voicegroup");
         if (command == null) {
-            getLogger().severe("The /vcgroup command is missing from plugin.yml; disabling plugin.");
+            getLogger().severe("The /voicegroup command is missing from plugin.yml; disabling plugin.");
             getServer().getPluginManager().disablePlugin(this);
             return;
         }

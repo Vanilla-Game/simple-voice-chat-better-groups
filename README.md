@@ -43,12 +43,12 @@ The plugin declares a hard dependency on `voicechat`. If Simple Voice Chat is mi
 2. Copy `client-fabric/build/libs/simple-voice-chat-group-management-fabric-*.jar` into the client's `mods` directory.
 3. Connect to a server that runs the matching Paper plugin.
 
-The client addon checks the server command tree and changes nothing when `/vcgroup` is unavailable. On supported servers it adds:
+The client addon checks the server command tree for the `vcgroup` alias — the stable wire name it also uses when sending commands — and changes nothing when it is unavailable. On supported servers it adds:
 
 - an invite button to the footer of the existing Simple Voice Chat group screen; it opens a searchable player picker listing everyone connected to voice chat and not in a group, and clicking a player sends the invite;
 - a gold crown next to the current group leader;
-- a remove button next to each other group member's existing volume slider when the local player is the current leader; it executes `/vcgroup kick <player>`;
-- a request button on the password screen of a locked group; it executes `/vcgroup request <group UUID>` so the player can knock without knowing the password.
+- a remove button next to each other group member's existing volume slider when the local player is the current leader; it executes `/voicegroup kick <player>`;
+- a request button on the password screen of a locked group; it executes `/voicegroup request <group UUID>` so the player can knock without knowing the password.
 
 The server still performs every permission, leadership, membership, and live-state check. The client sends only a versioned capability message; it never sends a player or leader UUID. Installing or modifying the client cannot grant kick authority. Players without the client addon retain the complete command workflow. Invite acceptance stays in the existing clickable server chat message because an invited player is not yet inside the group screen.
 
@@ -62,19 +62,19 @@ After the client release is published, manually update its Modrinth listing: rep
 
 ## Commands
 
-All commands are player-only.
+All commands are player-only. Everything is also available under the legacy `/vcgroup` alias, which released clients use on the wire; the alias is permanent.
 
-- `/vcgroup invite <player>` — sends an online player a clickable, password-free invite to the sender's current voice chat group. The target must not already be in a group. A configurable cooldown per inviter and target pair prevents chat spam.
-- `/vcgroup accept <token>` — accepts an invite that belongs to the executing player's UUID. Tokens expire after the configured lifetime and are removed after successful use.
-- `/vcgroup kick <player>` — removes an online member from the caller's current voice chat group. Only the current leader tracked by the server is authorized.
-- `/vcgroup transfer <player>` — hands leadership to another online member of the caller's current voice chat group. Only the current leader is authorized; the new leader is notified and synced to compatible clients immediately.
-- `/vcgroup request <group>` — asks the leader of a password-protected, visible group to let the caller in; the group is matched by name or UUID. The leader receives a clickable one-time request that expires after the configured lifetime; approving it puts the requester into the group without revealing the password. Approval is bound to whoever holds leadership at click time and is only offered for groups whose leader is known.
+- `/voicegroup invite <player>` — sends an online player a clickable, password-free invite to the sender's current voice chat group. The target must not already be in a group. A configurable cooldown per inviter and target pair prevents chat spam.
+- `/voicegroup accept <token>` — accepts an invite that belongs to the executing player's UUID. Tokens expire after the configured lifetime and are removed after successful use.
+- `/voicegroup kick <player>` — removes an online member from the caller's current voice chat group. Only the current leader tracked by the server is authorized.
+- `/voicegroup transfer <player>` — hands leadership to another online member of the caller's current voice chat group. Only the current leader is authorized; the new leader is notified and synced to compatible clients immediately.
+- `/voicegroup request <group>` — asks the leader of a password-protected, visible group to let the caller in; the group is matched by name or UUID. The leader receives a clickable one-time request that expires after the configured lifetime; approving it puts the requester into the group without revealing the password. Approval is bound to whoever holds leadership at click time and is only offered for groups whose leader is known.
 
 Invites contain a random 192-bit URL-safe token. They never contain, log, or display a group password.
 
 ## Group leadership
 
-The player observed in `CreateGroupEvent#getConnection()` becomes the initial leader. Members are tracked in join order. When the leader leaves the group, moves to another group, or quits the Minecraft server, leadership passes to the longest-standing remaining member. A former leader who rejoins is appended to the end of that order and does not reclaim leadership automatically. The current leader can also hand the role to another member with `/vcgroup transfer <player>`; the transfer does not change the join order used for later automatic passes.
+The player observed in `CreateGroupEvent#getConnection()` becomes the initial leader. Members are tracked in join order. When the leader leaves the group, moves to another group, or quits the Minecraft server, leadership passes to the longest-standing remaining member. A former leader who rejoins is appended to the end of that order and does not reclaim leadership automatically. The current leader can also hand the role to another member with `/voicegroup transfer <player>`; the transfer does not change the join order used for later automatic passes.
 
 A transient Simple Voice Chat connection loss does not change leadership: Simple Voice Chat keeps the player's group UUID and marks only the voice connection as disconnected. Membership-changing events and Bukkit player quit are handled idempotently, so duplicate leave/disconnect signals are harmless.
 
@@ -108,7 +108,7 @@ requests:
 
 ## Permission
 
-- `vanillagame.svc_group_management.use` — allows `/vcgroup`; granted to all players by default. This permission does not grant kick authority: `/vcgroup kick` always checks the current leader UUID for the exact group.
+- `vanillagame.svc_group_management.use` — allows `/voicegroup`; granted to all players by default. This permission does not grant kick authority: `/voicegroup kick` always checks the current leader UUID for the exact group.
 
 ## Localization
 
@@ -120,7 +120,7 @@ Translations are bundled in `src/main/resources/lang/Messages_en_US.properties` 
 
 - Invites and cooldowns are deliberately in memory only. Invites expire after the configured lifetime and are invalidated when used, superseded for the same player/group pair, when the invited player disconnects, when the group is removed, or when the plugin/voice chat server stops.
 - Initial leadership is learned only from public `CreateGroupEvent` events observed while this addon is active. Membership and succession are mirrored through `JoinGroupEvent`, `LeaveGroupEvent`, `RemoveGroupEvent`, and Bukkit player quit.
-- The public API does not expose the creator or historical join order of an already existing group. After a plugin reload, or for a persistent group created before this addon observed its creation event, leadership cannot be safely reconstructed. In that case no crown is shown and `/vcgroup kick` is denied with a clear message; the plugin never guesses or grants fallback leadership.
+- The public API does not expose the creator or historical join order of an already existing group. After a plugin reload, or for a persistent group created before this addon observed its creation event, leadership cannot be safely reconstructed. In that case no crown is shown and `/voicegroup kick` is denied with a clear message; the plugin never guesses or grants fallback leadership.
 - The plugin only acts on online Bukkit players and current public `VoicechatConnection` objects.
 
 ## Simple Voice Chat compatibility automation
