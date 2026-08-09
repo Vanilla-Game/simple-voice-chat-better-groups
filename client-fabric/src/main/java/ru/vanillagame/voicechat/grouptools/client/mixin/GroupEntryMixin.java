@@ -10,7 +10,9 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.FontDescription;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.Identifier;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -38,6 +40,12 @@ public abstract class GroupEntryMixin extends ListScreenEntryBase<GroupEntry> {
     @Final
     protected AdjustVolumeSlider volumeSlider;
 
+    // The default font renders non-ASCII glyphs from the squished unifont
+    // fallback, so the crown ships as a custom 8x8 bitmap glyph instead.
+    @Unique
+    private static final FontDescription VOICE_CHAT_GROUP_TOOLS$CROWN_FONT = new FontDescription.Resource(
+            Identifier.fromNamespaceAndPath("voicechat_group_tools_client", "crown"));
+
     @Unique
     private Button voiceChatGroupTools$kickButton;
 
@@ -53,9 +61,11 @@ public abstract class GroupEntryMixin extends ListScreenEntryBase<GroupEntry> {
         if (!LeaderClientState.isLeader(state.getUuid())) {
             return Component.literal(playerName);
         }
-        return Component.literal("♛ ")
-                .withStyle(ChatFormatting.GOLD)
-                .append(Component.literal(playerName).withStyle(ChatFormatting.WHITE));
+        return Component.empty()
+                .append(Component.literal("\uE000").withStyle(style -> style
+                        .withFont(VOICE_CHAT_GROUP_TOOLS$CROWN_FONT)
+                        .withColor(ChatFormatting.GOLD)))
+                .append(Component.literal(" " + playerName).withStyle(ChatFormatting.WHITE));
     }
 
     @Inject(method = "<init>", at = @At("RETURN"), remap = false)
