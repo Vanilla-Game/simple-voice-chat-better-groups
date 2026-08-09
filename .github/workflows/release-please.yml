@@ -71,7 +71,7 @@ jobs:
           modrinth-id: scOrYDTf
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
           files: build/libs/*.jar
-          name: "[PAPER][${{ steps.mc.outputs.version }}] Simple Voice Chat Group Management ${{ steps.release.outputs.version }}"
+          name: "[PAPER][${{ steps.mc.outputs.version }}] Simple Voice Chat Better Groups ${{ steps.release.outputs.version }}"
           version: paper-${{ steps.release.outputs.version }}+${{ steps.mc.outputs.version }}
           version-type: release
           loaders: |
@@ -95,7 +95,7 @@ jobs:
           modrinth-id: scOrYDTf
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
           files: client-fabric/build/libs/*.jar
-          name: "[FABRIC][${{ steps.mc.outputs.version }}] Simple Voice Chat Group Management ${{ steps.release.outputs['client-fabric--version'] }}"
+          name: "[FABRIC][${{ steps.mc.outputs.version }}] Simple Voice Chat Better Groups ${{ steps.release.outputs['client-fabric--version'] }}"
           version: fabric-${{ steps.release.outputs['client-fabric--version'] }}+${{ steps.mc.outputs.version }}
           version-type: release
           loaders: fabric
