@@ -1,0 +1,7 @@
+{
+  "gui.svc_better_groups.invite": "Speler uitnodigen",
+  "gui.svc_better_groups.kick": "%s uit de voicechatgroep verwijderen (alleen leider)",
+  "gui.svc_better_groups.request": "Ken je het wachtwoord niet? Vraag de groepsleider om je binnen te laten.",
+  "gui.svc_better_groups.invite_screen_title": "Speler uitnodigen",
+  "gui.svc_better_groups.invite_screen_empty": "Er is momenteel niemand om uit te nodigen."
+}

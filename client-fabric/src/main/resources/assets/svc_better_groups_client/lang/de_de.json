@@ -1,0 +1,7 @@
+{
+  "gui.svc_better_groups.invite": "Spieler einladen",
+  "gui.svc_better_groups.kick": "%s aus der Sprachchat-Gruppe entfernen (nur Leiter)",
+  "gui.svc_better_groups.request": "Du kennst das Passwort nicht? Bitte den Gruppenleiter, dich hereinzulassen.",
+  "gui.svc_better_groups.invite_screen_title": "Spieler einladen",
+  "gui.svc_better_groups.invite_screen_empty": "Im Moment kann niemand eingeladen werden."
+}

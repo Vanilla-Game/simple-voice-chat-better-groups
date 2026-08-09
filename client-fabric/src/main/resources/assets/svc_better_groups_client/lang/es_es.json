@@ -1,0 +1,7 @@
+{
+  "gui.svc_better_groups.invite": "Invitar a un jugador",
+  "gui.svc_better_groups.kick": "Expulsar a %s del grupo de voz (solo el líder)",
+  "gui.svc_better_groups.request": "¿No sabes la contraseña? Pide al líder del grupo que te deje entrar.",
+  "gui.svc_better_groups.invite_screen_title": "Invitar a un jugador",
+  "gui.svc_better_groups.invite_screen_empty": "Ahora mismo no hay nadie a quien invitar."
+}

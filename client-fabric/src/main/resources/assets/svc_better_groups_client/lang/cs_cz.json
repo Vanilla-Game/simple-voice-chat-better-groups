@@ -1,0 +1,7 @@
+{
+  "gui.svc_better_groups.invite": "Pozvat hráče",
+  "gui.svc_better_groups.kick": "Odebrat hráče %s z hlasové skupiny (pouze vedoucí)",
+  "gui.svc_better_groups.request": "Neznáte heslo? Požádejte vedoucího skupiny, aby vás pustil dovnitř.",
+  "gui.svc_better_groups.invite_screen_title": "Pozvat hráče",
+  "gui.svc_better_groups.invite_screen_empty": "Momentálně není koho pozvat."
+}

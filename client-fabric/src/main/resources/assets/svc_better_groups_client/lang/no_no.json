@@ -1,0 +1,7 @@
+{
+  "gui.svc_better_groups.invite": "Inviter spiller",
+  "gui.svc_better_groups.kick": "Fjern %s fra talegruppen (bare leder)",
+  "gui.svc_better_groups.request": "Kjenner du ikke passordet? Be gruppelederen om å slippe deg inn.",
+  "gui.svc_better_groups.invite_screen_title": "Inviter en spiller",
+  "gui.svc_better_groups.invite_screen_empty": "Det er ingen å invitere akkurat nå."
+}

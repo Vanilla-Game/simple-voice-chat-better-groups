@@ -24,7 +24,7 @@ The optional client module additionally requires:
 - Fabric API `0.152.1` or newer for Minecraft `26.2`
 - Simple Voice Chat Fabric `2.6.18` or newer within the supported range
 
-The server project compiles against Paper API `26.2.build.84-stable` and emits Java 25 bytecode. Paper's 26.2 development documentation specifies Java 25 and the `26.2.build.*` API line. Simple Voice Chat 2.6.21 exposes the separately published public API artifact `voicechat-api:2.6.20`, which is used as a compile-only dependency by the server plugin.
+The server project compiles against Paper API `26.2.build.84-stable` and emits Java 25 bytecode. Paper's 26.2 development documentation specifies Java 25 and the `26.2.build.*` API line. Simple Voice Chat 2.6.19 is the first Bukkit release for Minecraft 26.2 and exposes the separately published public API artifact `voicechat-api:2.6.19`, which is used as a compile-only dependency by the server plugin.
 
 The Fabric module intentionally targets Simple Voice Chat's client UI classes for version `2.6.21`. It uses two small Mixins instead of copying or replacing the group screen. The client dependency range is deliberately capped; every Simple Voice Chat update is checked by CI before the range is widened. See "Simple Voice Chat compatibility automation" below.
 
@@ -112,9 +112,9 @@ requests:
 
 ## Localization
 
-Player-facing messages are available in English (`en_US`) and Russian (`ru_RU`). The plugin uses Paper's Adventure translation system and automatically renders each message in the language selected by that player's Minecraft client. English is used as the fallback for unsupported locales.
+Player-facing messages are available in English (`en_US`), Catalan (`ca_ES`), Czech (`cs_CZ`), German (`de_DE`), Spanish (`es_ES`), French (`fr_FR`), Italian (`it_IT`), Dutch (`nl_NL`), Norwegian (`no_NO`), Polish (`pl_PL`), Portuguese (`pt_PT`), Russian (`ru_RU`), Swedish (`sv_SE`), Turkish (`tr_TR`), and Ukrainian (`uk_UA`). The plugin uses Paper's Adventure translation system and automatically renders each message in the language selected by that player's Minecraft client. English is used as the fallback for unsupported locales.
 
-Translations are bundled in `src/main/resources/lang/Messages_en_US.properties` and `Messages_ru_RU.properties`. Text is translated server-side; the clickable invite command, token, colors, and click/hover events remain controlled by Java code.
+Server translations are bundled in `src/main/resources/lang/`, with matching client translations under `client-fabric/src/main/resources/assets/svc_better_groups_client/lang/`. Text is translated server-side; the clickable invite command, token, colors, and click/hover events remain controlled by Java code.
 
 ## State and public API limitations
 
@@ -148,4 +148,4 @@ Run the focused server unit tests and build both artifacts:
 ./gradlew build
 ```
 
-The unit tests cover secure token shape/randomness, configurable expiry, one-time consumption, player/group UUID binding, replacement of stale invites, cooldown timing, command accept/kick mutation checks, ordered leader succession, group moves without a leave event, idempotent leave/disconnect handling, fail-closed unknown leadership, sync-protocol encoding, per-target invite throttling, vanish-aware tab completion, translation-key parity, configured lifetime rendering, per-player Russian/English rendering, and English fallback.
+The unit tests cover secure token shape/randomness, configurable expiry, one-time consumption, player/group UUID binding, replacement of stale invites, cooldown timing, command accept/kick mutation checks, ordered leader succession, group moves without a leave event, idempotent leave/disconnect handling, fail-closed unknown leadership, sync-protocol encoding, per-target invite throttling, vanish-aware tab completion, server and client translation-key/placeholder parity, configured lifetime rendering, per-player locale rendering, and English fallback.

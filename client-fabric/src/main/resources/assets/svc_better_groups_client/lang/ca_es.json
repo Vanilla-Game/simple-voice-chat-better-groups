@@ -1,0 +1,7 @@
+{
+  "gui.svc_better_groups.invite": "Convida un jugador",
+  "gui.svc_better_groups.kick": "Expulsa %s del grup de veu (només el líder)",
+  "gui.svc_better_groups.request": "No saps la contrasenya? Demana al líder del grup que et deixi entrar.",
+  "gui.svc_better_groups.invite_screen_title": "Convida un jugador",
+  "gui.svc_better_groups.invite_screen_empty": "Ara mateix no hi ha ningú per convidar."
+}
