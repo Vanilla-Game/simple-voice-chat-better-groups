@@ -1,13 +1,13 @@
 # Changelog
 
-## [0.4.0](https://github.com/Vanilla-Game/svc-better-groups/compare/svc-better-groups-v0.3.0...svc-better-groups-v0.4.0) (2026-08-09)
+## [0.4.0](https://github.com/Vanilla-Game/svc-better-groups/compare/v0.3.0...v0.4.0) (2026-08-09)
 
 
 ### Features
 
 * open a player picker from the invite button ([#19](https://github.com/Vanilla-Game/svc-better-groups/issues/19)) ([2296ad9](https://github.com/Vanilla-Game/svc-better-groups/commit/2296ad9bc058c06efe5cca19a99b685df718bf16))
 
-## [0.3.0](https://github.com/Vanilla-Game/svc-better-groups/compare/svc-better-groups-v0.2.0...svc-better-groups-v0.3.0) (2026-08-09)
+## [0.3.0](https://github.com/Vanilla-Game/svc-better-groups/compare/v0.2.0...v0.3.0) (2026-08-09)
 
 
 ### Features
@@ -15,7 +15,7 @@
 * add join requests for password-protected groups ([#16](https://github.com/Vanilla-Game/svc-better-groups/issues/16)) ([e79fad7](https://github.com/Vanilla-Game/svc-better-groups/commit/e79fad76555615a029f94324de5543ea84b1bbaf))
 * add voice group leadership with client sync ([#13](https://github.com/Vanilla-Game/svc-better-groups/issues/13)) ([4195a54](https://github.com/Vanilla-Game/svc-better-groups/commit/4195a54ff8a2a50b48ab5e49b347f481081841e9))
 
-## [0.2.0](https://github.com/Vanilla-Game/svc-better-groups/compare/svc-better-groups-v0.1.0...svc-better-groups-v0.2.0) (2026-08-08)
+## [0.2.0](https://github.com/Vanilla-Game/svc-better-groups/compare/v0.1.0...v0.2.0) (2026-08-08)
 
 
 ### Features
