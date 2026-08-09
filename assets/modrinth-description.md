@@ -1,10 +1,14 @@
 # Simple Voice Chat Better Groups
 
-**Everything voice groups are missing: leaders, passwordless invites, join requests.**
+**Better controls for Simple Voice Chat groups.**
 
-Out of the box, groups in [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat) are just a name and a password — with no way to manage who's inside. This plugin turns them into proper groups:
+Simple Voice Chat Better Groups adds passwordless invites, join requests, group leaders, member removal, and leadership transfer to [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat).
 
-- **One-click invites** that never expose the password — the built-in invite pastes it right into a command for every invitee to see; here it's a one-time code that expires in minutes. You can even invite someone out of another group: they get a warning, and accepting moves them over.
+The Paper plugin handles permissions and group changes on the server. An optional Fabric client mod adds invite, request, and remove buttons to the existing group UI, along with a crown marking the current leader.
+
+## Features
+
+- **One-click invites** that never expose the password — the built-in invite pastes it right into a command for every invitee to see; here it's a one-time code that expires in minutes.
 - **A leader with a golden crown.** The group's creator leads it: only the leader kicks members and approves requests. The crown passes to the longest-standing member when the leader leaves, or by hand with `/voicegroup transfer`.
 - **Join requests for locked groups.** Ask instead of guessing the password: the leader gets a one-click **[Accept]** with an anvil *clang* that's hard to miss (the sound is configurable).
 - **Chat announcements** when someone joins the group — including who invited them.
@@ -20,7 +24,7 @@ The **Fabric** file is an optional client mod for players who want buttons inste
 - a golden crown marks the current leader;
 - a door button on a locked group's password screen sends a join request.
 
-On servers without the plugin it quietly does nothing, so it's safe to keep in your mods folder.
+On servers without Better Groups, its extra controls stay hidden, so the client mod can remain installed when joining other servers.
 
 ## Usage
 

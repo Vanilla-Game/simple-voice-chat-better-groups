@@ -22,8 +22,8 @@ the project is addressed by id `scOrYDTf` in CI.
 
 `/voicegroup` is the primary command (sits next to Simple Voice Chat's own
 `/voicechat`, `/voicemute` in tab completion). `/vcgroup` is a **permanent**
-alias: it is the wire name — the client detects it in the command tree and
-sends it (`ServerSupport`). Removing the alias breaks every released client.
+alias: it is the wire name used by client UI actions after protocol
+negotiation. Removing the alias breaks released clients.
 
 ## Group leadership
 
@@ -42,24 +42,32 @@ at the end of the order. **Fail-closed**: a group whose creation was not
 observed (plugin restarted, persistent group) has an unknown leader — kick,
 transfer and join requests are denied rather than guessed.
 
-## Leader sync protocol
+## Client-server protocol
 
-Channels `svc_better_groups:hello` (client→server, 1 byte version) and
-`svc_better_groups:leader_state` (server→client: version u8, flags u8,
-optional group UUID, optional leader UUID as two big-endian longs).
+Protocol version 2 uses three channels:
 
-- The byte layout is **frozen by golden vectors** in `LeaderSyncProtocolTest`.
-  Version 1 semantics never change; any format change ships as a new
-  `LeaderSyncProtocol.VERSION` plus an explicit decision about older clients.
+- `svc_better_groups:client_hello` — client→server, requested version u8;
+- `svc_better_groups:server_hello` — server→client, selected version u8;
+- `svc_better_groups:group_state` — server→client, version u8, flags u8,
+  optional group UUID, optional leader UUID as two big-endian longs.
+
+- Negotiation contains no membership data. `ServerSupport` becomes available
+  only after a valid `server_hello`; group and leader data are handled only by
+  `group_state`.
+- The server sends initial group state only when the player is in a group. An
+  empty state is sent later only when needed to clear a previously cached group.
+- The byte layouts are **frozen by golden vectors** in `GroupSyncProtocolTest`.
+  Version 2 semantics never change; any format change ships as a new
+  `GroupSyncProtocol.VERSION`.
 - Mixed client versions are the normal operating state: the server answers only
   compatible hellos; incompatible clients silently keep the command workflow.
-- The client sends hello at JOIN **and** on `ServerboundPlayChannelEvents.REGISTER`
+- The client sends `client_hello` at JOIN **and** on `ServerboundPlayChannelEvents.REGISTER`
   (Paper announces channels in a `minecraft:register` packet that arrives after
   the Fabric JOIN event). A re-announcement resets the handshake — the server
   plugin may have been reloaded and lost its state. UNREGISTER clears the cache.
 - protobuf was evaluated and rejected (1.7 MB dependency + shading hazards for
   ~34 bytes of payload); a shared protocol Gradle module is deferred until the
-  packet count grows beyond two.
+  protocol grows beyond these three small messages.
 
 ## Invites and requests
 

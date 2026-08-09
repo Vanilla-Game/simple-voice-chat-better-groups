@@ -20,7 +20,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import ru.vanillagame.voicechat.bettergroups.client.Icons;
-import ru.vanillagame.voicechat.bettergroups.client.LeaderClientState;
+import ru.vanillagame.voicechat.bettergroups.client.GroupClientState;
 import ru.vanillagame.voicechat.bettergroups.client.ServerSupport;
 
 @Mixin(value = GroupEntry.class, remap = false)
@@ -51,7 +51,7 @@ public abstract class GroupEntryMixin extends ListScreenEntryBase<GroupEntry> {
             remap = true
     )
     private MutableComponent svcBetterGroups$markLeader(String playerName) {
-        if (!LeaderClientState.isLeader(state.getUuid())) {
+        if (!GroupClientState.isLeader(state.getUuid())) {
             return Component.literal(playerName);
         }
         return Component.empty()
@@ -81,7 +81,7 @@ public abstract class GroupEntryMixin extends ListScreenEntryBase<GroupEntry> {
             remap = false
     )
     private void svcBetterGroups$leaveSpaceForKickButton(AdjustVolumeSlider slider, int width) {
-        if (!ServerSupport.isAvailable() || !LeaderClientState.isLocalPlayerLeader()) {
+        if (!ServerSupport.isAvailable() || !GroupClientState.isLocalPlayerLeader()) {
             slider.setWidth(width);
             return;
         }
@@ -102,7 +102,7 @@ public abstract class GroupEntryMixin extends ListScreenEntryBase<GroupEntry> {
         boolean visible = hovered
                 && !isSelf
                 && ServerSupport.isAvailable()
-                && LeaderClientState.isLocalPlayerLeader();
+                && GroupClientState.isLocalPlayerLeader();
         svcBetterGroups$kickButton.visible = visible;
         if (!visible) {
             return;

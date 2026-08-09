@@ -32,7 +32,7 @@
 
 ## Wire format
 
-- The leader-sync bytes are pinned by golden vectors in
-  `LeaderSyncProtocolTest`; both client payload codecs mirror them by hand.
+- The client-server protocol bytes are pinned by golden vectors in
+  `GroupSyncProtocolTest`; the client payload codecs mirror them by hand.
   Any byte change without a protocol VERSION bump breaks deployed clients
   while every unit test stays green — the vectors are the only tripwire.

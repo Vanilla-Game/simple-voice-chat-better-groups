@@ -6,13 +6,21 @@ import net.minecraft.client.multiplayer.ClientPacketListener;
 public final class ServerSupport {
 
     private static final String COMMAND = "vcgroup";
+    private static boolean available;
 
     private ServerSupport() {
     }
 
     public static boolean isAvailable() {
-        ClientPacketListener connection = Minecraft.getInstance().getConnection();
-        return connection != null && connection.getCommands().getRoot().getChild(COMMAND) != null;
+        return available;
+    }
+
+    static void confirm() {
+        available = true;
+    }
+
+    static void clear() {
+        available = false;
     }
 
     public static void invite(String playerName) {

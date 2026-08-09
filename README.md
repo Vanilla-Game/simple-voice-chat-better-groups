@@ -43,14 +43,14 @@ The plugin declares a hard dependency on `voicechat`. If Simple Voice Chat is mi
 2. Copy `client-fabric/build/libs/svc-better-groups-fabric-*.jar` into the client's `mods` directory.
 3. Connect to a server that runs the matching Paper plugin.
 
-The client addon checks the server command tree for the `vcgroup` alias — the stable wire name it also uses when sending commands — and changes nothing when it is unavailable. On supported servers it adds:
+The client addon waits for a valid response to its versioned handshake with the Paper plugin and keeps its controls hidden until a compatible server confirms support. On supported servers it adds:
 
 - an invite button to the footer of the existing Simple Voice Chat group screen; it opens a searchable player picker listing everyone connected to voice chat and not in a group, and clicking a player sends the invite;
 - a gold crown next to the current group leader;
 - a remove button next to each other group member's existing volume slider when the local player is the current leader; it executes `/voicegroup kick <player>`;
 - a request button on the password screen of a locked group; it executes `/voicegroup request <group UUID>` so the player can knock without knowing the password.
 
-The server still performs every permission, leadership, membership, and live-state check. The client sends only a versioned capability message; it never sends a player or leader UUID. Installing or modifying the client cannot grant kick authority. Players without the client addon retain the complete command workflow. Invite acceptance stays in the existing clickable server chat message because an invited player is not yet inside the group screen.
+The server still performs every permission, leadership, membership, and live-state check. Protocol negotiation carries only version bytes; the client never sends a group or leader UUID. Installing or modifying the client cannot grant kick authority. Players without the client addon retain the complete command workflow. Invite acceptance stays in the existing clickable server chat message because an invited player is not yet inside the group screen.
 
 ## Releases
 
@@ -78,15 +78,21 @@ The player observed in `CreateGroupEvent#getConnection()` becomes the initial le
 
 A transient Simple Voice Chat connection loss does not change leadership: Simple Voice Chat keeps the player's group UUID and marks only the voice connection as disconnected. Membership-changing events and Bukkit player quit are handled idempotently, so duplicate leave/disconnect signals are harmless.
 
-## Leader sync protocol
+## Client-server protocol
 
-The server plugin and the client mod exchange two plugin messages: the client sends a one-byte versioned `svc_better_groups:hello`, and the server answers on `svc_better_groups:leader_state` with a version byte, a flags byte, and optional group and leader UUIDs. This byte layout is the compatibility contract between the two components. It is pinned by golden vectors in `LeaderSyncProtocolTest`, and the Fabric payload codecs must match those vectors exactly.
+The server plugin and client mod use three versioned plugin messages:
+
+- `svc_better_groups:client_hello` — client to server, one requested protocol-version byte;
+- `svc_better_groups:server_hello` — server to client, one selected protocol-version byte and no group state;
+- `svc_better_groups:group_state` — server to client, version and flags followed by optional group and leader UUIDs.
+
+After negotiation, the server sends an initial `group_state` only when the player is already in a group. Later membership and leadership transitions send updated state to affected compatible clients. Leaving a group sends an empty state because the client must clear its previous group cache. The byte layouts are pinned by golden vectors in `GroupSyncProtocolTest`, and the Fabric payload codecs must match those vectors exactly.
 
 Evolution rules:
 
-- Version 1 byte semantics never change. Any format change ships as a new protocol version, together with an explicit decision about older clients: keep answering them in their format, or stay silent so they degrade to the command workflow.
-- Mixed client versions are the normal operating state, not an error. The server answers only compatible hellos; clients facing an incompatible or absent server keep the complete command workflow and simply show no leader UI.
-- Deploy the server plugin before shipping client updates. A newer client against an older server stays inactive until the server catches up; the reverse pairing is fully supported.
+- Version 2 byte semantics never change. Any format change ships as a new protocol version.
+- The server answers only compatible client hellos. A mismatched or absent server leaves the optional client UI inactive while the normal command workflow remains available.
+- Deploy the server plugin before shipping the matching client update. The UI becomes available only after `server_hello` confirms the selected protocol version.
 
 ## Configuration
 

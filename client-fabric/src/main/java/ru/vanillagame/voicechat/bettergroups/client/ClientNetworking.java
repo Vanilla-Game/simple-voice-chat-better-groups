@@ -4,37 +4,51 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.networking.v1.ServerboundPlayChannelEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
-import ru.vanillagame.voicechat.bettergroups.client.network.HelloPayload;
-import ru.vanillagame.voicechat.bettergroups.client.network.LeaderStatePayload;
+import ru.vanillagame.voicechat.bettergroups.client.network.ClientHelloPayload;
+import ru.vanillagame.voicechat.bettergroups.client.network.GroupStatePayload;
+import ru.vanillagame.voicechat.bettergroups.client.network.ServerHelloPayload;
 
 public final class ClientNetworking {
 
-    private static final int PROTOCOL_VERSION = 1;
+    private static final int PROTOCOL_VERSION = 2;
 
-    private static boolean helloSent;
+    private static boolean clientHelloSent;
 
     private ClientNetworking() {
     }
 
     public static void initialize() {
-        PayloadTypeRegistry.serverboundPlay().register(HelloPayload.TYPE, HelloPayload.CODEC);
-        PayloadTypeRegistry.clientboundPlay().register(LeaderStatePayload.TYPE, LeaderStatePayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(ClientHelloPayload.TYPE, ClientHelloPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(ServerHelloPayload.TYPE, ServerHelloPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(GroupStatePayload.TYPE, GroupStatePayload.CODEC);
 
-        ClientPlayNetworking.registerGlobalReceiver(LeaderStatePayload.TYPE, (payload, context) ->
+        ClientPlayNetworking.registerGlobalReceiver(ServerHelloPayload.TYPE, (payload, context) ->
                 context.client().execute(() -> {
                     if (payload.protocolVersion() == PROTOCOL_VERSION) {
-                        LeaderClientState.update(payload);
+                        ServerSupport.confirm();
                     } else {
-                        LeaderClientState.clear();
+                        ServerSupport.clear();
+                        GroupClientState.clear();
+                    }
+                })
+        );
+        ClientPlayNetworking.registerGlobalReceiver(GroupStatePayload.TYPE, (payload, context) ->
+                context.client().execute(() -> {
+                    if (payload.protocolVersion() == PROTOCOL_VERSION && ServerSupport.isAvailable()) {
+                        GroupClientState.update(payload);
+                    } else if (payload.protocolVersion() != PROTOCOL_VERSION) {
+                        ServerSupport.clear();
+                        GroupClientState.clear();
                     }
                 })
         );
 
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) ->
                 client.execute(() -> {
-                    LeaderClientState.clear();
-                    helloSent = false;
-                    sendHelloIfPossible();
+                    ServerSupport.clear();
+                    GroupClientState.clear();
+                    clientHelloSent = false;
+                    sendClientHelloIfPossible();
                 })
         );
         // A Bukkit server announces its plugin channels in a minecraft:register
@@ -42,33 +56,37 @@ public final class ClientNetworking {
         // canSend() == false there. A re-announcement also means the server-side
         // plugin was reloaded and lost its handshake state, so always re-send.
         ServerboundPlayChannelEvents.REGISTER.register((handler, sender, client, channels) -> {
-            if (channels.contains(HelloPayload.TYPE.id())) {
+            if (channels.contains(ClientHelloPayload.TYPE.id())) {
                 client.execute(() -> {
-                    helloSent = false;
-                    sendHelloIfPossible();
+                    ServerSupport.clear();
+                    GroupClientState.clear();
+                    clientHelloSent = false;
+                    sendClientHelloIfPossible();
                 });
             }
         });
         ServerboundPlayChannelEvents.UNREGISTER.register((handler, sender, client, channels) -> {
-            if (channels.contains(HelloPayload.TYPE.id())) {
+            if (channels.contains(ClientHelloPayload.TYPE.id())) {
                 client.execute(() -> {
-                    helloSent = false;
-                    LeaderClientState.clear();
+                    ServerSupport.clear();
+                    clientHelloSent = false;
+                    GroupClientState.clear();
                 });
             }
         });
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
                 client.execute(() -> {
-                    LeaderClientState.clear();
-                    helloSent = false;
+                    ServerSupport.clear();
+                    GroupClientState.clear();
+                    clientHelloSent = false;
                 })
         );
     }
 
-    private static void sendHelloIfPossible() {
-        if (!helloSent && ClientPlayNetworking.canSend(HelloPayload.TYPE)) {
-            helloSent = true;
-            ClientPlayNetworking.send(new HelloPayload(PROTOCOL_VERSION));
+    private static void sendClientHelloIfPossible() {
+        if (!clientHelloSent && ClientPlayNetworking.canSend(ClientHelloPayload.TYPE)) {
+            clientHelloSent = true;
+            ClientPlayNetworking.send(new ClientHelloPayload(PROTOCOL_VERSION));
         }
     }
 }
