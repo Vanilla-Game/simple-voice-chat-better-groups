@@ -38,10 +38,22 @@ public class InvitePlayerScreen extends VoiceChatScreenBase {
     protected EditBox searchBox;
     protected String lastSearch;
     protected int units;
+    protected int refreshTimer;
 
     public InvitePlayerScreen() {
         super(TITLE, 236, 0);
         this.lastSearch = "";
+    }
+
+    // Simple Voice Chat pushes state updates only to its own screens, so this
+    // one refreshes by polling the client state registry once a second.
+    @Override
+    public void tick() {
+        super.tick();
+        if (++refreshTimer >= 20) {
+            refreshTimer = 0;
+            playerList.updateEntryList();
+        }
     }
 
     @Override
