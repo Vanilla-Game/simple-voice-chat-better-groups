@@ -1,0 +1,4 @@
+{
+  "gui.svc_group_management.invite": "Пригласить игрока",
+  "gui.svc_group_management.kick": "Исключить %s из голосовой группы (только лидер)"
+}

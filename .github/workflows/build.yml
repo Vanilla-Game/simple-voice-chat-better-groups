@@ -31,7 +31,7 @@ jobs:
       - name: Upload server and client jars
         uses: actions/upload-artifact@v6
         with:
-          name: voicechat-group-tools-${{ github.sha }}
+          name: simple-voice-chat-group-management-${{ github.sha }}
           path: |
             build/libs/*.jar
             client-fabric/build/libs/*.jar

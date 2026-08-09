@@ -1,28 +1,29 @@
 {
   "schemaVersion": 1,
-  "id": "voicechat_group_tools_client",
+  "id": "svc_group_management_client",
   "version": "${version}",
-  "name": "Voice Chat Group Tools Client",
-  "description": "Adds Vanilla Game group actions to the existing Simple Voice Chat group screen.",
+  "name": "Simple Voice Chat Group Management (Client)",
+  "description": "Adds Vanilla Game group actions and current-leader status to the Simple Voice Chat group screen.",
   "authors": [
     "Vanilla Game"
   ],
   "contact": {
     "homepage": "https://vanilla-game.ru",
-    "sources": "https://github.com/Vanilla-Game/voicechat-group-tools"
+    "sources": "https://github.com/Vanilla-Game/simple-voice-chat-group-management"
   },
   "license": "All-Rights-Reserved",
   "environment": "client",
   "entrypoints": {
     "client": [
-      "ru.vanillagame.voicechat.grouptools.client.VoiceChatGroupToolsClient"
+      "ru.vanillagame.voicechat.groupmanagement.client.SvcGroupManagementClient"
     ]
   },
   "mixins": [
-    "voicechat-group-tools-client.mixins.json"
+    "svc-group-management-client.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=0.19.3",
+    "fabric-api": ">=${fabric_api_version}",
     "java": ">=25",
     "minecraft": "${minecraft_version}",
     "voicechat": "${voicechat_range}"

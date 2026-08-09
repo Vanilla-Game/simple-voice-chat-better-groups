@@ -1,17 +1,17 @@
-name: VoiceChatGroupTools
+name: SimpleVoiceChatGroupManagement
 version: "${version}"
-main: ru.vanillagame.voicechat.grouptools.VoiceChatGroupToolsPlugin
+main: ru.vanillagame.voicechat.groupmanagement.SvcGroupManagementPlugin
 api-version: "26.2"
-description: Password-free group invites and creator-authorized group kicks for Simple Voice Chat.
+description: Password-free group invites and leader-authorized group kicks for Simple Voice Chat.
 website: "https://vanilla-game.ru"
 depend: [voicechat]
 
 commands:
   vcgroup:
     description: Manage Simple Voice Chat group invites and members.
-    usage: "/vcgroup <invite <player>|accept <token>|kick <player>>"
+    usage: "/vcgroup <invite <player>|accept <token>|kick <player>|transfer <player>>"
 
 permissions:
-  vanillagame.voicechat_group_tools.use:
-    description: Allows use of /vcgroup. Kick still requires group creator ownership.
+  vanillagame.svc_group_management.use:
+    description: Allows use of /vcgroup. Kick still requires current group leadership.
     default: true
