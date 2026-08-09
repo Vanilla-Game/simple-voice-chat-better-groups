@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "ru.vanillagame.voicechat.bettergroups.client.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "EnterPasswordScreenMixin",
+    "GroupEntryMixin",
+    "GroupScreenMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

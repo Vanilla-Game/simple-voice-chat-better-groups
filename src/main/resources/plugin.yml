@@ -1,6 +1,6 @@
-name: SimpleVoiceChatGroupManagement
+name: SVCBetterGroups
 version: "${version}"
-main: ru.vanillagame.voicechat.groupmanagement.SvcGroupManagementPlugin
+main: ru.vanillagame.voicechat.bettergroups.BetterGroupsPlugin
 api-version: "26.2"
 description: Password-free group invites and leader-authorized group kicks for Simple Voice Chat.
 website: "https://vanilla-game.ru"
@@ -13,6 +13,6 @@ commands:
     aliases: [vcgroup]
 
 permissions:
-  vanillagame.svc_group_management.use:
+  vanillagame.svc_better_groups.use:
     description: Allows use of /voicegroup. Kick still requires current group leadership.
     default: true

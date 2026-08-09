@@ -4,12 +4,12 @@ A Bukkit/Paper addon and companion Fabric client mod for [Simple Voice Chat](htt
 
 Developed for [Vanilla Game](https://vanilla-game.ru).
 
-The plugin ID used with the Simple Voice Chat API is `vanilla_game_svc_group_management`.
+The plugin ID used with the Simple Voice Chat API is `vanilla_game_svc_better_groups`.
 
 The repository builds two separate artifacts:
 
-- `build/libs/simple-voice-chat-group-management-<version>.jar` — the authoritative Paper/Leaf server plugin.
-- `client-fabric/build/libs/simple-voice-chat-group-management-fabric-<version>.jar` — the optional Fabric client UI addon.
+- `build/libs/svc-better-groups-<version>.jar` — the authoritative Paper/Leaf server plugin.
+- `client-fabric/build/libs/svc-better-groups-fabric-<version>.jar` — the optional Fabric client UI addon.
 
 ## Requirements and version choices
 
@@ -32,7 +32,7 @@ The Fabric module intentionally targets Simple Voice Chat's client UI classes fo
 
 1. Install Simple Voice Chat 2.6.21 on the server.
 2. Build this plugin with `./gradlew build`.
-3. Copy the `build/libs/simple-voice-chat-group-management-*.jar` file into the server's `plugins` directory.
+3. Copy the `build/libs/svc-better-groups-*.jar` file into the server's `plugins` directory.
 4. Restart the server. A full restart is recommended instead of Bukkit plugin reload tools.
 
 The plugin declares a hard dependency on `voicechat`. If Simple Voice Chat is missing, the server will not load this plugin. If its `BukkitVoicechatService` is unexpectedly unavailable, this plugin logs a severe error and disables itself.
@@ -40,7 +40,7 @@ The plugin declares a hard dependency on `voicechat`. If Simple Voice Chat is mi
 ### Optional Fabric client
 
 1. Install Fabric Loader, Fabric API, and Simple Voice Chat `2.6.21` for Minecraft `26.2` on the client.
-2. Copy `client-fabric/build/libs/simple-voice-chat-group-management-fabric-*.jar` into the client's `mods` directory.
+2. Copy `client-fabric/build/libs/svc-better-groups-fabric-*.jar` into the client's `mods` directory.
 3. Connect to a server that runs the matching Paper plugin.
 
 The client addon checks the server command tree for the `vcgroup` alias — the stable wire name it also uses when sending commands — and changes nothing when it is unavailable. On supported servers it adds:
@@ -54,7 +54,7 @@ The server still performs every permission, leadership, membership, and live-sta
 
 ## Releases
 
-Releases follow the same Release Please workflow used by other Vanilla Game plugins, with the server plugin and the client mod versioned independently. Commits touching the repository outside `client-fabric/` attribute to the server plugin; commits touching `client-fabric/` attribute to the client mod. Each component gets its own release pull request, changelog, and GitHub Release: the server releases as `simple-voice-chat-group-management-v<version>` with the server jar attached, the client as `simple-voice-chat-group-management-fabric-v<version>` with the Fabric jar attached.
+Releases follow the same Release Please workflow used by other Vanilla Game plugins, with the server plugin and the client mod versioned independently. Commits touching the repository outside `client-fabric/` attribute to the server plugin; commits touching `client-fabric/` attribute to the client mod. Each component gets its own release pull request, changelog, and GitHub Release: the server releases as `svc-better-groups-v<version>` with the server jar attached, the client as `svc-better-groups-fabric-v<version>` with the Fabric jar attached.
 
 Each component starts at `0.1.0`. Pull request titles are checked for Conventional Commit format, and every pull request to `main` runs the Gradle build and unit tests.
 
@@ -80,7 +80,7 @@ A transient Simple Voice Chat connection loss does not change leadership: Simple
 
 ## Leader sync protocol
 
-The server plugin and the client mod exchange two plugin messages: the client sends a one-byte versioned `svc_group_management:hello`, and the server answers on `svc_group_management:leader_state` with a version byte, a flags byte, and optional group and leader UUIDs. This byte layout is the compatibility contract between the two components. It is pinned by golden vectors in `LeaderSyncProtocolTest`, and the Fabric payload codecs must match those vectors exactly.
+The server plugin and the client mod exchange two plugin messages: the client sends a one-byte versioned `svc_better_groups:hello`, and the server answers on `svc_better_groups:leader_state` with a version byte, a flags byte, and optional group and leader UUIDs. This byte layout is the compatibility contract between the two components. It is pinned by golden vectors in `LeaderSyncProtocolTest`, and the Fabric payload codecs must match those vectors exactly.
 
 Evolution rules:
 
@@ -90,7 +90,7 @@ Evolution rules:
 
 ## Configuration
 
-The generated `plugins/SimpleVoiceChatGroupManagement/config.yml` file contains:
+The generated `plugins/SVCBetterGroups/config.yml` file contains:
 
 ```yaml
 invites:
@@ -108,7 +108,7 @@ requests:
 
 ## Permission
 
-- `vanillagame.svc_group_management.use` — allows `/voicegroup`; granted to all players by default. This permission does not grant kick authority: `/voicegroup kick` always checks the current leader UUID for the exact group.
+- `vanillagame.svc_better_groups.use` — allows `/voicegroup`; granted to all players by default. This permission does not grant kick authority: `/voicegroup kick` always checks the current leader UUID for the exact group.
 
 ## Localization
 
@@ -138,7 +138,7 @@ Two workflows consume it:
 - Every pull request re-checks the client against every version in `voicechat.tested` (compile plus a headless client launch that force-loads both mixin target classes; `required: true` with `defaultRequire: 1` turns any missing injection point into a non-zero exit). This guards our own changes as much as Simple Voice Chat updates.
 - A daily discovery workflow queries the Modrinth API for new Simple Voice Chat Fabric releases for the targeted Minecraft version, runs the same harness against them, and opens a draft `fix:` pull request that widens `voicechat.range` and extends `voicechat.tested` across the contiguous green prefix only. A red version is never skipped, and the prefix never crosses a minor-version boundary — a shipped range must not cover an untested gap that a later backport could land in, so moving to a new Simple Voice Chat minor line is a manual decision. `voicechat.compile` is never bumped automatically. The `fix:` type makes release-please ship the widened range in a patch release of the client mod; the server plugin is versioned independently and is not re-released.
 
-The compatibility harness builds a test-only flavor (`-PvoicechatCompatCheck`) that relaxes the `fabric.mod.json` range to `*` — otherwise Fabric Loader would reject a candidate version before mixins are even applied — and renames the jar to `simple-voice-chat-group-management-fabric-compat-test-<version>.jar`. This flavor exists only inside the compatibility jobs and is never uploaded as an artifact or attached to releases.
+The compatibility harness builds a test-only flavor (`-PvoicechatCompatCheck`) that relaxes the `fabric.mod.json` range to `*` — otherwise Fabric Loader would reject a candidate version before mixins are even applied — and renames the jar to `svc-better-groups-fabric-compat-test-<version>.jar`. This flavor exists only inside the compatibility jobs and is never uploaded as an artifact or attached to releases.
 
 ## Development
 

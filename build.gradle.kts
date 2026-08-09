@@ -53,7 +53,7 @@ tasks.test {
 }
 
 tasks.jar {
-    archiveBaseName = "simple-voice-chat-group-management"
+    archiveBaseName = "svc-better-groups"
 }
 
 tasks.named("build") {

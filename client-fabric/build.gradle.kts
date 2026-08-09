@@ -24,8 +24,8 @@ val voicechatRange: String =
 
 base {
     archivesName =
-        if (compatCheck) "simple-voice-chat-group-management-fabric-compat-test"
-        else "simple-voice-chat-group-management-fabric"
+        if (compatCheck) "svc-better-groups-fabric-compat-test"
+        else "svc-better-groups-fabric"
 }
 
 repositories {
@@ -76,6 +76,6 @@ tasks.processResources {
 
 if (compatCheck) {
     loom.runs.named("client") {
-        systemProperties.put("svc_group_management.compat_check", "true")
+        systemProperties.put("svc_better_groups.compat_check", "true")
     }
 }
