@@ -1,0 +1,7 @@
+{
+  "gui.svc_better_groups.invite": "Bjud in spelare",
+  "gui.svc_better_groups.kick": "Ta bort %s från röstgruppen (endast ledaren)",
+  "gui.svc_better_groups.request": "Kan du inte lösenordet? Be gruppledaren att släppa in dig.",
+  "gui.svc_better_groups.invite_screen_title": "Bjud in en spelare",
+  "gui.svc_better_groups.invite_screen_empty": "Det finns ingen att bjuda in just nu."
+}

@@ -1,0 +1,7 @@
+{
+  "gui.svc_better_groups.invite": "Oyuncu davet et",
+  "gui.svc_better_groups.kick": "%s adlı oyuncuyu ses grubundan çıkar (yalnızca lider)",
+  "gui.svc_better_groups.request": "Parolayı bilmiyor musunuz? Grup liderinden sizi içeri almasını isteyin.",
+  "gui.svc_better_groups.invite_screen_title": "Bir oyuncu davet et",
+  "gui.svc_better_groups.invite_screen_empty": "Şu anda davet edilecek kimse yok."
+}

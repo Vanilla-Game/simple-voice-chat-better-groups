@@ -1,0 +1,7 @@
+{
+  "gui.svc_better_groups.invite": "Inviter un joueur",
+  "gui.svc_better_groups.kick": "Exclure %s du groupe vocal (responsable uniquement)",
+  "gui.svc_better_groups.request": "Vous ne connaissez pas le mot de passe ? Demandez au responsable du groupe de vous laisser entrer.",
+  "gui.svc_better_groups.invite_screen_title": "Inviter un joueur",
+  "gui.svc_better_groups.invite_screen_empty": "Personne ne peut être invité pour le moment."
+}

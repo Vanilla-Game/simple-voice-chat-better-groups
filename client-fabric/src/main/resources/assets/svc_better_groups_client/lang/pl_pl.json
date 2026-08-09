@@ -1,0 +1,7 @@
+{
+  "gui.svc_better_groups.invite": "Zaproś gracza",
+  "gui.svc_better_groups.kick": "Usuń gracza %s z grupy głosowej (tylko lider)",
+  "gui.svc_better_groups.request": "Nie znasz hasła? Poproś lidera grupy o wpuszczenie.",
+  "gui.svc_better_groups.invite_screen_title": "Zaproś gracza",
+  "gui.svc_better_groups.invite_screen_empty": "Nie ma teraz nikogo do zaproszenia."
+}

@@ -34,4 +34,4 @@ Everything works from chat, no client mod needed:
 
 ---
 
-*Minecraft 26.2 · Simple Voice Chat 2.6.18+ · English & Russian, matches your game language*
+*Minecraft 26.2 · Simple Voice Chat 2.6.18+ · 15 languages, matches your game language*
