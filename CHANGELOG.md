@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.0](https://github.com/Vanilla-Game/simple-voice-chat-group-management/compare/simple-voice-chat-group-management-v0.2.0...simple-voice-chat-group-management-v0.3.0) (2026-08-09)
+
+
+### Features
+
+* add join requests for password-protected groups ([#16](https://github.com/Vanilla-Game/simple-voice-chat-group-management/issues/16)) ([e79fad7](https://github.com/Vanilla-Game/simple-voice-chat-group-management/commit/e79fad76555615a029f94324de5543ea84b1bbaf))
+* add voice group leadership with client sync ([#13](https://github.com/Vanilla-Game/simple-voice-chat-group-management/issues/13)) ([4195a54](https://github.com/Vanilla-Game/simple-voice-chat-group-management/commit/4195a54ff8a2a50b48ab5e49b347f481081841e9))
+
 ## [0.2.0](https://github.com/Vanilla-Game/simple-voice-chat-group-management/compare/simple-voice-chat-group-management-v0.1.0...simple-voice-chat-group-management-v0.2.0) (2026-08-08)
 
 
