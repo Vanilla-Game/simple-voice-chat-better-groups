@@ -5,7 +5,7 @@ plugins {
 }
 
 group = rootProject.group
-version = "0.3.0" // x-release-please-version
+version = rootProject.version
 
 val compatibility = Properties().apply {
     file("compatibility.properties").inputStream().use { load(it) }
