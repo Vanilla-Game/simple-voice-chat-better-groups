@@ -10,53 +10,53 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class LeaderSyncProtocolTest {
+class GroupSyncProtocolTest {
 
-    // Golden vectors: the version 1 wire format shared with the Fabric client
-    // payload codecs (HelloPayload, LeaderStatePayload). Deployed clients parse
-    // exactly these bytes, so a change that breaks these assertions breaks
-    // players in the wild — never edit the vectors; bump
-    // LeaderSyncProtocol.VERSION and add new vectors instead.
+    // Golden vectors: the version 2 wire format shared with the Fabric client
+    // payload codecs. Deployed clients parse exactly these bytes, so a wire
+    // change requires a new GroupSyncProtocol.VERSION and new vectors.
     @Test
-    void goldenVectorsPinTheVersion1WireFormat() {
+    void goldenVectorsPinTheVersion2WireFormat() {
         UUID groupId = UUID.fromString("00000000-0000-0000-0000-000000000001");
         UUID leaderId = UUID.fromString("00000000-0000-0000-0000-000000000002");
 
-        assertTrue(LeaderSyncProtocol.isCompatibleHello(HexFormat.of().parseHex("01")));
+        assertTrue(GroupSyncProtocol.isCompatibleClientHello(HexFormat.of().parseHex("02")));
+        assertArrayEquals(HexFormat.of().parseHex("02"), GroupSyncProtocol.encodeServerHello());
         assertArrayEquals(
-                HexFormat.of().parseHex("0100"),
-                LeaderSyncProtocol.encode(GroupLeadershipRegistry.PlayerLeadershipState.notInGroup())
+                HexFormat.of().parseHex("0200"),
+                GroupSyncProtocol.encodeGroupState(
+                        GroupLeadershipRegistry.PlayerLeadershipState.notInGroup())
         );
         assertArrayEquals(
-                HexFormat.of().parseHex("0101" + "00000000000000000000000000000001"),
-                LeaderSyncProtocol.encode(
+                HexFormat.of().parseHex("0201" + "00000000000000000000000000000001"),
+                GroupSyncProtocol.encodeGroupState(
                         new GroupLeadershipRegistry.PlayerLeadershipState(groupId, null))
         );
         assertArrayEquals(
                 HexFormat.of().parseHex(
-                        "0103"
+                        "0203"
                                 + "00000000000000000000000000000001"
                                 + "00000000000000000000000000000002"),
-                LeaderSyncProtocol.encode(
+                GroupSyncProtocol.encodeGroupState(
                         new GroupLeadershipRegistry.PlayerLeadershipState(groupId, leaderId))
         );
     }
 
     @Test
-    void helloRequiresExactlyOneSupportedVersionByte() {
-        assertTrue(LeaderSyncProtocol.isCompatibleHello(new byte[]{1}));
-        assertFalse(LeaderSyncProtocol.isCompatibleHello(new byte[]{}));
-        assertFalse(LeaderSyncProtocol.isCompatibleHello(new byte[]{2}));
-        assertFalse(LeaderSyncProtocol.isCompatibleHello(new byte[]{1, 0}));
-        assertFalse(LeaderSyncProtocol.isCompatibleHello(null));
+    void clientHelloRequiresExactlyOneSupportedVersionByte() {
+        assertTrue(GroupSyncProtocol.isCompatibleClientHello(new byte[]{2}));
+        assertFalse(GroupSyncProtocol.isCompatibleClientHello(new byte[]{}));
+        assertFalse(GroupSyncProtocol.isCompatibleClientHello(new byte[]{1}));
+        assertFalse(GroupSyncProtocol.isCompatibleClientHello(new byte[]{2, 0}));
+        assertFalse(GroupSyncProtocol.isCompatibleClientHello(null));
     }
 
     @Test
-    void stateEncodingIncludesVersionFlagsGroupAndLeader() {
+    void groupStateEncodingIncludesVersionFlagsGroupAndLeader() {
         UUID groupId = UUID.randomUUID();
         UUID leaderId = UUID.randomUUID();
         ByteBuffer expected = ByteBuffer.allocate(34)
-                .put((byte) 1)
+                .put((byte) 2)
                 .put((byte) 3)
                 .putLong(groupId.getMostSignificantBits())
                 .putLong(groupId.getLeastSignificantBits())
@@ -65,7 +65,7 @@ class LeaderSyncProtocolTest {
 
         assertArrayEquals(
                 expected.array(),
-                LeaderSyncProtocol.encode(
+                GroupSyncProtocol.encodeGroupState(
                         new GroupLeadershipRegistry.PlayerLeadershipState(groupId, leaderId)
                 )
         );
@@ -77,18 +77,19 @@ class LeaderSyncProtocolTest {
 
         assertArrayEquals(
                 ByteBuffer.allocate(18)
-                        .put((byte) 1)
+                        .put((byte) 2)
                         .put((byte) 1)
                         .putLong(groupId.getMostSignificantBits())
                         .putLong(groupId.getLeastSignificantBits())
                         .array(),
-                LeaderSyncProtocol.encode(
+                GroupSyncProtocol.encodeGroupState(
                         new GroupLeadershipRegistry.PlayerLeadershipState(groupId, null)
                 )
         );
         assertArrayEquals(
-                new byte[]{1, 0},
-                LeaderSyncProtocol.encode(GroupLeadershipRegistry.PlayerLeadershipState.notInGroup())
+                new byte[]{2, 0},
+                GroupSyncProtocol.encodeGroupState(
+                        GroupLeadershipRegistry.PlayerLeadershipState.notInGroup())
         );
     }
 }

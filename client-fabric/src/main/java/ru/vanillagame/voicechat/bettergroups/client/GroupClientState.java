@@ -1,19 +1,19 @@
 package ru.vanillagame.voicechat.bettergroups.client;
 
 import de.maxhenkel.voicechat.voice.client.ClientManager;
-import ru.vanillagame.voicechat.bettergroups.client.network.LeaderStatePayload;
+import ru.vanillagame.voicechat.bettergroups.client.network.GroupStatePayload;
 
 import java.util.UUID;
 
-public final class LeaderClientState {
+public final class GroupClientState {
 
     private static UUID groupId;
     private static UUID leaderId;
 
-    private LeaderClientState() {
+    private GroupClientState() {
     }
 
-    public static void update(LeaderStatePayload payload) {
+    public static void update(GroupStatePayload payload) {
         groupId = payload.groupId();
         leaderId = payload.leaderId();
     }

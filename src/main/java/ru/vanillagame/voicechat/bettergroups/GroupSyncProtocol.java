@@ -3,30 +3,36 @@ package ru.vanillagame.voicechat.bettergroups;
 import java.nio.ByteBuffer;
 import java.util.UUID;
 
-// Wire format (version 1), shared with the Fabric client payload codecs:
-//   hello:        [version u8]
-//   leader_state: [version u8][flags u8][group uuid][leader uuid]
+// Wire format (version 2), shared with the Fabric client payload codecs:
+//   client_hello: [version u8]
+//   server_hello: [selected version u8]
+//   group_state:  [version u8][flags u8][group uuid][leader uuid]
 // flags bit 0 = in group (group uuid present), bit 1 = leader known (leader
 // uuid present); a uuid is two big-endian longs. The format is pinned by the
-// golden vectors in LeaderSyncProtocolTest: version 1 semantics never change,
+// golden vectors in GroupSyncProtocolTest: version 2 semantics never change,
 // any format change ships as a new VERSION.
-final class LeaderSyncProtocol {
+final class GroupSyncProtocol {
 
-    static final int VERSION = 1;
-    static final String HELLO_CHANNEL = "svc_better_groups:hello";
-    static final String STATE_CHANNEL = "svc_better_groups:leader_state";
+    static final int VERSION = 2;
+    static final String CLIENT_HELLO_CHANNEL = "svc_better_groups:client_hello";
+    static final String SERVER_HELLO_CHANNEL = "svc_better_groups:server_hello";
+    static final String GROUP_STATE_CHANNEL = "svc_better_groups:group_state";
 
     private static final int FLAG_IN_GROUP = 1;
     private static final int FLAG_LEADER_KNOWN = 1 << 1;
 
-    private LeaderSyncProtocol() {
+    private GroupSyncProtocol() {
     }
 
-    static boolean isCompatibleHello(byte[] message) {
+    static boolean isCompatibleClientHello(byte[] message) {
         return message != null && message.length == 1 && Byte.toUnsignedInt(message[0]) == VERSION;
     }
 
-    static byte[] encode(GroupLeadershipRegistry.PlayerLeadershipState state) {
+    static byte[] encodeServerHello() {
+        return new byte[]{VERSION};
+    }
+
+    static byte[] encodeGroupState(GroupLeadershipRegistry.PlayerLeadershipState state) {
         int flags = 0;
         int size = 2;
         if (state.inGroup()) {

@@ -10,22 +10,23 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-final class LeaderSyncService implements PluginMessageListener {
+final class GroupSyncService implements PluginMessageListener {
 
     private final BetterGroupsPlugin plugin;
     private final GroupLeadershipRegistry leadership;
     private final Set<UUID> compatibleClients = new HashSet<>();
     private boolean registered;
 
-    LeaderSyncService(BetterGroupsPlugin plugin, GroupLeadershipRegistry leadership) {
+    GroupSyncService(BetterGroupsPlugin plugin, GroupLeadershipRegistry leadership) {
         this.plugin = plugin;
         this.leadership = leadership;
     }
 
     void register() {
         Messenger messenger = plugin.getServer().getMessenger();
-        messenger.registerIncomingPluginChannel(plugin, LeaderSyncProtocol.HELLO_CHANNEL, this);
-        messenger.registerOutgoingPluginChannel(plugin, LeaderSyncProtocol.STATE_CHANNEL);
+        messenger.registerIncomingPluginChannel(plugin, GroupSyncProtocol.CLIENT_HELLO_CHANNEL, this);
+        messenger.registerOutgoingPluginChannel(plugin, GroupSyncProtocol.SERVER_HELLO_CHANNEL);
+        messenger.registerOutgoingPluginChannel(plugin, GroupSyncProtocol.GROUP_STATE_CHANNEL);
         registered = true;
     }
 
@@ -34,21 +35,26 @@ final class LeaderSyncService implements PluginMessageListener {
             return;
         }
         Messenger messenger = plugin.getServer().getMessenger();
-        messenger.unregisterIncomingPluginChannel(plugin, LeaderSyncProtocol.HELLO_CHANNEL, this);
-        messenger.unregisterOutgoingPluginChannel(plugin, LeaderSyncProtocol.STATE_CHANNEL);
+        messenger.unregisterIncomingPluginChannel(plugin, GroupSyncProtocol.CLIENT_HELLO_CHANNEL, this);
+        messenger.unregisterOutgoingPluginChannel(plugin, GroupSyncProtocol.SERVER_HELLO_CHANNEL);
+        messenger.unregisterOutgoingPluginChannel(plugin, GroupSyncProtocol.GROUP_STATE_CHANNEL);
         compatibleClients.clear();
         registered = false;
     }
 
     @Override
     public void onPluginMessageReceived(String channel, Player player, byte[] message) {
-        if (!LeaderSyncProtocol.HELLO_CHANNEL.equals(channel)
-                || !LeaderSyncProtocol.isCompatibleHello(message)) {
+        if (!GroupSyncProtocol.CLIENT_HELLO_CHANNEL.equals(channel)
+                || !GroupSyncProtocol.isCompatibleClientHello(message)) {
             return;
         }
 
         compatibleClients.add(player.getUniqueId());
-        sendCurrentState(player);
+        sendServerHello(player);
+        GroupLeadershipRegistry.PlayerLeadershipState state = leadership.stateFor(player.getUniqueId());
+        if (state.inGroup()) {
+            sendGroupState(player, state);
+        }
     }
 
     void publish(GroupLeadershipRegistry.Transition transition) {
@@ -59,7 +65,7 @@ final class LeaderSyncService implements PluginMessageListener {
             transition.affectedPlayerIds().forEach(playerId -> {
                 Player player = Bukkit.getPlayer(playerId);
                 if (player != null && player.isOnline()) {
-                    sendCurrentState(player);
+                    sendCurrentGroupState(player);
                 }
             });
             notifyPromotedLeaders(transition);
@@ -70,12 +76,24 @@ final class LeaderSyncService implements PluginMessageListener {
         compatibleClients.remove(playerId);
     }
 
-    private void sendCurrentState(Player player) {
+    private void sendServerHello(Player player) {
+        player.sendPluginMessage(
+                plugin,
+                GroupSyncProtocol.SERVER_HELLO_CHANNEL,
+                GroupSyncProtocol.encodeServerHello()
+        );
+    }
+
+    private void sendCurrentGroupState(Player player) {
         if (!compatibleClients.contains(player.getUniqueId())) {
             return;
         }
-        byte[] message = LeaderSyncProtocol.encode(leadership.stateFor(player.getUniqueId()));
-        player.sendPluginMessage(plugin, LeaderSyncProtocol.STATE_CHANNEL, message);
+        sendGroupState(player, leadership.stateFor(player.getUniqueId()));
+    }
+
+    private void sendGroupState(Player player, GroupLeadershipRegistry.PlayerLeadershipState state) {
+        byte[] message = GroupSyncProtocol.encodeGroupState(state);
+        player.sendPluginMessage(plugin, GroupSyncProtocol.GROUP_STATE_CHANNEL, message);
     }
 
     private void notifyPromotedLeaders(GroupLeadershipRegistry.Transition transition) {

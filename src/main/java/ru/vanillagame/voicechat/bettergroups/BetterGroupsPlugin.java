@@ -20,7 +20,7 @@ public final class BetterGroupsPlugin extends JavaPlugin implements Listener {
     private RequestStore requests;
     private InviteCooldownStore requestCooldowns;
     private GroupLeadershipRegistry leadership;
-    private LeaderSyncService leaderSync;
+    private GroupSyncService groupSync;
     private JoinNotifier joinNotifier;
     private PluginTranslations translations;
 
@@ -33,7 +33,7 @@ public final class BetterGroupsPlugin extends JavaPlugin implements Listener {
         requests = new RequestStore(clock, settings.requestExpiration());
         requestCooldowns = new InviteCooldownStore(clock, settings.requestCooldown());
         leadership = new GroupLeadershipRegistry();
-        leaderSync = new LeaderSyncService(this, leadership);
+        groupSync = new GroupSyncService(this, leadership);
         joinNotifier = new JoinNotifier(this, leadership);
 
         BukkitVoicechatService service = getServer().getServicesManager().load(BukkitVoicechatService.class);
@@ -72,7 +72,7 @@ public final class BetterGroupsPlugin extends JavaPlugin implements Listener {
         command.setExecutor(commandHandler);
         command.setTabCompleter(commandHandler);
 
-        leaderSync.register();
+        groupSync.register();
         getServer().getPluginManager().registerEvents(this, this);
         getServer().getScheduler().runTaskTimer(this, this::cleanupExpiredState, 20L * 60L, 20L * 60L);
         getLogger().info("Simple Voice Chat Group Management enabled.");
@@ -84,8 +84,8 @@ public final class BetterGroupsPlugin extends JavaPlugin implements Listener {
             translations.unregister();
         }
         clearVoicechatState();
-        if (leaderSync != null) {
-            leaderSync.unregister();
+        if (groupSync != null) {
+            groupSync.unregister();
         }
     }
 
@@ -95,8 +95,8 @@ public final class BetterGroupsPlugin extends JavaPlugin implements Listener {
         if (leadership != null) {
             publishLeadership(leadership.disconnect(playerId));
         }
-        if (leaderSync != null) {
-            leaderSync.forget(playerId);
+        if (groupSync != null) {
+            groupSync.forget(playerId);
         }
         if (invites != null) {
             invites.invalidatePlayer(playerId);
@@ -150,8 +150,8 @@ public final class BetterGroupsPlugin extends JavaPlugin implements Listener {
     }
 
     void publishLeadership(GroupLeadershipRegistry.Transition transition) {
-        if (leaderSync != null) {
-            leaderSync.publish(transition);
+        if (groupSync != null) {
+            groupSync.publish(transition);
         }
     }
 
