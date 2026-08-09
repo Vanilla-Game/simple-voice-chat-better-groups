@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/compare/simple-voice-chat-group-management-v0.4.0...simple-voice-chat-group-management-v0.5.0) (2026-08-09)
+
+
+### Features
+
+* rename the command to /voicegroup with a permanent /vcgroup alias ([#24](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/issues/24)) ([161772a](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/commit/161772a9b6615c57040d95ae1d93fedf0d0b6864))
+
 ## [0.4.0](https://github.com/Vanilla-Game/simple-voice-chat-group-management/compare/simple-voice-chat-group-management-v0.3.0...simple-voice-chat-group-management-v0.4.0) (2026-08-09)
 
 
