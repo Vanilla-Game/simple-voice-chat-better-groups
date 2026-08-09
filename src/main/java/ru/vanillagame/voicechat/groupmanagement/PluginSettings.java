@@ -7,10 +7,13 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.time.Duration;
 
-// requestSound is a validated sound event key, or null when disabled.
+// Sound values are validated sound event keys, or null when disabled.
 record PluginSettings(
         int inviteExpirationMinutes,
         int inviteCooldownSeconds,
+        String inviteSound,
+        float inviteSoundVolume,
+        float inviteSoundPitch,
         int requestExpirationMinutes,
         int requestCooldownSeconds,
         String requestSound,
@@ -22,12 +25,13 @@ record PluginSettings(
     static final int DEFAULT_INVITE_COOLDOWN_SECONDS = 10;
     static final int DEFAULT_REQUEST_EXPIRATION_MINUTES = 5;
     static final int DEFAULT_REQUEST_COOLDOWN_SECONDS = 30;
-    static final String DEFAULT_REQUEST_SOUND = "block.anvil.land";
-    static final float DEFAULT_REQUEST_SOUND_VOLUME = 0.5F;
-    static final float DEFAULT_REQUEST_SOUND_PITCH = 2.0F;
+    static final String DEFAULT_SOUND = "block.anvil.land";
+    static final float DEFAULT_SOUND_VOLUME = 0.5F;
+    static final float DEFAULT_SOUND_PITCH = 2.0F;
 
     private static final String INVITE_EXPIRATION_PATH = "invites.expiration-minutes";
     private static final String INVITE_COOLDOWN_PATH = "invites.cooldown-seconds";
+    private static final String INVITE_SOUND_PATH = "invites.sound";
     private static final String REQUEST_EXPIRATION_PATH = "requests.expiration-minutes";
     private static final String REQUEST_COOLDOWN_PATH = "requests.cooldown-seconds";
     private static final String REQUEST_SOUND_PATH = "requests.sound";
@@ -50,15 +54,19 @@ record PluginSettings(
     static PluginSettings load(JavaPlugin plugin) {
         plugin.saveDefaultConfig();
         FileConfiguration config = plugin.getConfig();
-        SoundSetting sound = readSound(plugin, config);
+        SoundSetting inviteSound = readSound(plugin, config, INVITE_SOUND_PATH);
+        SoundSetting requestSound = readSound(plugin, config, REQUEST_SOUND_PATH);
         return new PluginSettings(
                 readInt(plugin, config, INVITE_EXPIRATION_PATH, DEFAULT_INVITE_EXPIRATION_MINUTES, 1),
                 readInt(plugin, config, INVITE_COOLDOWN_PATH, DEFAULT_INVITE_COOLDOWN_SECONDS, 0),
+                inviteSound.key(),
+                inviteSound.volume(),
+                inviteSound.pitch(),
                 readInt(plugin, config, REQUEST_EXPIRATION_PATH, DEFAULT_REQUEST_EXPIRATION_MINUTES, 1),
                 readInt(plugin, config, REQUEST_COOLDOWN_PATH, DEFAULT_REQUEST_COOLDOWN_SECONDS, 0),
-                sound.key(),
-                sound.volume(),
-                sound.pitch()
+                requestSound.key(),
+                requestSound.volume(),
+                requestSound.pitch()
         );
     }
 
@@ -85,10 +93,10 @@ record PluginSettings(
     // segments are volume and pitch; the rest is the sound id, which may itself
     // contain one namespace colon (vanilla sound path segments are never purely
     // numeric, so the split is unambiguous).
-    private static SoundSetting readSound(JavaPlugin plugin, FileConfiguration config) {
-        String value = config.getString(REQUEST_SOUND_PATH, DEFAULT_REQUEST_SOUND);
+    private static SoundSetting readSound(JavaPlugin plugin, FileConfiguration config, String path) {
+        String value = config.getString(path, DEFAULT_SOUND);
         if (value == null || value.isBlank() || value.equalsIgnoreCase("none")) {
-            return new SoundSetting(null, DEFAULT_REQUEST_SOUND_VOLUME, DEFAULT_REQUEST_SOUND_PITCH);
+            return new SoundSetting(null, DEFAULT_SOUND_VOLUME, DEFAULT_SOUND_PITCH);
         }
 
         String[] parts = value.split(":");
@@ -107,17 +115,17 @@ record PluginSettings(
         try {
             Key.key(keyValue);
         } catch (InvalidKeyException invalidKey) {
-            warn(plugin, REQUEST_SOUND_PATH, DEFAULT_REQUEST_SOUND,
-                    "must be <sound id>[:volume[:pitch]] like " + DEFAULT_REQUEST_SOUND + ":0.5:2, or none");
-            return new SoundSetting(DEFAULT_REQUEST_SOUND,
-                    DEFAULT_REQUEST_SOUND_VOLUME, DEFAULT_REQUEST_SOUND_PITCH);
+            warn(plugin, path, DEFAULT_SOUND,
+                    "must be <sound id>[:volume[:pitch]] like " + DEFAULT_SOUND + ":0.5:2, or none");
+            return new SoundSetting(DEFAULT_SOUND,
+                    DEFAULT_SOUND_VOLUME, DEFAULT_SOUND_PITCH);
         }
 
-        float volume = DEFAULT_REQUEST_SOUND_VOLUME;
+        float volume = DEFAULT_SOUND_VOLUME;
         if (!numbers.isEmpty()) {
             float candidate = numbers.get(0);
             if (candidate < 0.0F || candidate > 10.0F) {
-                warn(plugin, REQUEST_SOUND_PATH, DEFAULT_REQUEST_SOUND_VOLUME,
+                warn(plugin, path, DEFAULT_SOUND_VOLUME,
                         "volume must be between 0.0 and 10.0");
             } else {
                 volume = candidate;
@@ -125,11 +133,11 @@ record PluginSettings(
         }
         // Minecraft clamps pitch to [0.5, 2.0]; values outside it would be
         // silently distorted, so they are rejected up front.
-        float pitch = DEFAULT_REQUEST_SOUND_PITCH;
+        float pitch = DEFAULT_SOUND_PITCH;
         if (numbers.size() == 2) {
             float candidate = numbers.get(1);
             if (candidate < 0.5F || candidate > 2.0F) {
-                warn(plugin, REQUEST_SOUND_PATH, DEFAULT_REQUEST_SOUND_PITCH,
+                warn(plugin, path, DEFAULT_SOUND_PITCH,
                         "pitch must be between 0.5 and 2.0");
             } else {
                 pitch = candidate;

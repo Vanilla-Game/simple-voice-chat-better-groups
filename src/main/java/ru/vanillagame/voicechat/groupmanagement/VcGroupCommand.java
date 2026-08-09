@@ -162,11 +162,23 @@ final class VcGroupCommand implements CommandExecutor, TabCompleter {
                                 Component.text(settings.inviteExpirationMinutes())
                         ))
         );
+        playNotificationSound(target, settings.inviteSound(),
+                settings.inviteSoundVolume(), settings.inviteSoundPitch());
         inviter.sendMessage(Messages.component(
                 Messages.INVITE_SENT,
                 NamedTextColor.GREEN,
                 Component.text(target.getName())
         ));
+    }
+
+    private static void playNotificationSound(Player player, String soundKey, float volume, float pitch) {
+        if (soundKey == null) {
+            return;
+        }
+        player.playSound(
+                Sound.sound(Key.key(soundKey), Sound.Source.MASTER, volume, pitch),
+                Sound.Emitter.self()
+        );
     }
 
     private void accept(Player player, String token, VoicechatServerApi api) {
@@ -413,17 +425,8 @@ final class VcGroupCommand implements CommandExecutor, TabCompleter {
                                 Component.text(settings.requestExpirationMinutes())
                         ))
         );
-        if (settings.requestSound() != null) {
-            leader.playSound(
-                    Sound.sound(
-                            Key.key(settings.requestSound()),
-                            Sound.Source.MASTER,
-                            settings.requestSoundVolume(),
-                            settings.requestSoundPitch()
-                    ),
-                    Sound.Emitter.self()
-            );
-        }
+        playNotificationSound(leader, settings.requestSound(),
+                settings.requestSoundVolume(), settings.requestSoundPitch());
         requester.sendMessage(Messages.component(Messages.REQUEST_SENT, NamedTextColor.GREEN));
     }
 

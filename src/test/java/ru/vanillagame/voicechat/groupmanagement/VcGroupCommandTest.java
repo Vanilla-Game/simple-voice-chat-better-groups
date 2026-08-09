@@ -62,7 +62,7 @@ class VcGroupCommandTest {
                 cooldowns,
                 new RequestStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ofMinutes(5)),
                 new InviteCooldownStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ZERO),
-                new PluginSettings(5, 10, 5, 30, "block.anvil.land", 1.0F, 1.0F)
+                new PluginSettings(5, 10, "block.anvil.land", 1.0F, 1.0F, 5, 30, "block.anvil.land", 1.0F, 1.0F)
         );
 
         try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
@@ -76,6 +76,10 @@ class VcGroupCommandTest {
 
         verify(invites, times(1)).create(target.getUniqueId(), group.getId());
         verify(target, times(1)).sendMessage(any(Component.class));
+        verify(target, times(1)).playSound(
+                any(net.kyori.adventure.sound.Sound.class),
+                any(net.kyori.adventure.sound.Sound.Emitter.class)
+        );
         verify(invites, times(1)).create(other.getUniqueId(), group.getId());
         verify(other, times(1)).sendMessage(any(Component.class));
     }
@@ -204,7 +208,7 @@ class VcGroupCommandTest {
                 new InviteCooldownStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ZERO),
                 requests,
                 new InviteCooldownStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ZERO),
-                new PluginSettings(5, 10, 5, 30, "block.anvil.land", 1.0F, 1.0F)
+                new PluginSettings(5, 10, "block.anvil.land", 1.0F, 1.0F, 5, 30, "block.anvil.land", 1.0F, 1.0F)
         );
 
         try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
@@ -248,7 +252,7 @@ class VcGroupCommandTest {
                 new InviteCooldownStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ZERO),
                 requests,
                 new InviteCooldownStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ZERO),
-                new PluginSettings(5, 10, 5, 30, "block.anvil.land", 1.0F, 1.0F)
+                new PluginSettings(5, 10, "block.anvil.land", 1.0F, 1.0F, 5, 30, "block.anvil.land", 1.0F, 1.0F)
         );
 
         command.onCommand(requester, mock(Command.class), "vcgroup", new String[]{"request", "Open"});
@@ -297,7 +301,7 @@ class VcGroupCommandTest {
                 new InviteCooldownStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ZERO),
                 new RequestStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ofMinutes(5)),
                 new InviteCooldownStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ZERO),
-                new PluginSettings(5, 10, 5, 30, "block.anvil.land", 1.0F, 1.0F)
+                new PluginSettings(5, 10, "block.anvil.land", 1.0F, 1.0F, 5, 30, "block.anvil.land", 1.0F, 1.0F)
         );
     }
 

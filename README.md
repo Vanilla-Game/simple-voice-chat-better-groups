@@ -96,6 +96,7 @@ The generated `plugins/SimpleVoiceChatGroupManagement/config.yml` file contains:
 invites:
   expiration-minutes: 5
   cooldown-seconds: 10
+  sound: block.anvil.land:0.5:2
 
 requests:
   expiration-minutes: 5
@@ -103,7 +104,7 @@ requests:
   sound: block.anvil.land:0.5:2
 ```
 
-`expiration-minutes` values must be at least `1`. `invites.cooldown-seconds` is applied per inviter and target pair, `requests.cooldown-seconds` per requester and group pair; either may be set to `0` to disable that cooldown. `requests.sound` is the sound played to the leader when a join request arrives, in the single-line form `<sound id>[:volume[:pitch]]` — any sound event id works, `none` disables it, and unknown-but-well-formed ids fail silently on the client. Volume accepts `0.0`–`10.0`, pitch `0.5`–`2.0` (the range Minecraft supports); omitted or out-of-range values fall back to the defaults `0.5` and `2`. Invalid values are reported in the server log and replaced with safe defaults. Restart the plugin/server after changing the file; this MVP does not add a reload command.
+`expiration-minutes` values must be at least `1`. `invites.cooldown-seconds` is applied per inviter and target pair, `requests.cooldown-seconds` per requester and group pair; either may be set to `0` to disable that cooldown. `invites.sound` and `requests.sound` are the sounds played to the invited player and to the leader receiving a join request, in the single-line form `<sound id>[:volume[:pitch]]` — any sound event id works, `none` disables it, and unknown-but-well-formed ids fail silently on the client. Volume accepts `0.0`–`10.0`, pitch `0.5`–`2.0` (the range Minecraft supports); omitted or out-of-range values fall back to the defaults `0.5` and `2`. Invalid values are reported in the server log and replaced with safe defaults. Restart the plugin/server after changing the file; this MVP does not add a reload command.
 
 ## Permission
 

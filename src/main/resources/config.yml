@@ -6,6 +6,10 @@ invites:
   # inviter and target pair. Set to 0 to disable the cooldown.
   cooldown-seconds: 10
 
+  # Sound played to the invited player when an invite arrives, as
+  # <sound id>[:volume[:pitch]]. Set to none to disable.
+  sound: block.anvil.land:0.5:2
+
 # Join requests for password-protected groups.
 requests:
   expiration-minutes: 5

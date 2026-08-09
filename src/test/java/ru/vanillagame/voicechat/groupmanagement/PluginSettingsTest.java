@@ -23,6 +23,7 @@ class PluginSettingsTest {
         config.set("invites.cooldown-seconds", 3);
         config.set("requests.expiration-minutes", 7);
         config.set("requests.cooldown-seconds", 45);
+        config.set("invites.sound", "block.note_block.pling:0.4:0.9");
         config.set("requests.sound", "entity.experience_orb.pickup:0.7:1.5");
         when(plugin.getConfig()).thenReturn(config);
 
@@ -33,6 +34,9 @@ class PluginSettingsTest {
         assertEquals(Duration.ofSeconds(3), settings.inviteCooldown());
         assertEquals(Duration.ofMinutes(7), settings.requestExpiration());
         assertEquals(Duration.ofSeconds(45), settings.requestCooldown());
+        assertEquals("block.note_block.pling", settings.inviteSound());
+        assertEquals(0.4F, settings.inviteSoundVolume());
+        assertEquals(0.9F, settings.inviteSoundPitch());
         assertEquals("entity.experience_orb.pickup", settings.requestSound());
         assertEquals(0.7F, settings.requestSoundVolume());
         assertEquals(1.5F, settings.requestSoundPitch());
@@ -68,9 +72,9 @@ class PluginSettingsTest {
                 Duration.ofSeconds(PluginSettings.DEFAULT_REQUEST_COOLDOWN_SECONDS),
                 settings.requestCooldown()
         );
-        assertEquals(PluginSettings.DEFAULT_REQUEST_SOUND, settings.requestSound());
-        assertEquals(PluginSettings.DEFAULT_REQUEST_SOUND_VOLUME, settings.requestSoundVolume());
-        assertEquals(PluginSettings.DEFAULT_REQUEST_SOUND_PITCH, settings.requestSoundPitch());
+        assertEquals(PluginSettings.DEFAULT_SOUND, settings.requestSound());
+        assertEquals(PluginSettings.DEFAULT_SOUND_VOLUME, settings.requestSoundVolume());
+        assertEquals(PluginSettings.DEFAULT_SOUND_PITCH, settings.requestSoundPitch());
     }
 
     @Test
@@ -85,7 +89,7 @@ class PluginSettingsTest {
 
         assertEquals("minecraft:block.bell.use", settings.requestSound());
         assertEquals(2.0F, settings.requestSoundVolume());
-        assertEquals(PluginSettings.DEFAULT_REQUEST_SOUND_PITCH, settings.requestSoundPitch());
+        assertEquals(PluginSettings.DEFAULT_SOUND_PITCH, settings.requestSoundPitch());
     }
 
     @Test
