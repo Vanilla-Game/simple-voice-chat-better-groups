@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.0](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/compare/v0.5.0...v0.6.0) (2026-08-09)
+
+
+### Features
+
+* add European localizations and align voice chat API ([#40](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/issues/40)) ([2df4f49](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/commit/2df4f49b2765803c56184a90ff10a1f550167369))
+* separate protocol negotiation from group state ([#42](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/issues/42)) ([1e98e7d](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/commit/1e98e7d37e45885a58d1e5886b601b682717be02))
+
 ## [0.5.0](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/compare/v0.4.0...v0.5.0) (2026-08-09)
 
 
