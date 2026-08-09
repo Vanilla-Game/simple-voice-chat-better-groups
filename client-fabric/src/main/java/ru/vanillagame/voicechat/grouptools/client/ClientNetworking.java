@@ -39,10 +39,22 @@ public final class ClientNetworking {
         );
         // A Bukkit server announces its plugin channels in a minecraft:register
         // packet that arrives after the JOIN event, so the JOIN-time attempt sees
-        // canSend() == false there. Retry when the server declares the channel.
+        // canSend() == false there. A re-announcement also means the server-side
+        // plugin was reloaded and lost its handshake state, so always re-send.
         ServerboundPlayChannelEvents.REGISTER.register((handler, sender, client, channels) -> {
             if (channels.contains(HelloPayload.TYPE.id())) {
-                client.execute(ClientNetworking::sendHelloIfPossible);
+                client.execute(() -> {
+                    helloSent = false;
+                    sendHelloIfPossible();
+                });
+            }
+        });
+        ServerboundPlayChannelEvents.UNREGISTER.register((handler, sender, client, channels) -> {
+            if (channels.contains(HelloPayload.TYPE.id())) {
+                client.execute(() -> {
+                    helloSent = false;
+                    LeaderClientState.clear();
+                });
             }
         });
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
