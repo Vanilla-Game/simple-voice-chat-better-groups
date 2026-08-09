@@ -62,7 +62,7 @@ class VcGroupCommandTest {
                 cooldowns,
                 new RequestStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ofMinutes(5)),
                 new InviteCooldownStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ZERO),
-                new PluginSettings(5, 10, 5, 30)
+                new PluginSettings(5, 10, 5, 30, "block.anvil.land")
         );
 
         try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
@@ -204,7 +204,7 @@ class VcGroupCommandTest {
                 new InviteCooldownStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ZERO),
                 requests,
                 new InviteCooldownStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ZERO),
-                new PluginSettings(5, 10, 5, 30)
+                new PluginSettings(5, 10, 5, 30, "block.anvil.land")
         );
 
         try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
@@ -215,6 +215,10 @@ class VcGroupCommandTest {
 
             command.onCommand(requester, mock(Command.class), "vcgroup", new String[]{"request", "Secret"});
             verify(leader, atLeastOnce()).sendMessage(any(Component.class));
+            verify(leader).playSound(
+                    any(net.kyori.adventure.sound.Sound.class),
+                    any(net.kyori.adventure.sound.Sound.Emitter.class)
+            );
 
             command.onCommand(leader, mock(Command.class), "vcgroup", new String[]{"approve", "req-token"});
         }
@@ -244,7 +248,7 @@ class VcGroupCommandTest {
                 new InviteCooldownStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ZERO),
                 requests,
                 new InviteCooldownStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ZERO),
-                new PluginSettings(5, 10, 5, 30)
+                new PluginSettings(5, 10, 5, 30, "block.anvil.land")
         );
 
         command.onCommand(requester, mock(Command.class), "vcgroup", new String[]{"request", "Open"});
@@ -293,7 +297,7 @@ class VcGroupCommandTest {
                 new InviteCooldownStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ZERO),
                 new RequestStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ofMinutes(5)),
                 new InviteCooldownStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ZERO),
-                new PluginSettings(5, 10, 5, 30)
+                new PluginSettings(5, 10, 5, 30, "block.anvil.land")
         );
     }
 

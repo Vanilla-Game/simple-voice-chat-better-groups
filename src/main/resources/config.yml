@@ -13,3 +13,7 @@ requests:
   # Delay between join requests, applied per requester and group pair.
   # Set to 0 to disable the cooldown.
   cooldown-seconds: 30
+
+  # Sound played to the group leader when a join request arrives. Any sound
+  # event id works (e.g. entity.experience_orb.pickup); set to none to disable.
+  sound: block.anvil.land

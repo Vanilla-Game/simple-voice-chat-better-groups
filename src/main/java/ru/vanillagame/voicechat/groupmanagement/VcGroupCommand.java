@@ -3,6 +3,8 @@ package ru.vanillagame.voicechat.groupmanagement;
 import de.maxhenkel.voicechat.api.Group;
 import de.maxhenkel.voicechat.api.VoicechatConnection;
 import de.maxhenkel.voicechat.api.VoicechatServerApi;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -411,6 +413,12 @@ final class VcGroupCommand implements CommandExecutor, TabCompleter {
                                 Component.text(settings.requestExpirationMinutes())
                         ))
         );
+        if (settings.requestSound() != null) {
+            leader.playSound(
+                    Sound.sound(Key.key(settings.requestSound()), Sound.Source.MASTER, 1.0f, 1.0f),
+                    Sound.Emitter.self()
+            );
+        }
         requester.sendMessage(Messages.component(Messages.REQUEST_SENT, NamedTextColor.GREEN));
     }
 

@@ -8,6 +8,7 @@ import java.time.Duration;
 import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -22,6 +23,7 @@ class PluginSettingsTest {
         config.set("invites.cooldown-seconds", 3);
         config.set("requests.expiration-minutes", 7);
         config.set("requests.cooldown-seconds", 45);
+        config.set("requests.sound", "entity.experience_orb.pickup");
         when(plugin.getConfig()).thenReturn(config);
 
         PluginSettings settings = PluginSettings.load(plugin);
@@ -31,6 +33,7 @@ class PluginSettingsTest {
         assertEquals(Duration.ofSeconds(3), settings.inviteCooldown());
         assertEquals(Duration.ofMinutes(7), settings.requestExpiration());
         assertEquals(Duration.ofSeconds(45), settings.requestCooldown());
+        assertEquals("entity.experience_orb.pickup", settings.requestSound());
     }
 
     @Test
@@ -41,6 +44,7 @@ class PluginSettingsTest {
         config.set("invites.cooldown-seconds", -1);
         config.set("requests.expiration-minutes", 0);
         config.set("requests.cooldown-seconds", -1);
+        config.set("requests.sound", "NOT A VALID KEY");
         when(plugin.getConfig()).thenReturn(config);
         when(plugin.getLogger()).thenReturn(Logger.getAnonymousLogger());
 
@@ -62,5 +66,17 @@ class PluginSettingsTest {
                 Duration.ofSeconds(PluginSettings.DEFAULT_REQUEST_COOLDOWN_SECONDS),
                 settings.requestCooldown()
         );
+        assertEquals(PluginSettings.DEFAULT_REQUEST_SOUND, settings.requestSound());
+    }
+
+    @Test
+    void noneDisablesTheRequestSound() {
+        JavaPlugin plugin = mock(JavaPlugin.class);
+        YamlConfiguration config = new YamlConfiguration();
+        config.set("requests.sound", "none");
+        when(plugin.getConfig()).thenReturn(config);
+        when(plugin.getLogger()).thenReturn(Logger.getAnonymousLogger());
+
+        assertNull(PluginSettings.load(plugin).requestSound());
     }
 }
