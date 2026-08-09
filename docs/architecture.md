@@ -1,111 +1,56 @@
-# Architecture decisions
+# Architecture
 
-Two artifacts, one project: the authoritative Paper plugin (repo root) and an
-optional Fabric client mod (`client-fabric/`). They are separate Gradle modules
-by necessity — Paper API and Fabric Loom toolchains cannot share a module.
+This repository builds two artifacts:
 
-## Naming tiers
+- a Paper plugin that owns group state and authorizes every action;
+- an optional Fabric mod that adds controls to the Simple Voice Chat UI.
 
-Three deliberate tiers; the mismatch between them is intentional — do not "fix" it.
+The client is never trusted with membership or leadership decisions. Players
+without the client mod retain the complete command workflow.
 
-| Tier | Value | Where |
-| --- | --- | --- |
-| Display | Simple Voice Chat Better Groups | Modrinth title, version subtitles, mod list name, README title |
-| Kebab | `svc-better-groups[-fabric]` | jar names, release tags, release-please package name |
-| Machine | `svc_better_groups[_client]` | mod id, plugin channels, translation keys, assets namespace, permission `vanillagame.svc_better_groups.use` |
+## Stable identifiers
 
-Java packages: `ru.vanillagame.voicechat.bettergroups[.client]`. Config folder:
-`plugins/SVCBetterGroups/`. The Modrinth slug survives renames as an opaque id;
-the project is addressed by id `scOrYDTf` in CI.
+The public display name, artifact name, and machine identifiers intentionally
+use different formats:
 
-## Command ABI
+| Purpose | Value |
+| --- | --- |
+| Display name | Simple Voice Chat Better Groups |
+| Artifact names | `svc-better-groups[-fabric]` |
+| Protocol and resource namespaces | `svc_better_groups[_client]` |
 
-`/voicegroup` is the primary command (sits next to Simple Voice Chat's own
-`/voicechat`, `/voicemute` in tab completion). `/vcgroup` is a **permanent**
-alias: it is the wire name used by client UI actions after protocol
-negotiation. Removing the alias breaks released clients.
+`/voicegroup` is the primary command. `/vcgroup` is a permanent compatibility
+alias used by released clients and must not be removed.
 
-## Group leadership
+## Leadership
 
-`GroupLeadershipRegistry` mirrors Simple Voice Chat's membership through the
-public events (Create/Join/Leave/RemoveGroupEvent) and never diverges from it.
-Verified against SVC sources (branch 26.2): API `setGroup(null)` funnels through
-`ServerGroupManager.leaveGroup` and fires `LeaveGroupEvent`; `setGroup(group)`
-fires `JoinGroupEvent`; a transient voice-connection drop does **not** change
-membership. All registry operations are idempotent (quit may deliver duplicate
-signals).
+The server mirrors Simple Voice Chat membership through its public events. The
+group creator is the initial leader. When the leader leaves, leadership passes
+to the longest-standing remaining member; rejoining puts a player at the end
+of that order. Manual transfer does not change the succession order.
 
-Rules: the creator is the first leader; on leader leave/switch/quit the role
-passes to the longest-standing member (LinkedHashSet join order); `/voicegroup
-transfer` moves it by hand without reordering; a returning former leader joins
-at the end of the order. **Fail-closed**: a group whose creation was not
-observed (plugin restarted, persistent group) has an unknown leader — kick,
-transfer and join requests are denied rather than guessed.
+Leadership is fail-closed. If the plugin did not observe a group's creation, it
+cannot reconstruct the creator or historical join order from the public API.
+For such a group, leader-only actions remain disabled and clients receive no
+leader identity.
 
-## Client-server protocol
+## Client protocol
 
-Protocol version 2 uses three channels:
+The client first negotiates a protocol version, then receives group state on a
+separate server-to-client channel. The client never submits group or leader
+identities. A client with no compatible handshake keeps its extra UI disabled.
 
-- `svc_better_groups:client_hello` — client→server, requested version u8;
-- `svc_better_groups:server_hello` — server→client, selected version u8;
-- `svc_better_groups:group_state` — server→client, version u8, flags u8,
-  optional group UUID, optional leader UUID as two big-endian longs.
+Published message layouts are immutable. Any byte-level format change requires
+a new protocol version and updated golden vectors in `GroupSyncProtocolTest`.
+Mixed client versions are expected during deployments, so the server must
+continue to reject incompatible handshakes without affecting commands.
 
-- Negotiation contains no membership data. `ServerSupport` becomes available
-  only after a valid `server_hello`; group and leader data are handled only by
-  `group_state`.
-- The server sends initial group state only when the player is in a group. An
-  empty state is sent later only when needed to clear a previously cached group.
-- The byte layouts are **frozen by golden vectors** in `GroupSyncProtocolTest`.
-  Version 2 semantics never change; any format change ships as a new
-  `GroupSyncProtocol.VERSION`.
-- Mixed client versions are the normal operating state: the server answers only
-  compatible hellos; incompatible clients silently keep the command workflow.
-- The client sends `client_hello` at JOIN **and** on `ServerboundPlayChannelEvents.REGISTER`
-  (Paper announces channels in a `minecraft:register` packet that arrives after
-  the Fabric JOIN event). A re-announcement resets the handshake — the server
-  plugin may have been reloaded and lost its state. UNREGISTER clears the cache.
-- protobuf was evaluated and rejected (1.7 MB dependency + shading hazards for
-  ~34 bytes of payload); a shared protocol Gradle module is deferred until the
-  protocol grows beyond these three small messages.
+## Invites and join requests
 
-## Invites and requests
+Invites and join requests use random, single-use, expiring tokens stored only in
+memory. An invite is bound to its recipient. A join request is authorized
+against the current leader when it is approved, because leadership may change
+after the request is sent.
 
-Both are one-time SecureRandom 192-bit tokens, in memory only, with TTL and
-invalidation on quit/group removal. Design differences:
-
-- An **invite** is bound to the invited player's UUID (only they can accept)
-  and carries the inviter's id/name for join-announcement attribution.
-- A **request** token is handed to the leader, but approval is authorized
-  against whoever holds leadership **at click time**, not whoever received the
-  message — leadership may have transferred meanwhile.
-- Invites reach players in *other* groups; accepting switches groups (the
-  invite message carries a gold warning). Only own-group members are rejected.
-- Requests are only offered for visible, password-protected groups; hidden
-  groups are excluded from name and UUID resolution so their existence cannot
-  be probed.
-
-Per-pair cooldowns (inviter+target, requester+group) reuse one store class.
-
-## Client UI integration
-
-Mixin surface (all `required: true, defaultRequire: 1` — a missing injection
-point fails class load, which the compat harness exploits):
-
-- `GroupScreenMixin` — "+" opens the invite picker.
-- `GroupEntryMixin` — crown glyph via `@Redirect` on the single
-  `Component.literal` call in `extractContent`; kick buttons gated by
-  client-side leader state (server still authorizes).
-- `EnterPasswordScreenMixin` — the join-request door button lives on the
-  password screen because `JoinGroupList.mouseClicked` consumes row clicks
-  itself and never dispatches to entry child widgets.
-
-UI icons (crown `\uE000`, ajar door `\uE001`) are 8x8 white bitmap glyphs in
-the mod font `svc_better_groups_client:icons` — the unifont fallback renders
-non-ASCII glyphs squished. Color comes from the component style (gold crown).
-
-The invite picker lists players from SVC's own `ClientPlayerStateManager` and
-polls it once a second while open: SVC pushes state updates only to its own
-screens by a hardcoded list. Voice-disconnected players stay listed (gray
-name) — the invite arrives in chat regardless; only own-group members are
-hidden.
+Hidden groups are excluded from join-request lookup. This prevents name or UUID
+probing from revealing their existence.
