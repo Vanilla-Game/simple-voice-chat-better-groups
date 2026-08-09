@@ -106,6 +106,28 @@ class PluginTranslationsTest {
         }
     }
 
+    @Test
+    void translatorEscapesRawApostrophesExactlyOnce() {
+        PluginTranslations translations = new PluginTranslations();
+        translations.register(getClass().getClassLoader());
+        try {
+            assertEquals(
+                    "Vous n'avez pas la permission d'utiliser /voicegroup.",
+                    render(Messages.component(Messages.COMMAND_NO_PERMISSION, NamedTextColor.RED), Locale.FRANCE)
+            );
+            assertEquals(
+                    "Simple Voice Chat encara no està preparat. Torna-ho a provar d'aquí a una estona.",
+                    render(Messages.component(Messages.VOICECHAT_NOT_READY, NamedTextColor.RED), Locale.of("ca", "ES"))
+            );
+            assertEquals(
+                    "Il leader di questo gruppo è sconosciuto, quindi l'espulsione è disattivata per sicurezza.",
+                    render(Messages.component(Messages.KICK_UNKNOWN_LEADER, NamedTextColor.RED), Locale.ITALY)
+            );
+        } finally {
+            translations.unregister();
+        }
+    }
+
     private static ResourceBundle bundle(Locale locale) {
         return ResourceBundle.getBundle(
                 PluginTranslations.BUNDLE_NAME,
