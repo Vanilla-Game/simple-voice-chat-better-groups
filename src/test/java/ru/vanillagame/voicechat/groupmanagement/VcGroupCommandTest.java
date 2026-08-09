@@ -333,11 +333,14 @@ class VcGroupCommandTest {
         when(viewer.canSee(groupmate)).thenReturn(true);
         when(viewer.canSee(outsider)).thenReturn(true);
         Group ownGroup = group();
+        VoicechatConnection viewerConnection = connection(ownGroup);
+        VoicechatConnection groupmateConnection = connection(ownGroup);
+        VoicechatConnection outsiderConnection = connection(null);
         VoicechatServerApi api = mock(VoicechatServerApi.class);
         when(plugin.getVoicechatApi()).thenReturn(api);
-        when(api.getConnectionOf(viewer.getUniqueId())).thenReturn(connection(ownGroup));
-        when(api.getConnectionOf(groupmate.getUniqueId())).thenReturn(connection(ownGroup));
-        when(api.getConnectionOf(outsider.getUniqueId())).thenReturn(connection(null));
+        when(api.getConnectionOf(viewer.getUniqueId())).thenReturn(viewerConnection);
+        when(api.getConnectionOf(groupmate.getUniqueId())).thenReturn(groupmateConnection);
+        when(api.getConnectionOf(outsider.getUniqueId())).thenReturn(outsiderConnection);
         VcGroupCommand command = command(plugin, mock(InviteStore.class), new GroupLeadershipRegistry());
 
         try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
