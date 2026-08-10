@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/compare/v0.6.0...v0.7.0) (2026-08-10)
+
+
+### Features
+
+* support Minecraft 26.1.2 and 26.2 ([#45](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/issues/45)) ([4f09ac0](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/commit/4f09ac061490003c6c09972d82a1a95707e7fc7d))
+
 ## [0.6.0](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/compare/v0.5.0...v0.6.0) (2026-08-09)
 
 
