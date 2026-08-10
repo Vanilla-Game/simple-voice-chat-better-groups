@@ -1,0 +1,243 @@
+name: Server Voice Chat Compatibility
+
+on:
+  workflow_call:
+    inputs:
+      matrix:
+        description: JSON array of platform, Minecraft, server build, and SVC artifact tuples
+        required: true
+        type: string
+      suite:
+        description: Unique label when the reusable workflow is invoked more than once
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: temurin
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Package server plugin
+        run: ./gradlew --no-daemon stageReleaseArtifacts --warning-mode all
+
+      - name: Locate server jar
+        id: server
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          matches=(build/release/svc-better-groups-[0-9]*.jar)
+          test "${#matches[@]}" -eq 1
+          sha256sum "${matches[0]}" | awk '{ print $1 }' > "${matches[0]}.sha256"
+          echo "path=${matches[0]}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload server jar
+        uses: actions/upload-artifact@v6
+        with:
+          name: server-compat-plugin-${{ inputs.suite }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ steps.server.outputs.path }}
+            ${{ steps.server.outputs.path }}.sha256
+          if-no-files-found: error
+          retention-days: 1
+
+  check:
+    needs: package
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        include: ${{ fromJSON(inputs.matrix) }}
+    name: ${{ matrix.platform }} ${{ matrix.minecraft }}-${{ matrix.build }} / ${{ matrix.voicechatArtifact }}
+    steps:
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: temurin
+
+      - name: Download server plugin
+        uses: actions/download-artifact@v6
+        with:
+          name: server-compat-plugin-${{ inputs.suite }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: packaged-plugin
+
+      - name: Resolve plugin jar
+        id: plugin
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s globstar nullglob
+          matches=(packaged-plugin/**/svc-better-groups-[0-9]*.jar)
+          test "${#matches[@]}" -eq 1
+          plugin_path=$(realpath "${matches[0]}")
+          expected=$(cat "$plugin_path.sha256")
+          actual=$(sha256sum "$plugin_path" | awk '{ print $1 }')
+          test "$actual" = "$expected"
+          {
+            echo "path=$plugin_path"
+            echo "sha256=$expected"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Download and verify server and Simple Voice Chat
+        shell: bash
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          MINECRAFT: ${{ matrix.minecraft }}
+          SERVER_BUILD: ${{ matrix.build }}
+          VOICECHAT_ARTIFACT: ${{ matrix.voicechatArtifact }}
+        run: |
+          set -euo pipefail
+          mkdir -p server/plugins
+
+          curl -fsSL \
+            -H 'User-Agent: Vanilla-Game/simple-voice-chat-better-groups compatibility workflow' \
+            "https://api.modrinth.com/v2/project/simple-voice-chat/version" > voicechat-versions.json
+          voicechat=$(jq -ce --arg artifact "$VOICECHAT_ARTIFACT" '
+            first(.[] | select(
+              .version_number == $artifact and
+              .version_type == "release" and
+              .status == "listed"
+            ))
+          ' voicechat-versions.json)
+          voicechat_url=$(jq -er '.files[] | select(.primary == true) | .url' <<< "$voicechat")
+          voicechat_sha512=$(jq -er '.files[] | select(.primary == true) | .hashes.sha512' <<< "$voicechat")
+          curl -fsSL "$voicechat_url" -o server/plugins/voicechat.jar
+          printf '%s  %s\n' "$voicechat_sha512" server/plugins/voicechat.jar | sha512sum --check --strict
+
+          if [ "$PLATFORM" = paper ]; then
+            metadata_url="https://fill.papermc.io/v3/projects/paper/versions/$MINECRAFT/builds/$SERVER_BUILD"
+            curl -fsSL "$metadata_url" -o server-metadata.json
+            server_url=$(jq -er '.downloads["server:default"].url' server-metadata.json)
+            server_sha256=$(jq -er '.downloads["server:default"].checksums.sha256' server-metadata.json)
+          elif [ "$PLATFORM" = leaf ]; then
+            metadata_url="https://api.leafmc.one/v2/projects/leaf/versions/$MINECRAFT/builds/$SERVER_BUILD"
+            curl -fsSL "$metadata_url" -o server-metadata.json
+            server_name=$(jq -er '.downloads.primary.name' server-metadata.json)
+            server_sha256=$(jq -er '.downloads.primary.sha256' server-metadata.json)
+            server_url="https://api.leafmc.one/v2/projects/leaf/versions/$MINECRAFT/builds/$SERVER_BUILD/downloads/$server_name"
+          else
+            echo "Unsupported server platform: $PLATFORM" >&2
+            exit 1
+          fi
+          curl -fsSL "$server_url" -o server/server.jar
+          printf '%s  %s\n' "$server_sha256" server/server.jar | sha256sum --check --strict
+          cp '${{ steps.plugin.outputs.path }}' server/plugins/svc-better-groups.jar
+
+      - name: Boot server and verify plugins
+        shell: bash
+        working-directory: server
+        run: |
+          set -euo pipefail
+          printf 'eula=true\n' > eula.txt
+          cat > server.properties <<'EOF'
+          online-mode=false
+          server-port=25565
+          max-players=1
+          spawn-protection=0
+          view-distance=2
+          simulation-distance=2
+          EOF
+
+          coproc MCSERVER { java -Xms512M -Xmx1536M -jar server.jar --nogui 2>&1 | tee server.log; }
+          server_pid=$MCSERVER_PID
+          server_stdin=${MCSERVER[1]}
+          stop_server() {
+            if kill -0 "$server_pid" 2>/dev/null; then
+              { printf 'stop\n' >&"$server_stdin"; } 2>/dev/null || true
+              for _ in $(seq 1 30); do
+                kill -0 "$server_pid" 2>/dev/null || return 0
+                sleep 1
+              done
+              kill "$server_pid" 2>/dev/null || true
+            fi
+          }
+          trap stop_server EXIT
+
+          ready=false
+          for _ in $(seq 1 120); do
+            if grep -Fq 'Simple Voice Chat Group Management enabled.' server.log 2>/dev/null \
+              && grep -Eqi 'Voice chat server (started (at|on)|hosted on) port|Started voice chat server' server.log 2>/dev/null \
+              && grep -Eq 'Done \([0-9.]+s\)!|Done \([0-9.]+s\)! For help' server.log 2>/dev/null; then
+              ready=true
+              break
+            fi
+            if ! kill -0 "$server_pid" 2>/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ready" != true ]; then
+            echo 'Server or plugins did not become ready.' >&2
+            tail -n 250 server.log >&2 || true
+            exit 1
+          fi
+
+          if grep -Eqi '(NoClassDefFoundError|ClassNotFoundException|NoSuchMethodError|AbstractMethodError|UnsupportedClassVersionError|Could not load .*SVCBetterGroups|Error occurred while enabling SVCBetterGroups|disabling Simple Voice Chat Group Management)' server.log; then
+            echo 'A compatibility failure was found in the server log.' >&2
+            grep -Ein '(NoClassDefFoundError|ClassNotFoundException|NoSuchMethodError|AbstractMethodError|UnsupportedClassVersionError|SVCBetterGroups|Simple Voice Chat Group Management)' server.log >&2 || true
+            exit 1
+          fi
+
+          printf 'stop\n' >&"$server_stdin"
+          exec {server_stdin}>&-
+          trap - EXIT
+          wait "$server_pid"
+
+      - name: Confirm packaged server plugin was not modified
+        if: ${{ always() && steps.plugin.outcome == 'success' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual=$(sha256sum '${{ steps.plugin.outputs.path }}' | awk '{ print $1 }')
+          test "$actual" = '${{ steps.plugin.outputs.sha256 }}'
+
+      - name: Record result
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p compat-results
+          result=fail
+          if [ '${{ job.status }}' = success ]; then
+            result=ok
+          fi
+          file="server__${{ matrix.platform }}__${{ matrix.minecraft }}__${{ matrix.voicechatArtifact }}"
+          printf '%s\n' "$result" > "compat-results/$file"
+          echo "- \`${{ matrix.platform }} / ${{ matrix.minecraft }} / ${{ matrix.voicechatArtifact }}\`: $result" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload result
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: compat-result-server-${{ matrix.platform }}-${{ matrix.minecraft }}-${{ matrix.voicechatArtifact }}
+          path: compat-results/
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload server logs
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: compat-logs-server-${{ matrix.platform }}-${{ matrix.minecraft }}-${{ matrix.voicechatArtifact }}
+          path: |
+            server/server.log
+            server/logs/
+          if-no-files-found: ignore
+          retention-days: 7

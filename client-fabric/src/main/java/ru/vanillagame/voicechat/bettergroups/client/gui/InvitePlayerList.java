@@ -67,7 +67,7 @@ public class InvitePlayerList extends ListScreenListBase<InvitePlayerEntry> {
         Minecraft minecraft = Minecraft.getInstance();
         minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1F));
         ServerSupport.invite(entry.getState().getName());
-        minecraft.gui.setScreen(null);
+        minecraft.setScreenAndShow(null);
         return true;
     }
 

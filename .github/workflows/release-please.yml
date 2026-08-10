@@ -2,7 +2,7 @@ name: Release Please
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -20,9 +20,6 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
-      # A tag created by the repository GITHUB_TOKEN does not trigger build.yml.
-      # Build the released revision here; the server and client jars share one
-      # release and one version.
       - name: Checkout
         if: ${{ steps.release.outputs.release_created == 'true' }}
         uses: actions/checkout@v7
@@ -38,20 +35,45 @@ jobs:
         if: ${{ steps.release.outputs.release_created == 'true' }}
         uses: gradle/actions/setup-gradle@v5
 
-      - name: Build server and client jars
+      - name: Validate generated compatibility documentation
         if: ${{ steps.release.outputs.release_created == 'true' }}
-        run: ./gradlew --no-daemon clean build --warning-mode all
+        run: ruby scripts/update-compatibility-docs.rb --check
 
-      - name: Attach jars to the release
+      - name: Build, test, and stage release artifacts
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        run: ./gradlew --no-daemon clean build stageReleaseArtifacts --warning-mode all
+
+      - name: Validate and locate staged artifacts
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        id: artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          server=(build/release/svc-better-groups-[0-9]*.jar)
+          fabric_26_1=(build/release/svc-better-groups-fabric-26.1-[0-9]*.jar)
+          fabric_26_2=(build/release/svc-better-groups-fabric-26.2-[0-9]*.jar)
+          all=(build/release/*.jar)
+          test "${#server[@]}" -eq 1
+          test "${#fabric_26_1[@]}" -eq 1
+          test "${#fabric_26_2[@]}" -eq 1
+          test "${#all[@]}" -eq 3
+          {
+            echo "server=${server[0]}"
+            echo "fabric_26_1=${fabric_26_1[0]}"
+            echo "fabric_26_2=${fabric_26_2[0]}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Attach the three jars to the GitHub release
         if: ${{ steps.release.outputs.release_created == 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "${{ steps.release.outputs.tag_name }}" build/libs/*.jar client-fabric/build/libs/*.jar --clobber
-
-      - name: Read Minecraft version
-        if: ${{ steps.release.outputs.release_created == 'true' }}
-        id: mc
-        run: echo "version=$(grep '^minecraft=' client-fabric/compatibility.properties | cut -d= -f2-)" >> "$GITHUB_OUTPUT"
+        run: |
+          gh release upload "${{ steps.release.outputs.tag_name }}" \
+            "${{ steps.artifacts.outputs.server }}" \
+            "${{ steps.artifacts.outputs.fabric_26_1 }}" \
+            "${{ steps.artifacts.outputs.fabric_26_2 }}" \
+            --clobber
 
       - name: Fetch release notes
         if: ${{ steps.release.outputs.release_created == 'true' }}
@@ -59,36 +81,95 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh release view "${{ steps.release.outputs.tag_name }}" --json body -q .body > changelog.md
 
-      - name: Publish server plugin to Modrinth
+      - name: Prepare Modrinth versions
         if: ${{ steps.release.outputs.release_created == 'true' }}
+        id: modrinth
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+        run: |
+          set -euo pipefail
+          paper_games=$(jq -r '[.server.targets[].minecraft] | unique[]' compatibility.json)
+          fabric_26_1_games=$(jq -r '.fabric.targets[] | select(.id == "26.1") | .releaseMinecraftVersions[]' compatibility.json)
+          fabric_26_2_games=$(jq -r '.fabric.targets[] | select(.id == "26.2") | .releaseMinecraftVersions[]' compatibility.json)
+          curl -fsSL \
+            -H "Authorization: $MODRINTH_TOKEN" \
+            -H 'User-Agent: Vanilla-Game/simple-voice-chat-better-groups release workflow' \
+            'https://api.modrinth.com/v2/project/scOrYDTf/version' > modrinth-versions.json
+          output_lines=()
+          for kind in paper fabric_26_1 fabric_26_2; do
+            case "$kind" in
+              paper) version="paper-${RELEASE_VERSION}+26.1.2" ;;
+              fabric_26_1) version="fabric-${RELEASE_VERSION}+26.1" ;;
+              fabric_26_2) version="fabric-${RELEASE_VERSION}+26.2" ;;
+            esac
+            publish=true
+            if jq -e --arg version "$version" 'any(.[]; .version_number == $version)' modrinth-versions.json >/dev/null; then
+              publish=false
+              echo "Modrinth version $version already exists; publication will be skipped." >> "$GITHUB_STEP_SUMMARY"
+            fi
+            output_lines+=("${kind}_publish=$publish" "${kind}_version=$version")
+          done
+          {
+            printf '%s\n' "${output_lines[@]}"
+            echo 'paper_games<<EOF_PAPER_GAMES'
+            echo "$paper_games"
+            echo 'EOF_PAPER_GAMES'
+            echo 'fabric_26_1_games<<EOF_FABRIC_26_1_GAMES'
+            echo "$fabric_26_1_games"
+            echo 'EOF_FABRIC_26_1_GAMES'
+            echo 'fabric_26_2_games<<EOF_FABRIC_26_2_GAMES'
+            echo "$fabric_26_2_games"
+            echo 'EOF_FABRIC_26_2_GAMES'
+          } > "$GITHUB_OUTPUT"
+
+      - name: Publish server plugin to Modrinth
+        if: ${{ steps.release.outputs.release_created == 'true' && steps.modrinth.outputs.paper_publish == 'true' }}
         uses: Kir-Antipov/mc-publish@v3.3
         with:
           modrinth-id: scOrYDTf
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
-          files: build/libs/*.jar
-          name: "[PAPER][${{ steps.mc.outputs.version }}] Simple Voice Chat Better Groups ${{ steps.release.outputs.version }}"
-          version: paper-${{ steps.release.outputs.version }}+${{ steps.mc.outputs.version }}
+          files: ${{ steps.artifacts.outputs.server }}
+          name: "[PAPER][26.1.2-26.2] Simple Voice Chat Better Groups ${{ steps.release.outputs.version }}"
+          version: ${{ steps.modrinth.outputs.paper_version }}
           version-type: release
           loaders: |
             paper
             purpur
-          game-versions: ${{ steps.mc.outputs.version }}
-          dependencies: |
-            simple-voice-chat(required)
+          game-versions: ${{ steps.modrinth.outputs.paper_games }}
+          dependencies: simple-voice-chat(required)
           changelog-file: changelog.md
 
-      - name: Publish client mod to Modrinth
-        if: ${{ steps.release.outputs.release_created == 'true' }}
+      - name: Publish Fabric 26.1 client to Modrinth
+        if: ${{ steps.release.outputs.release_created == 'true' && steps.modrinth.outputs.fabric_26_1_publish == 'true' }}
         uses: Kir-Antipov/mc-publish@v3.3
         with:
           modrinth-id: scOrYDTf
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
-          files: client-fabric/build/libs/*.jar
-          name: "[FABRIC][${{ steps.mc.outputs.version }}] Simple Voice Chat Better Groups ${{ steps.release.outputs.version }}"
-          version: fabric-${{ steps.release.outputs.version }}+${{ steps.mc.outputs.version }}
+          files: ${{ steps.artifacts.outputs.fabric_26_1 }}
+          name: "[FABRIC][26.1.x] Simple Voice Chat Better Groups ${{ steps.release.outputs.version }}"
+          version: ${{ steps.modrinth.outputs.fabric_26_1_version }}
           version-type: release
           loaders: fabric
-          game-versions: ${{ steps.mc.outputs.version }}
+          game-versions: ${{ steps.modrinth.outputs.fabric_26_1_games }}
+          dependencies: |
+            simple-voice-chat(required)
+            fabric-api(required)
+          changelog-file: changelog.md
+
+      - name: Publish Fabric 26.2 client to Modrinth
+        if: ${{ steps.release.outputs.release_created == 'true' && steps.modrinth.outputs.fabric_26_2_publish == 'true' }}
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          modrinth-id: scOrYDTf
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          files: ${{ steps.artifacts.outputs.fabric_26_2 }}
+          name: "[FABRIC][26.2] Simple Voice Chat Better Groups ${{ steps.release.outputs.version }}"
+          version: ${{ steps.modrinth.outputs.fabric_26_2_version }}
+          version-type: release
+          loaders: fabric
+          game-versions: ${{ steps.modrinth.outputs.fabric_26_2_games }}
           dependencies: |
             simple-voice-chat(required)
             fabric-api(required)

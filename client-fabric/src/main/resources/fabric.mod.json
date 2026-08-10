@@ -22,7 +22,7 @@
     "svc-better-groups-client.mixins.json"
   ],
   "depends": {
-    "fabricloader": ">=0.19.3",
+    "fabricloader": ">=${fabric_loader_version}",
     "fabric-api": ">=${fabric_api_version}",
     "java": ">=25",
     "minecraft": "${minecraft_version}",

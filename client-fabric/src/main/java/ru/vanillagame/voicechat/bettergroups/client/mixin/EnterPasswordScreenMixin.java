@@ -47,7 +47,7 @@ public abstract class EnterPasswordScreenMixin extends VoiceChatScreenBase {
                                 .withStyle(style -> style.withFont(Icons.FONT)),
                         button -> {
                     ServerSupport.requestJoin(group.getId());
-                    minecraft.gui.setScreen(null);
+                    minecraft.setScreenAndShow(null);
                 })
                 .bounds(
                         guiLeft + xSize - 7 - SVC_BETTER_GROUPS$BUTTON_SIZE,

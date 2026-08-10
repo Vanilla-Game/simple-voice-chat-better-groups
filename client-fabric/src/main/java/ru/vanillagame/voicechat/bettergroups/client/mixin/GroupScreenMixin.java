@@ -27,7 +27,7 @@ public abstract class GroupScreenMixin extends VoiceChatScreenBase {
     private void svcBetterGroups$addInviteButton(CallbackInfo callbackInfo) {
         int buttonY = guiTop + ySize - 27;
         svcBetterGroups$inviteButton = Button.builder(Component.literal("+"), button -> {
-                    minecraft.gui.setScreen(new InvitePlayerScreen());
+                    minecraft.setScreenAndShow(new InvitePlayerScreen());
                 })
                 .bounds(guiLeft + 76, buttonY, 20, 20)
                 .tooltip(Tooltip.create(Component.translatable("gui.svc_better_groups.invite")))
