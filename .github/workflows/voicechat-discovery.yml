@@ -42,26 +42,44 @@ jobs:
               | sub("\\+.*$"; "")
               | split(".")
               | map(tonumber);
+            def contiguous_after($maximum):
+              sort_by([.core, .artifact])
+              | unique_by(.core)
+              | reduce .[] as $candidate (
+                  {accepted: [], next_patch: ($maximum[2] + 1), open: true};
+                  if .open and $candidate.core[2] == .next_patch then
+                    .accepted += [$candidate]
+                    | .next_patch += 1
+                  elif .open then
+                    .open = false
+                  else
+                    .
+                  end
+                )
+              | .accepted;
             [
               .fabric.targets[] as $target
               | ($target.compatibility | map(.voicechatArtifact | core) | max) as $maximum
               | ($maximum[0:2]) as $minor
-              | $versions[0][]
-              | select(
-                  .version_type == "release" and
-                  .status == "listed" and
-                  (.loaders | index("fabric")) != null and
-                  (.game_versions | index($target.compile.minecraft)) != null and
-                  (.version_number | startswith("fabric-")) and
-                  (.version_number | core | .[0:2]) == $minor and
-                  (.version_number | core) > $maximum
-                )
-              | {
-                  target: $target.id,
-                  artifact: .version_number,
-                  core: (.version_number | core),
-                  runtimes: $target.releaseMinecraftVersions
-                }
+              | ([
+                  $versions[0][]
+                  | select(
+                      .version_type == "release" and
+                      .status == "listed" and
+                      (.loaders | index("fabric")) != null and
+                      (.game_versions | index($target.compile.minecraft)) != null and
+                      (.version_number | startswith("fabric-")) and
+                      (.version_number | core | .[0:2]) == $minor and
+                      (.version_number | core) > $maximum
+                    )
+                  | {
+                      target: $target.id,
+                      artifact: .version_number,
+                      core: (.version_number | core),
+                      runtimes: $target.releaseMinecraftVersions
+                    }
+                ]
+                | contiguous_after($maximum)[])
             ]
             | unique_by([.target, .artifact])
             | sort_by([.target, .core])
@@ -73,26 +91,44 @@ jobs:
               | sub("\\+.*$"; "")
               | split(".")
               | map(tonumber);
+            def contiguous_after($maximum):
+              sort_by([.core, .artifact])
+              | unique_by(.core)
+              | reduce .[] as $candidate (
+                  {accepted: [], next_patch: ($maximum[2] + 1), open: true};
+                  if .open and $candidate.core[2] == .next_patch then
+                    .accepted += [$candidate]
+                    | .next_patch += 1
+                  elif .open then
+                    .open = false
+                  else
+                    .
+                  end
+                )
+              | .accepted;
             [
               .server.targets[] as $target
               | ($target.voicechatArtifacts | map(core) | max) as $maximum
               | ($maximum[0:2]) as $minor
-              | $versions[0][]
-              | select(
-                  .version_type == "release" and
-                  .status == "listed" and
-                  (.loaders | index("bukkit")) != null and
-                  (.game_versions | index($target.minecraft)) != null and
-                  (.version_number | startswith("bukkit-")) and
-                  (.version_number | core | .[0:2]) == $minor and
-                  (.version_number | core) > $maximum
-                )
-              | {
-                  minecraft: $target.minecraft,
-                  build: $target.paperBuild,
-                  artifact: .version_number,
-                  core: (.version_number | core)
-                }
+              | ([
+                  $versions[0][]
+                  | select(
+                      .version_type == "release" and
+                      .status == "listed" and
+                      (.loaders | index("bukkit")) != null and
+                      (.game_versions | index($target.minecraft)) != null and
+                      (.version_number | startswith("bukkit-")) and
+                      (.version_number | core | .[0:2]) == $minor and
+                      (.version_number | core) > $maximum
+                    )
+                  | {
+                      minecraft: $target.minecraft,
+                      build: $target.paperBuild,
+                      artifact: .version_number,
+                      core: (.version_number | core)
+                    }
+                ]
+                | contiguous_after($maximum)[])
             ]
             | unique_by([.minecraft, .artifact])
             | sort_by([.minecraft, .core])
