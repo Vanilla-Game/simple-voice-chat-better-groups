@@ -1,3 +1,4 @@
+import net.fabricmc.loom.task.prod.ClientProductionRunTask
 import java.util.Properties
 
 plugins {
@@ -21,6 +22,8 @@ val voicechatVersion: String = providers.gradleProperty("voicechatVersion")
 val compatCheck = providers.gradleProperty("voicechatCompatCheck").isPresent
 val voicechatRange: String =
     if (compatCheck) "*" else compatibility.getProperty("voicechat.range")
+val fabricApiDependency = "net.fabricmc.fabric-api:fabric-api:$fabricApiVersion"
+val voicechatDependency = "maven.modrinth:simple-voice-chat:$voicechatVersion"
 
 base {
     archivesName =
@@ -42,9 +45,14 @@ dependencies {
     minecraft("com.mojang:minecraft:$minecraftVersion")
 
     implementation("net.fabricmc:fabric-loader:0.19.3")
-    implementation("net.fabricmc.fabric-api:fabric-api:$fabricApiVersion")
-    compileOnly("maven.modrinth:simple-voice-chat:$voicechatVersion")
-    runtimeOnly("maven.modrinth:simple-voice-chat:$voicechatVersion")
+    implementation(fabricApiDependency)
+    compileOnly(voicechatDependency)
+    runtimeOnly(voicechatDependency)
+
+    // ClientProductionRunTask launches remapped production mods rather than the
+    // development runtime classpath, so its runtime mods must be explicit.
+    add("productionRuntimeMods", fabricApiDependency)
+    add("productionRuntimeMods", voicechatDependency)
 }
 
 java {
@@ -74,8 +82,9 @@ tasks.processResources {
     }
 }
 
-if (compatCheck) {
-    loom.runs.named("client") {
-        systemProperties.put("svc_better_groups.compat_check", "true")
-    }
+tasks.register<ClientProductionRunTask>("runCompatClient") {
+    group = "verification"
+    description = "Launches the remapped client mod and verifies its Simple Voice Chat mixins"
+    useXVFB.set(true)
+    jvmArgs.add("-Dsvc_better_groups.compat_check=true")
 }

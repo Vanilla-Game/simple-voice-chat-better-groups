@@ -3,7 +3,8 @@ name: Voice Chat Compatibility
 # Reusable harness shared by the PR build (tested versions) and the discovery
 # workflow (new candidates). Each matrix leg compiles the client against one
 # Simple Voice Chat version and then verifies the mixins actually apply by
-# launching a headless client that force-loads both target classes.
+# launching the remapped client through Loom's production run task. Loom owns
+# the Xvfb wrapper used by the headless CI launch.
 
 on:
   workflow_call:
@@ -45,7 +46,7 @@ jobs:
 
       - name: Verify mixins apply on ${{ matrix.voicechat }}
         run: >
-          xvfb-run -a ./gradlew --no-daemon :client-fabric:runClient
+          ./gradlew --no-daemon :client-fabric:runCompatClient
           "-PvoicechatVersion=${{ matrix.voicechat }}"
           -PvoicechatCompatCheck=true
 
