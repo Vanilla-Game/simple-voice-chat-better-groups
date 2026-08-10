@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "svc_better_groups_client_test",
+  "version": "1.0.0",
+  "name": "Simple Voice Chat Better Groups Client Tests",
+  "environment": "client",
+  "entrypoints": {
+    "fabric-client-gametest": [
+      "ru.vanillagame.voicechat.bettergroups.test.VoiceChatCompatibilityGameTest"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "fabric-api": "*",
+    "svc_better_groups_client": "*"
+  }
+}
