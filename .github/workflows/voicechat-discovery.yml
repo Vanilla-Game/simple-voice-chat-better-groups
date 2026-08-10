@@ -194,7 +194,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Download compatibility results
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           pattern: compat-result-*
           merge-multiple: true

@@ -73,7 +73,7 @@ jobs:
           distribution: temurin
 
       - name: Download server plugin
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: server-compat-plugin-${{ inputs.suite }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: packaged-plugin
