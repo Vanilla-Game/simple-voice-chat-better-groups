@@ -10,7 +10,7 @@ plugins {
 }
 
 group = "ru.vanillagame.voicechat"
-version = "0.6.0" // x-release-please-version
+version = "0.7.0" // x-release-please-version
 
 repositories {
     mavenCentral()
