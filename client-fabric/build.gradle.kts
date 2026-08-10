@@ -1,5 +1,7 @@
-import net.fabricmc.loom.task.prod.ClientProductionRunTask
 import java.util.Properties
+
+import net.fabricmc.loom.task.prod.ClientProductionRunTask
+import org.gradle.jvm.tasks.Jar
 
 plugins {
     id("net.fabricmc.fabric-loom") version "1.17.19"
@@ -49,10 +51,20 @@ dependencies {
     compileOnly(voicechatDependency)
     runtimeOnly(voicechatDependency)
 
-    // ClientProductionRunTask launches remapped production mods rather than the
+    // ClientProductionRunTask launches packaged mods rather than the
     // development runtime classpath, so its runtime mods must be explicit.
     add("productionRuntimeMods", fabricApiDependency)
     add("productionRuntimeMods", voicechatDependency)
+}
+
+fabricApi {
+    configureTests {
+        createSourceSet.set(true)
+        modId.set("svc_better_groups_client_test")
+        enableGameTests.set(false)
+        enableClientGameTests.set(true)
+        eula.set(true)
+    }
 }
 
 java {
@@ -82,9 +94,16 @@ tasks.processResources {
     }
 }
 
-tasks.register<ClientProductionRunTask>("runCompatClient") {
+val gametestJar = tasks.register<Jar>("gametestJar") {
+    archiveClassifier.set("gametest")
+    from(sourceSets.named("gametest").map { it.output })
+}
+
+tasks.register<ClientProductionRunTask>("runProductionClientGameTest") {
     group = "verification"
-    description = "Launches the remapped client mod and verifies its Simple Voice Chat mixins"
+    description = "Runs the packaged client mod's Simple Voice Chat compatibility game test"
+    mods.from(gametestJar)
     useXVFB.set(true)
-    jvmArgs.add("-Dsvc_better_groups.compat_check=true")
+    jvmArgs.add("-Dfabric.client.gametest")
+    jvmArgs.add("-Dfabric.client.gametest.disableNetworkSynchronizer=true")
 }
