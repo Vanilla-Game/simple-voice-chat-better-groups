@@ -2,9 +2,9 @@ name: CI Build
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 permissions:
   contents: read
@@ -25,38 +25,122 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v5
 
-      - name: Build and test
-        run: ./gradlew --no-daemon clean build --warning-mode all
+      - name: Validate generated compatibility documentation
+        run: ruby scripts/update-compatibility-docs.rb --check
 
-      - name: Upload server and client jars
+      - name: Build, test, and stage release artifacts
+        run: ./gradlew --no-daemon clean build stageReleaseArtifacts --warning-mode all
+
+      - name: Locate staged artifacts
+        id: artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          server=(build/release/svc-better-groups-[0-9]*.jar)
+          fabric_26_1=(build/release/svc-better-groups-fabric-26.1-[0-9]*.jar)
+          fabric_26_2=(build/release/svc-better-groups-fabric-26.2-[0-9]*.jar)
+          all=(build/release/*.jar)
+          test "${#server[@]}" -eq 1
+          test "${#fabric_26_1[@]}" -eq 1
+          test "${#fabric_26_2[@]}" -eq 1
+          test "${#all[@]}" -eq 3
+          {
+            echo "server=${server[0]}"
+            echo "fabric_26_1=${fabric_26_1[0]}"
+            echo "fabric_26_2=${fabric_26_2[0]}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Upload staged release jars
         uses: actions/upload-artifact@v6
         with:
           name: svc-better-groups-${{ github.sha }}
           path: |
-            build/libs/*.jar
-            client-fabric/build/libs/*.jar
+            ${{ steps.artifacts.outputs.server }}
+            ${{ steps.artifacts.outputs.fabric_26_1 }}
+            ${{ steps.artifacts.outputs.fabric_26_2 }}
           if-no-files-found: error
           retention-days: 14
 
   read-compatibility:
     runs-on: ubuntu-latest
     outputs:
-      tested: ${{ steps.read.outputs.tested }}
+      fabric: ${{ steps.read.outputs.fabric }}
+      server: ${{ steps.read.outputs.server }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Read tested Simple Voice Chat versions
+      - name: Read compatibility matrices
         id: read
+        shell: bash
         run: |
-          tested=$(grep '^voicechat\.tested=' client-fabric/compatibility.properties | cut -d= -f2- \
-            | jq -Rc 'split(",") | map(gsub("^\\s+|\\s+$"; ""))')
-          echo "tested=$tested" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          fabric=$(jq -c '[.fabric.targets[] as $target | $target.compatibility[] | {
+            target: $target.id,
+            minecraft: .minecraft,
+            voicechatArtifact: .voicechatArtifact
+          }]' compatibility.json)
+          paper=$(jq -c '[.server.targets[] as $target | $target.voicechatArtifacts[] | {
+            platform: "paper",
+            minecraft: $target.minecraft,
+            build: $target.paperBuild,
+            voicechatArtifact: .
+          }]' compatibility.json)
+          leaf=$(jq -c '[.server.targets[] as $target
+            | [$target.voicechatArtifacts[0], $target.voicechatArtifacts[-1]][]
+            | {
+                platform: "leaf",
+                minecraft: $target.minecraft,
+                build: $target.leafBuild,
+                voicechatArtifact: .
+              }
+          ]' compatibility.json)
+          test "$(jq 'length' <<< "$fabric")" -ge 32
+          test "$(jq 'length' <<< "$paper")" -ge 9
+          test "$(jq 'length' <<< "$leaf")" -eq 4
+          server=$(jq -cn --argjson paper "$paper" --argjson leaf "$leaf" '$paper + $leaf')
+          {
+            echo "fabric=$fabric"
+            echo "server=$server"
+          } >> "$GITHUB_OUTPUT"
 
-  # Guards our own changes: every PR re-checks the client against every
-  # Simple Voice Chat version the mod currently claims to support.
   client-compatibility:
     needs: read-compatibility
     uses: ./.github/workflows/voicechat-compat.yml
     with:
-      versions: ${{ needs.read-compatibility.outputs.tested }}
+      matrix: ${{ needs.read-compatibility.outputs.fabric }}
+
+  server-compatibility:
+    needs: read-compatibility
+    uses: ./.github/workflows/server-compat.yml
+    with:
+      matrix: ${{ needs.read-compatibility.outputs.server }}
+      suite: supported
+
+  compatibility-gate:
+    name: Compatibility gate
+    if: always()
+    needs: [build, read-compatibility, client-compatibility, server-compatibility]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every build and compatibility suite
+        env:
+          BUILD_RESULT: ${{ needs.build.result }}
+          MATRIX_RESULT: ${{ needs.read-compatibility.result }}
+          CLIENT_RESULT: ${{ needs.client-compatibility.result }}
+          SERVER_RESULT: ${{ needs.server-compatibility.result }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          failed=false
+          for result in "$BUILD_RESULT" "$MATRIX_RESULT" "$CLIENT_RESULT" "$SERVER_RESULT"; do
+            if [ "$result" != success ]; then
+              failed=true
+            fi
+          done
+          if [ "$failed" = true ]; then
+            printf 'Required jobs: build=%s matrix=%s client=%s server=%s\n' \
+              "$BUILD_RESULT" "$MATRIX_RESULT" "$CLIENT_RESULT" "$SERVER_RESULT" >&2
+            exit 1
+          fi

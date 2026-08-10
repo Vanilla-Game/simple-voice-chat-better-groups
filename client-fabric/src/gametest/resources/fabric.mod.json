@@ -10,7 +10,7 @@
     ]
   },
   "depends": {
-    "fabricloader": ">=0.19.3",
+    "fabricloader": ">=${fabric_loader_version}",
     "fabric-api": "*",
     "svc_better_groups_client": "*"
   }

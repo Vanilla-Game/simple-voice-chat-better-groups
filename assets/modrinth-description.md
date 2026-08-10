@@ -15,9 +15,9 @@ The Paper plugin handles permissions and group changes on the server. An optiona
 
 ## Installation
 
-Grab the **Paper** file for your server — that's the plugin itself, and it works standalone: players don't need to install anything.
+Grab the **Paper** file for a Minecraft 26.1.2 or 26.2 server — that's the plugin itself, and it works standalone: players don't need to install anything. Paper is fully tested; Leaf support is experimental and smoke-tested.
 
-The **Fabric** file is an optional client mod for players who want buttons instead of commands:
+The **Fabric** files are optional client mods for players who want buttons instead of commands. Choose exactly one: `fabric-26.1` for Minecraft 26.1, 26.1.1, or 26.1.2; `fabric-26.2` for Minecraft 26.2.x.
 
 - **+** on the group screen opens a searchable player list — click someone to invite them;
 - **×** next to each member kicks them (only the leader sees it);
@@ -25,6 +25,15 @@ The **Fabric** file is an optional client mod for players who want buttons inste
 - a door button on a locked group's password screen sends a join request.
 
 On servers without Better Groups, its extra controls stay hidden, so the client mod can remain installed when joining other servers.
+
+Java 25 is required. Supported Simple Voice Chat versions are:
+
+- server 26.1.2: Bukkit SVC 2.6.16–2.6.21;
+- server 26.2: Bukkit SVC 2.6.19–2.6.21;
+- Fabric client 26.1.x: SVC 2.6.14–2.6.22;
+- Fabric client 26.2.x: SVC 2.6.18–2.6.22.
+
+Client and server SVC patch versions may differ when both are within the compatible 2.6 line. SVC 2.5.x, 2.7.x, beta, and unlisted builds are not supported. The client addon is Fabric-only; Forge, NeoForge, and Quilt are not supported.
 
 ## Usage
 
@@ -38,4 +47,4 @@ Everything works from chat, no client mod needed:
 
 ---
 
-*Minecraft 26.2 · Simple Voice Chat 2.6.18+ · 15 languages, matches your game language*
+*Minecraft server 26.1.2–26.2 · Fabric client 26.1.x or 26.2.x · Java 25 · 15 languages, matches your game language*

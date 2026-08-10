@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "java": 25,
+  "server": {
+    "compile": {
+      "paperApi": "26.1.2.build.74-stable",
+      "voicechatApi": "2.6.13"
+    },
+    "targets": [
+      {
+        "minecraft": "26.1.2",
+        "paperBuild": 74,
+        "leafBuild": 3,
+        "voicechatArtifacts": [
+          "bukkit-2.6.16",
+          "bukkit-2.6.17",
+          "bukkit-2.6.18",
+          "bukkit-2.6.19",
+          "bukkit-2.6.20",
+          "bukkit-2.6.21"
+        ]
+      },
+      {
+        "minecraft": "26.2",
+        "paperBuild": 111,
+        "leafBuild": 37,
+        "voicechatArtifacts": [
+          "bukkit-2.6.19",
+          "bukkit-2.6.20",
+          "bukkit-2.6.21"
+        ]
+      }
+    ]
+  },
+  "fabric": {
+    "targets": [
+      {
+        "id": "26.1",
+        "projectPath": ":client-fabric:mc26_1",
+        "archiveBaseName": "svc-better-groups-fabric-26.1",
+        "compile": {
+          "minecraft": "26.1.2",
+          "fabricLoader": "0.18.4",
+          "fabricApi": "0.144.3+26.1",
+          "voicechatArtifact": "fabric-2.6.14+26.1.1"
+        },
+        "minecraftDependency": "26.1.x",
+        "voicechatRange": ">=2.6.14 <2.6.23",
+        "releaseMinecraftVersions": [
+          "26.1",
+          "26.1.1",
+          "26.1.2"
+        ],
+        "compatibility": [
+          { "minecraft": "26.1", "voicechatArtifact": "fabric-2.6.14+26.1" },
+          { "minecraft": "26.1", "voicechatArtifact": "fabric-2.6.14+26.1.1" },
+          { "minecraft": "26.1.1", "voicechatArtifact": "fabric-2.6.14+26.1.1" },
+          { "minecraft": "26.1", "voicechatArtifact": "fabric-2.6.15+26.1.1" },
+          { "minecraft": "26.1.1", "voicechatArtifact": "fabric-2.6.15+26.1.1" },
+          { "minecraft": "26.1.2", "voicechatArtifact": "fabric-2.6.15+26.1.1" },
+          { "minecraft": "26.1", "voicechatArtifact": "fabric-2.6.16+26.1.2" },
+          { "minecraft": "26.1.1", "voicechatArtifact": "fabric-2.6.16+26.1.2" },
+          { "minecraft": "26.1.2", "voicechatArtifact": "fabric-2.6.16+26.1.2" },
+          { "minecraft": "26.1", "voicechatArtifact": "fabric-2.6.17+26.1.2" },
+          { "minecraft": "26.1.1", "voicechatArtifact": "fabric-2.6.17+26.1.2" },
+          { "minecraft": "26.1.2", "voicechatArtifact": "fabric-2.6.17+26.1.2" },
+          { "minecraft": "26.1", "voicechatArtifact": "fabric-2.6.18+26.1.2" },
+          { "minecraft": "26.1.1", "voicechatArtifact": "fabric-2.6.18+26.1.2" },
+          { "minecraft": "26.1.2", "voicechatArtifact": "fabric-2.6.18+26.1.2" },
+          { "minecraft": "26.1", "voicechatArtifact": "fabric-2.6.19+26.1.2" },
+          { "minecraft": "26.1.1", "voicechatArtifact": "fabric-2.6.19+26.1.2" },
+          { "minecraft": "26.1.2", "voicechatArtifact": "fabric-2.6.19+26.1.2" },
+          { "minecraft": "26.1", "voicechatArtifact": "fabric-2.6.20+26.1.2" },
+          { "minecraft": "26.1.1", "voicechatArtifact": "fabric-2.6.20+26.1.2" },
+          { "minecraft": "26.1.2", "voicechatArtifact": "fabric-2.6.20+26.1.2" },
+          { "minecraft": "26.1", "voicechatArtifact": "fabric-2.6.21+26.1.2" },
+          { "minecraft": "26.1.1", "voicechatArtifact": "fabric-2.6.21+26.1.2" },
+          { "minecraft": "26.1.2", "voicechatArtifact": "fabric-2.6.21+26.1.2" },
+          { "minecraft": "26.1", "voicechatArtifact": "fabric-2.6.22+26.1.2" },
+          { "minecraft": "26.1.1", "voicechatArtifact": "fabric-2.6.22+26.1.2" },
+          { "minecraft": "26.1.2", "voicechatArtifact": "fabric-2.6.22+26.1.2" }
+        ]
+      },
+      {
+        "id": "26.2",
+        "projectPath": ":client-fabric:mc26_2",
+        "archiveBaseName": "svc-better-groups-fabric-26.2",
+        "compile": {
+          "minecraft": "26.2",
+          "fabricLoader": "0.19.3",
+          "fabricApi": "0.152.1+26.2",
+          "voicechatArtifact": "fabric-2.6.18+26.2"
+        },
+        "minecraftDependency": "26.2.x",
+        "voicechatRange": ">=2.6.18 <2.6.23",
+        "releaseMinecraftVersions": [
+          "26.2"
+        ],
+        "compatibility": [
+          { "minecraft": "26.2", "voicechatArtifact": "fabric-2.6.18+26.2" },
+          { "minecraft": "26.2", "voicechatArtifact": "fabric-2.6.19+26.2" },
+          { "minecraft": "26.2", "voicechatArtifact": "fabric-2.6.20+26.2" },
+          { "minecraft": "26.2", "voicechatArtifact": "fabric-2.6.21+26.2" },
+          { "minecraft": "26.2", "voicechatArtifact": "fabric-2.6.22+26.2" }
+        ]
+      }
+    ]
+  }
+}

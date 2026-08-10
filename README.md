@@ -6,41 +6,44 @@ Developed for [Vanilla Game](https://vanilla-game.ru).
 
 The plugin ID used with the Simple Voice Chat API is `vanilla_game_svc_better_groups`.
 
-The repository builds two separate artifacts:
+The repository builds three separate artifacts with one shared project version:
 
 - `build/libs/svc-better-groups-<version>.jar` — the authoritative Paper/Leaf server plugin.
-- `client-fabric/build/libs/svc-better-groups-fabric-<version>.jar` — the optional Fabric client UI addon.
+- `client-fabric/mc26_1/build/libs/svc-better-groups-fabric-26.1-<version>.jar` — the optional Fabric client UI addon for Minecraft 26.1.x.
+- `client-fabric/mc26_2/build/libs/svc-better-groups-fabric-26.2-<version>.jar` — the optional Fabric client UI addon for Minecraft 26.2.x.
+
+Release-ready copies are staged under `build/release/`. Install exactly one of the two Fabric jars: they intentionally share the same mod ID and differ only in the Minecraft line they target.
 
 ## Requirements and version choices
 
-- Leaf or Paper-compatible server for Minecraft `26.2`
+- Paper-compatible server for Minecraft `26.1.2` or `26.2`; Leaf support is experimental and smoke-tested
 - Java `25` or newer
-- Simple Voice Chat server plugin `2.6.21`
+- Simple Voice Chat Bukkit `2.6.16`–`2.6.21` on Minecraft `26.1.2`, or `2.6.19`–`2.6.21` on Minecraft `26.2`
 
 The optional client module additionally requires:
 
-- Minecraft `26.2`
-- Fabric Loader `0.19.3` or newer
-- Fabric API `0.152.1` or newer for Minecraft `26.2`
-- Simple Voice Chat Fabric `2.6.18` or newer within the supported range
+- for Minecraft `26.1`, `26.1.1`, or `26.1.2`: the `fabric-26.1` jar, Fabric Loader `0.18.4` or newer, Fabric API `0.144.3+26.1` or newer for that Minecraft line, and Simple Voice Chat Fabric `2.6.14`–`2.6.22`;
+- for Minecraft `26.2.x`: the `fabric-26.2` jar, Fabric Loader `0.19.3` or newer, Fabric API `0.152.1+26.2` or newer, and Simple Voice Chat Fabric `2.6.18`–`2.6.22`.
 
-The server project compiles against Paper API `26.2.build.84-stable` and emits Java 25 bytecode. Paper's 26.2 development documentation specifies Java 25 and the `26.2.build.*` API line. Simple Voice Chat 2.6.19 is the first Bukkit release for Minecraft 26.2 and exposes the separately published public API artifact `voicechat-api:2.6.19`, which is used as a compile-only dependency by the server plugin.
+The server project compiles against the minimum supported Paper API, `26.1.2.build.74-stable`, and the public Simple Voice Chat API `2.6.13`, then boots the same release jar across the complete supported Paper/SVC matrix. It emits Java 25 bytecode. Minecraft server versions 26.1 and 26.1.1 are not supported: 26.1 has no applicable Paper server build, and 26.1.1 did not reach the stable Paper baseline used by this project.
 
-The Fabric module intentionally targets Simple Voice Chat's client UI classes for version `2.6.21`. It uses two small Mixins instead of copying or replacing the group screen. The client dependency range is deliberately capped; every Simple Voice Chat update is checked by CI before the range is widened. See "Simple Voice Chat compatibility automation" below.
+Both Fabric variants use the same source and targeted Mixins instead of copying or replacing the Simple Voice Chat group screen. Each published jar is run unchanged against every declared Minecraft/SVC combination before release. The dependency ranges are deliberately capped; see "Simple Voice Chat compatibility automation" below.
+
+Simple Voice Chat supports different patch releases on the server and client when both remain on the compatible `2.6` protocol line. They do not need identical patch numbers. The supported ranges above are nevertheless strict: SVC `2.5.x`, `2.7.x`, beta, and unlisted builds are outside this project's tested contract.
 
 ## Installation
 
-1. Install Simple Voice Chat 2.6.21 on the server.
+1. Install a Simple Voice Chat Bukkit release supported by the server's Minecraft version.
 2. Build this plugin with `./gradlew build`.
-3. Copy the `build/libs/svc-better-groups-*.jar` file into the server's `plugins` directory.
+3. Copy `svc-better-groups-<version>.jar` into the server's `plugins` directory.
 4. Restart the server. A full restart is recommended instead of Bukkit plugin reload tools.
 
 The plugin declares a hard dependency on `voicechat`. If Simple Voice Chat is missing, the server will not load this plugin. If its `BukkitVoicechatService` is unexpectedly unavailable, this plugin logs a severe error and disables itself.
 
 ### Optional Fabric client
 
-1. Install Fabric Loader, Fabric API, and Simple Voice Chat `2.6.21` for Minecraft `26.2` on the client.
-2. Copy `client-fabric/build/libs/svc-better-groups-fabric-*.jar` into the client's `mods` directory.
+1. Install Fabric Loader, Fabric API, and a supported Simple Voice Chat Fabric build for the client's exact Minecraft version.
+2. Copy `svc-better-groups-fabric-26.1-<version>.jar` for Minecraft 26.1.x, or `svc-better-groups-fabric-26.2-<version>.jar` for Minecraft 26.2.x, into the client's `mods` directory. Do not install both.
 3. Connect to a server that runs the matching Paper plugin.
 
 The client addon waits for a valid response to its versioned handshake with the Paper plugin and keeps its controls hidden until a compatible server confirms support. On supported servers it adds:
@@ -54,11 +57,11 @@ The server still performs every permission, leadership, membership, and live-sta
 
 ## Releases
 
-Releases follow the same Release Please workflow used by other Vanilla Game plugins. The server plugin and the client mod share one release cycle and one version: every `v<version>` GitHub Release carries both jars, and the matching Modrinth versions (`paper-…` and `fabric-…`) use the same number — installing the same number on both sides is always a compatible pairing. Historical client releases keep their `svc-better-groups-fabric-v*` tags.
+Releases follow the same Release Please workflow used by other Vanilla Game plugins. The server plugin and both client variants share one release cycle and one version: every `v<version>` GitHub Release carries all three jars. Modrinth publishes separate Paper, Fabric 26.1, and Fabric 26.2 version entries with that shared project version. Historical client releases keep their `svc-better-groups-fabric-v*` tags.
 
 Pull request titles are checked for Conventional Commit format, and every pull request to `main` runs the Gradle build and unit tests.
 
-After the client release is published, manually update its Modrinth listing: replace any "creator only" wording with "current leader", add Fabric API as a Required dependency for the released client version, and note in the version changelog that the full leader UI requires the server plugin `0.3.0` or newer. This is a post-release metadata step and is not performed by the repository release workflow.
+Each Fabric Modrinth entry declares Fabric API and Simple Voice Chat as required dependencies and lists only the Minecraft versions supported by its jar. The Paper entry lists Minecraft 26.1.2 and 26.2. Publishing, deploying, and restarting servers remain separate operations.
 
 ## Commands
 
@@ -131,20 +134,28 @@ Server translations are bundled in `src/main/resources/lang/`, with matching cli
 
 ## Simple Voice Chat compatibility automation
 
-`client-fabric/compatibility.properties` is the single source of truth for the client module:
+`compatibility.json` is the single source of truth for the server and both client variants. It records:
 
-- `minecraft` — the targeted Minecraft version, used by Gradle and `fabric.mod.json`.
-- `fabric-api` — the Fabric API version used to compile and run the client networking channel, including compatibility-harness launches.
-- `voicechat.compile` — the minimum supported Simple Voice Chat artifact; the client always compiles against it so newer-only APIs cannot creep in.
-- `voicechat.range` — the dependency range shipped in `fabric.mod.json`.
-- `voicechat.tested` — every Simple Voice Chat version verified by CI.
+- minimum compile-time Paper and Simple Voice Chat APIs;
+- pinned Paper and experimental Leaf runtime builds;
+- each Fabric line's Minecraft, Loader, Fabric API, compile-time SVC artifact, and published dependency range;
+- every exact Minecraft runtime and SVC artifact pair verified by CI.
 
 Two workflows consume it:
 
-- Every pull request re-checks the client against every version in `voicechat.tested` (compile plus a production-like client launch through Loom's `ClientProductionRunTask`, using its built-in Xvfb support and a separate Fabric Client GameTest mod that force-loads every mixin target class; `required: true` with `defaultRequire: 1` turns any missing injection point into a non-zero exit). The GameTest framework reports failures and shuts the client down normally, while no test harness code is included in the published mod. This guards our own changes as much as Simple Voice Chat updates.
-- A daily discovery workflow queries the Modrinth API for new Simple Voice Chat Fabric releases for the targeted Minecraft version, runs the same harness against them, and opens a draft `fix:` pull request that widens `voicechat.range` and extends `voicechat.tested` across the contiguous green prefix only. A red version is never skipped, and the prefix never crosses a minor-version boundary — a shipped range must not cover an untested gap that a later backport could land in, so moving to a new Simple Voice Chat minor line is a manual decision. `voicechat.compile` is never bumped automatically. The `fix:` type makes release-please ship the widened range in a patch release of the client mod; the server plugin is versioned independently and is not re-released.
+- Every pull request builds each release jar once, then launches that exact jar against every declared runtime pair. Fabric runs use a separate non-published Loom/GameTest runner that force-loads every mixin target class; `required: true` with `defaultRequire: 1` turns any missing injection point into a non-zero exit. Paper runs boot the same server jar with every supported Bukkit SVC build, while Leaf runs the minimum and maximum SVC build for each server version. No test harness code is included in a published mod.
+- A daily discovery workflow queries listed Modrinth release builds independently for Fabric 26.1.x, Fabric 26.2, Bukkit 26.1.2, and Bukkit 26.2. It widens only the contiguous green prefix for each target and never skips a failed version or crosses into a new SVC minor. New Minecraft lines and SVC 2.7 require manual review.
 
-The compatibility harness builds a test-only flavor (`-PvoicechatCompatCheck`) that relaxes the `fabric.mod.json` range to `*` — otherwise Fabric Loader would reject a candidate version before mixins are even applied — and renames the jar to `svc-better-groups-fabric-compat-test-<version>.jar`. This flavor exists only inside the compatibility jobs and is never uploaded as an artifact or attached to releases.
+The CI workflow finishes with one stable `Compatibility gate` check that aggregates the build and both compatibility suites. Repository branch protection or a ruleset must require that check to make it merge-blocking; the workflow itself cannot enforce GitHub merge policy.
+
+For discovery only, the harness may generate a probe jar with the same compiled addon classes and a temporary unrestricted SVC dependency. Published jars never relax their metadata. The probe, GameTest jar, and runner outputs are never staged or attached to releases.
+
+## Unsupported combinations
+
+- Minecraft servers 26.1 and 26.1.1, and all Minecraft 1.21.x versions.
+- Simple Voice Chat 2.5.x, 2.7.x, beta, and unlisted builds.
+- Forge, NeoForge, and Quilt clients. The optional UI addon is Fabric-only.
+- Two Better Groups Fabric variants installed together.
 
 ## Development
 

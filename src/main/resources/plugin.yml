@@ -1,7 +1,7 @@
 name: SVCBetterGroups
 version: "${version}"
 main: ru.vanillagame.voicechat.bettergroups.BetterGroupsPlugin
-api-version: "26.2"
+api-version: "26.1.2"
 description: Password-free group invites and leader-authorized group kicks for Simple Voice Chat.
 website: "https://vanilla-game.ru"
 depend: [voicechat]
