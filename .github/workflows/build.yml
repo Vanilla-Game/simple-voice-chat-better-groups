@@ -117,3 +117,30 @@ jobs:
     with:
       matrix: ${{ needs.read-compatibility.outputs.server }}
       suite: supported
+
+  compatibility-gate:
+    name: Compatibility gate
+    if: always()
+    needs: [build, read-compatibility, client-compatibility, server-compatibility]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every build and compatibility suite
+        env:
+          BUILD_RESULT: ${{ needs.build.result }}
+          MATRIX_RESULT: ${{ needs.read-compatibility.result }}
+          CLIENT_RESULT: ${{ needs.client-compatibility.result }}
+          SERVER_RESULT: ${{ needs.server-compatibility.result }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          failed=false
+          for result in "$BUILD_RESULT" "$MATRIX_RESULT" "$CLIENT_RESULT" "$SERVER_RESULT"; do
+            if [ "$result" != success ]; then
+              failed=true
+            fi
+          done
+          if [ "$failed" = true ]; then
+            printf 'Required jobs: build=%s matrix=%s client=%s server=%s\n' \
+              "$BUILD_RESULT" "$MATRIX_RESULT" "$CLIENT_RESULT" "$SERVER_RESULT" >&2
+            exit 1
+          fi

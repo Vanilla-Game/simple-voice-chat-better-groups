@@ -185,6 +185,6 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: compat-logs-fabric-${{ matrix.target }}-${{ matrix.minecraft }}-${{ matrix.voicechatArtifact }}
-          path: client-fabric/compat-runner/run/
+          path: client-fabric/compat-runner/build/run/
           if-no-files-found: ignore
           retention-days: 7

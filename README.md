@@ -146,6 +146,8 @@ Two workflows consume it:
 - Every pull request builds each release jar once, then launches that exact jar against every declared runtime pair. Fabric runs use a separate non-published Loom/GameTest runner that force-loads every mixin target class; `required: true` with `defaultRequire: 1` turns any missing injection point into a non-zero exit. Paper runs boot the same server jar with every supported Bukkit SVC build, while Leaf runs the minimum and maximum SVC build for each server version. No test harness code is included in a published mod.
 - A daily discovery workflow queries listed Modrinth release builds independently for Fabric 26.1.x, Fabric 26.2, Bukkit 26.1.2, and Bukkit 26.2. It widens only the contiguous green prefix for each target and never skips a failed version or crosses into a new SVC minor. New Minecraft lines and SVC 2.7 require manual review.
 
+The CI workflow finishes with one stable `Compatibility gate` check that aggregates the build and both compatibility suites. Repository branch protection or a ruleset must require that check to make it merge-blocking; the workflow itself cannot enforce GitHub merge policy.
+
 For discovery only, the harness may generate a probe jar with the same compiled addon classes and a temporary unrestricted SVC dependency. Published jars never relax their metadata. The probe, GameTest jar, and runner outputs are never staged or attached to releases.
 
 ## Unsupported combinations
