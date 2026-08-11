@@ -191,7 +191,7 @@ jobs:
             fi
 
             result=fail
-            if ./gradlew "${args[@]}"; then
+            if ./gradlew "${args[@]}" </dev/null; then
               result=ok
             else
               failed=true
