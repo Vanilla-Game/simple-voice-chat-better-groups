@@ -7,7 +7,7 @@ root = File.expand_path("..", __dir__)
 catalog = JSON.parse(File.read(File.join(root, "compatibility.json")))
 
 def artifact_core(artifact)
-  artifact.sub(/^(fabric|bukkit)-/, "").sub(/\+.*/, "")
+  artifact.sub(/^(fabric|bukkit)-/, "").sub(/\+.*/, "").split("-").last
 end
 
 def artifact_range(artifacts)
@@ -16,7 +16,7 @@ def artifact_range(artifacts)
 end
 
 def declared_range(range)
-  match = range.match(/\A>=(\d+\.\d+\.\d+) <(\d+)\.(\d+)\.(\d+)\z/) or raise "Invalid range: #{range}"
+  match = range.match(/\A>=(?:\d+\.\d+\.\d+-)?(\d+\.\d+\.\d+) <(?:\d+\.\d+\.\d+-)?(\d+)\.(\d+)\.(\d+)\z/) or raise "Invalid range: #{range}"
   "#{match[1]}–#{match[2]}.#{match[3]}.#{match[4].to_i - 1}"
 end
 
@@ -25,25 +25,30 @@ fabric = catalog.fetch("fabric").fetch("targets").to_h { |target| [target.fetch(
 
 server_26_1 = artifact_range(server.fetch("26.1.2").fetch("voicechatArtifacts"))
 server_26_2 = artifact_range(server.fetch("26.2").fetch("voicechatArtifacts"))
+fabric_1_21_11 = declared_range(fabric.fetch("1.21.11").fetch("voicechatRange"))
 fabric_26_1 = declared_range(fabric.fetch("26.1").fetch("voicechatRange"))
 fabric_26_2 = declared_range(fabric.fetch("26.2").fetch("voicechatRange"))
 
 replacements = {
   "README.md" => [
     [
-      /(\| \[`svc-better-groups-\d+\.\d+\.\d+\.jar`\]\([^\n]+\) \| `26\.1\.2` \| Paper; Leaf \(experimental\) \| `25`\+ \| Bukkit `)\d+\.\d+\.\d+`–`\d+\.\d+\.\d+(` \|)/,
+      /(\| \[`svc-better-groups-\d+\.\d+\.\d+\.jar`\]\([^\n]+\) +\| `26\.1\.2` +\| Paper; Leaf \(experimental\) +\| `25`\+ +\| Bukkit `)\d+\.\d+\.\d+`–`\d+\.\d+\.\d+(` +\|)/,
       "\\1#{server_26_1.split('–').join('`–`')}\\2"
     ],
     [
-      /(\| \[`svc-better-groups-\d+\.\d+\.\d+\.jar`\]\([^\n]+\) \| `26\.2` \| Paper; Leaf \(experimental\) \| `25`\+ \| Bukkit `)\d+\.\d+\.\d+`–`\d+\.\d+\.\d+(` \|)/,
+      /(\| \[`svc-better-groups-\d+\.\d+\.\d+\.jar`\]\([^\n]+\) +\| `26\.2` +\| Paper; Leaf \(experimental\) +\| `25`\+ +\| Bukkit `)\d+\.\d+\.\d+`–`\d+\.\d+\.\d+(` +\|)/,
       "\\1#{server_26_2.split('–').join('`–`')}\\2"
     ],
     [
-      /(\| \[`svc-better-groups-fabric-26\.1-\d+\.\d+\.\d+\.jar`\]\([^\n]+\) \| `26\.1`–`26\.1\.2` \| Fabric Loader `0\.18\.4`\+ \| `0\.144\.3\+26\.1`\+ \| `25`\+ \| Fabric `)\d+\.\d+\.\d+`–`\d+\.\d+\.\d+(` \|)/,
+      /(\| \[`svc-better-groups-fabric-1\.21\.11-\d+\.\d+\.\d+\.jar`\]\([^\n]+\) +\| `1\.21\.11` +\| Fabric Loader `0\.18\.1`\+ +\| `0\.139\.4\+1\.21\.11`\+ +\| `21`\+ +\| Fabric `)\d+\.\d+\.\d+`–`\d+\.\d+\.\d+(` +\|)/,
+      "\\1#{fabric_1_21_11.split('–').join('`–`')}\\2"
+    ],
+    [
+      /(\| \[`svc-better-groups-fabric-26\.1-\d+\.\d+\.\d+\.jar`\]\([^\n]+\) +\| `26\.1`–`26\.1\.2` +\| Fabric Loader `0\.18\.4`\+ +\| `0\.144\.3\+26\.1`\+ +\| `25`\+ +\| Fabric `)\d+\.\d+\.\d+`–`\d+\.\d+\.\d+(` +\|)/,
       "\\1#{fabric_26_1.split('–').join('`–`')}\\2"
     ],
     [
-      /(\| \[`svc-better-groups-fabric-26\.2-\d+\.\d+\.\d+\.jar`\]\([^\n]+\) \| `26\.2\.x` \| Fabric Loader `0\.19\.3`\+ \| `0\.152\.1\+26\.2`\+ \| `25`\+ \| Fabric `)\d+\.\d+\.\d+`–`\d+\.\d+\.\d+(` \|)/,
+      /(\| \[`svc-better-groups-fabric-26\.2-\d+\.\d+\.\d+\.jar`\]\([^\n]+\) +\| `26\.2\.x` +\| Fabric Loader `0\.19\.3`\+ +\| `0\.152\.1\+26\.2`\+ +\| `25`\+ +\| Fabric `)\d+\.\d+\.\d+`–`\d+\.\d+\.\d+(` +\|)/,
       "\\1#{fabric_26_2.split('–').join('`–`')}\\2"
     ]
   ]
