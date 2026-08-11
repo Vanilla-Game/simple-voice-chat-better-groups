@@ -26,6 +26,7 @@ class JoinNotifierTest {
         UUID groupId = UUID.randomUUID();
         Player creator = player("Creator");
         Player joiner = player("Joiner");
+        when(creator.canSee(joiner)).thenReturn(true);
         leadership.createGroup(groupId, creator.getUniqueId());
         leadership.join(groupId, joiner.getUniqueId());
 
@@ -41,6 +42,30 @@ class JoinNotifierTest {
         }
 
         verify(creator, times(2)).sendMessage(any(Component.class));
+        verify(joiner, never()).sendMessage(any(Component.class));
+    }
+
+    @Test
+    void doesNotNotifyMembersWhoCannotSeeJoiner() {
+        GroupLeadershipRegistry leadership = new GroupLeadershipRegistry();
+        BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
+        JoinNotifier notifier = new JoinNotifier(plugin, leadership);
+        UUID groupId = UUID.randomUUID();
+        Player hiddenFromMember = player("Member");
+        Player joiner = player("VanishedJoiner");
+        leadership.createGroup(groupId, hiddenFromMember.getUniqueId());
+        leadership.join(groupId, joiner.getUniqueId());
+
+        when(hiddenFromMember.canSee(joiner)).thenReturn(false);
+        try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
+            bukkit.when(Bukkit::isPrimaryThread).thenReturn(true);
+            bukkit.when(() -> Bukkit.getPlayer(hiddenFromMember.getUniqueId())).thenReturn(hiddenFromMember);
+            bukkit.when(() -> Bukkit.getPlayer(joiner.getUniqueId())).thenReturn(joiner);
+
+            notifier.onJoin(groupId, joiner.getUniqueId());
+        }
+
+        verify(hiddenFromMember, never()).sendMessage(any(Component.class));
         verify(joiner, never()).sendMessage(any(Component.class));
     }
 

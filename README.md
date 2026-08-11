@@ -1,4 +1,4 @@
-# Simple Voice Chat Better Groups
+# 🎙️ Simple Voice Chat Better Groups
 
 [![Latest release](https://img.shields.io/github/v/release/Vanilla-Game/simple-voice-chat-better-groups?style=flat-square&logo=github&label=Release)](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/Vanilla-Game/simple-voice-chat-better-groups/total?style=flat-square&logo=github&label=Downloads)](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases)
@@ -12,7 +12,7 @@ The Paper plugin contains all gameplay logic. Players can use every feature thro
 
 Developed for [Vanilla Game](https://vanilla-game.ru).
 
-## Features
+## ✨ Features
 
 - One-time invites that expire without exposing a group password.
 - Join requests for visible, password-protected groups. The leader accepts them with one click.
@@ -21,7 +21,7 @@ Developed for [Vanilla Game](https://vanilla-game.ru).
 - Group chat announcements when a player joins, including who invited them.
 - Messages in 15 languages, selected from each player's Minecraft locale.
 
-## Installation
+## 📦 Installation
 
 ### Server
 
@@ -53,7 +53,7 @@ Client and server Simple Voice Chat patch versions may differ when both are in t
 
 See [`compatibility.json`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/blob/main/compatibility.json) for the exact tested combinations.
 
-## Usage
+## 🎮 Usage
 
 All commands are player-only. `/vcgroup` is a permanent alias for `/voicegroup`.
 
@@ -72,13 +72,13 @@ The optional client mod adds:
 
 The server checks every action. Installing or modifying the client mod cannot grant leader permissions.
 
-## Leadership
+## 👑 Leadership
 
 The group creator becomes its first leader. If the leader leaves the group or quits the server, the longest-standing remaining member takes over. A returning former leader joins the end of that order. The current leader can hand the role to another member with `/voicegroup transfer`.
 
 Leadership exists only in memory because the public Simple Voice Chat API does not expose historical group ownership. If the plugin is reloaded while groups still exist, it cannot safely identify their leaders. For those groups, leader-only actions are denied and the crown stays hidden until the groups are recreated.
 
-## Server configuration
+## ⚙️ Server configuration
 
 Settings are generated in `plugins/SVCBetterGroups/config.yml`. Server owners can change invite and join-request expiration, cooldown, and notification sound. Set a cooldown to `0` or a sound to `none` to disable it. Restart the plugin or server after editing the file.
 
