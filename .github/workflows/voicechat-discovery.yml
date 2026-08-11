@@ -39,7 +39,7 @@ jobs:
           jq --slurpfile versions versions.json '
             def core:
               sub("^(fabric|bukkit)-"; "")
-              | sub("\\+.*$"; "")
+              | capture("(?<core>[0-9]+\\.[0-9]+\\.[0-9]+)(?:\\+.*)?$").core
               | split(".")
               | map(tonumber);
             def contiguous_after($maximum):
@@ -88,7 +88,7 @@ jobs:
           jq --slurpfile versions versions.json '
             def core:
               sub("^(fabric|bukkit)-"; "")
-              | sub("\\+.*$"; "")
+              | capture("(?<core>[0-9]+\\.[0-9]+\\.[0-9]+)(?:\\+.*)?$").core
               | split(".")
               | map(tonumber);
             def contiguous_after($maximum):
@@ -238,7 +238,9 @@ jobs:
               IFS=. read -r major minor patch <<< "$last_core"
               old_range=$(jq -r --arg target "$target" '.fabric.targets[] | select(.id == $target) | .voicechatRange' compatibility.json)
               lower=${old_range%% *}
-              new_range="$lower <$major.$minor.$((patch + 1))"
+              old_upper=${old_range#* <}
+              upper_prefix=${old_upper%${old_upper##*-}}
+              new_range="$lower <${upper_prefix}$major.$minor.$((patch + 1))"
               jq --arg target "$target" --arg range "$new_range" --argjson entries "$entries" '
                 (.fabric.targets[] | select(.id == $target) | .voicechatRange) = $range |
                 (.fabric.targets[] | select(.id == $target) | .compatibility) += $entries

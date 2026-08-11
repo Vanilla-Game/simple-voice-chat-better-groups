@@ -2,7 +2,9 @@
 
 import groovy.json.JsonSlurper
 import java.util.zip.ZipFile
+import net.fabricmc.loom.api.LoomGradleExtensionAPI
 import net.fabricmc.loom.api.fabricapi.FabricApiExtension
+import net.fabricmc.loom.task.RemapJarTask
 import net.fabricmc.loom.task.prod.ClientProductionRunTask
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.plugins.BasePluginExtension
@@ -15,6 +17,7 @@ import org.gradle.language.jvm.tasks.ProcessResources
 plugins {
     base
     id("net.fabricmc.fabric-loom") version "1.17.19" apply false
+    id("net.fabricmc.fabric-loom-remap") version "1.17.19" apply false
 }
 
 group = rootProject.group
@@ -41,20 +44,24 @@ fun Project.addFabricRepositories() {
     }
 }
 
-fun Project.configureJava25() {
+fun Project.configureJava(targetVersion: Int) {
     extensions.configure<JavaPluginExtension> {
-        toolchain.languageVersion = JavaLanguageVersion.of(catalogJavaVersion)
-        sourceCompatibility = JavaVersion.toVersion(catalogJavaVersion)
-        targetCompatibility = JavaVersion.toVersion(catalogJavaVersion)
+        toolchain.languageVersion = JavaLanguageVersion.of(targetVersion)
+        sourceCompatibility = JavaVersion.toVersion(targetVersion)
+        targetCompatibility = JavaVersion.toVersion(targetVersion)
     }
     tasks.withType<JavaCompile>().configureEach {
         options.encoding = "UTF-8"
-        options.release = catalogJavaVersion
+        options.release = targetVersion
     }
 }
 
 fun Project.configureReleaseClient(target: Map<String, Any?>) {
-    pluginManager.apply("net.fabricmc.fabric-loom")
+    val obfuscated = target.getValue("obfuscated") as Boolean
+    pluginManager.apply(
+        if (obfuscated) "net.fabricmc.fabric-loom-remap"
+        else "net.fabricmc.fabric-loom"
+    )
     group = rootProject.group
     version = rootProject.version
 
@@ -67,8 +74,10 @@ fun Project.configureReleaseClient(target: Map<String, Any?>) {
     val voicechatArtifact = compile.getValue("voicechatArtifact")
     val minecraftDependency = target.getValue("minecraftDependency") as String
     val voicechatRange = target.getValue("voicechatRange") as String
+    val javaVersion = (target.getValue("java") as Number).toInt()
     val fabricApiDependency = "net.fabricmc.fabric-api:fabric-api:$fabricApiVersion"
     val voicechatDependency = "maven.modrinth:simple-voice-chat:$voicechatArtifact"
+    val loom = extensions.getByType<LoomGradleExtensionAPI>()
 
     extensions.configure<BasePluginExtension> {
         archivesName.set(target.getValue("archiveBaseName") as String)
@@ -77,10 +86,18 @@ fun Project.configureReleaseClient(target: Map<String, Any?>) {
 
     dependencies {
         add("minecraft", "com.mojang:minecraft:$minecraftVersion")
-        add("implementation", "net.fabricmc:fabric-loader:$loaderVersion")
-        add("implementation", fabricApiDependency)
-        add("compileOnly", voicechatDependency)
-        add("runtimeOnly", voicechatDependency)
+        if (obfuscated) {
+            add("mappings", loom.officialMojangMappings())
+            add("modImplementation", "net.fabricmc:fabric-loader:$loaderVersion")
+            add("modImplementation", fabricApiDependency)
+            add("modCompileOnly", voicechatDependency)
+            add("modRuntimeOnly", voicechatDependency)
+        } else {
+            add("implementation", "net.fabricmc:fabric-loader:$loaderVersion")
+            add("implementation", fabricApiDependency)
+            add("compileOnly", voicechatDependency)
+            add("runtimeOnly", voicechatDependency)
+        }
         add("productionRuntimeMods", fabricApiDependency)
         add("productionRuntimeMods", voicechatDependency)
     }
@@ -91,7 +108,23 @@ fun Project.configureReleaseClient(target: Map<String, Any?>) {
             resources.setSrcDirs(listOf(rootProject.file("client-fabric/src/main/resources")))
         }
     }
-    configureJava25()
+    if (obfuscated) {
+        val legacyOverrides = listOf(
+            "ru/vanillagame/voicechat/bettergroups/client/ClientNetworking.java",
+            "ru/vanillagame/voicechat/bettergroups/client/gui/InvitePlayerEntry.java",
+            "ru/vanillagame/voicechat/bettergroups/client/gui/InvitePlayerScreen.java",
+            "ru/vanillagame/voicechat/bettergroups/client/mixin/GroupEntryMixin.java"
+        )
+        extensions.configure<SourceSetContainer> {
+            named("main") {
+                java.exclude(legacyOverrides)
+            }
+        }
+        tasks.named<JavaCompile>("compileJava") {
+            source(rootProject.fileTree("client-fabric/src/legacy/java"))
+        }
+    }
+    configureJava(javaVersion)
 
     tasks.named<ProcessResources>("processResources") {
         inputs.property("version", clientVersion)
@@ -99,14 +132,19 @@ fun Project.configureReleaseClient(target: Map<String, Any?>) {
         inputs.property("loaderVersion", loaderVersion)
         inputs.property("fabricApiVersion", fabricApiVersion)
         inputs.property("voicechatRange", voicechatRange)
+        inputs.property("javaVersion", javaVersion)
         filesMatching("fabric.mod.json") {
             expand(
                 "version" to clientVersion,
                 "minecraft_version" to minecraftDependency,
                 "fabric_loader_version" to loaderVersion,
                 "fabric_api_version" to fabricApiVersion.substringBefore('+'),
+                "java_version" to javaVersion,
                 "voicechat_range" to voicechatRange
             )
+        }
+        filesMatching("svc-better-groups-client.mixins.json") {
+            expand("java_version" to javaVersion)
         }
     }
 
@@ -124,6 +162,7 @@ fun Project.configureReleaseClient(target: Map<String, Any?>) {
                 "minecraftDependency" to minecraftDependency,
                 "loaderVersion" to loaderVersion,
                 "fabricApiVersion" to fabricApiVersion,
+                "javaVersion" to javaVersion,
                 "targetId" to targetId
             )
         )
@@ -137,6 +176,7 @@ fun Project.configureReleaseClient(target: Map<String, Any?>) {
                     .replace("\${minecraft_version}", minecraftDependency)
                     .replace("\${fabric_loader_version}", loaderVersion)
                     .replace("\${fabric_api_version}", fabricApiVersion.substringBefore('+'))
+                    .replace("\${java_version}", javaVersion.toString())
                     .replace("\${voicechat_range}", "*")
             )
         }
@@ -145,11 +185,13 @@ fun Project.configureReleaseClient(target: Map<String, Any?>) {
     tasks.register<Jar>("compatProbeJar") {
         group = "verification"
         description = "Repackages the release classes with probe-only SVC dependency metadata"
-        dependsOn("jar", generateCompatProbeMetadata)
+        dependsOn(if (obfuscated) "remapJar" else "jar", generateCompatProbeMetadata)
         archiveBaseName.set(target.getValue("archiveBaseName") as String)
         archiveClassifier.set("compat-probe")
         duplicatesStrategy = DuplicatesStrategy.FAIL
-        manifest.attributes["Fabric-Mapping-Namespace"] = "official"
+        if (!obfuscated) {
+            manifest.attributes["Fabric-Mapping-Namespace"] = "official"
+        }
         from(releaseJar.map { zipTree(it) }) {
             exclude("fabric.mod.json", "META-INF/MANIFEST.MF")
         }
@@ -178,15 +220,19 @@ fabricTargets.values.forEach { target ->
 }
 
 project(":client-fabric:compat-runner") {
-    pluginManager.apply("net.fabricmc.fabric-loom")
-    group = rootProject.group
-    version = rootProject.version
-
     val targetId = providers.gradleProperty("compatTarget").getOrElse("26.2")
-    val runnerVersion = version.toString()
     val target = requireNotNull(fabricTargets[targetId]) {
         "Unknown -PcompatTarget=$targetId; expected one of ${fabricTargets.keys}"
     }
+    val obfuscated = target.getValue("obfuscated") as Boolean
+    pluginManager.apply(
+        if (obfuscated) "net.fabricmc.fabric-loom-remap"
+        else "net.fabricmc.fabric-loom"
+    )
+    group = rootProject.group
+    version = rootProject.version
+
+    val runnerVersion = version.toString()
     val compile = target.getValue("compile") as Map<String, String>
     val minecraftVersion = providers.gradleProperty("compatMinecraftVersion")
         .getOrElse(compile.getValue("minecraft"))
@@ -194,6 +240,7 @@ project(":client-fabric:compat-runner") {
         .getOrElse(compile.getValue("voicechatArtifact"))
     val loaderVersion = compile.getValue("fabricLoader")
     val fabricApiVersion = compile.getValue("fabricApi")
+    val javaVersion = (target.getValue("java") as Number).toInt()
     val probe = providers.gradleProperty("compatProbe").map(String::toBoolean).getOrElse(false)
     val declaredRows = target.getValue("compatibility") as List<Map<String, String>>
 
@@ -211,12 +258,21 @@ project(":client-fabric:compat-runner") {
     }
 
     addFabricRepositories()
+    val loom = extensions.getByType<LoomGradleExtensionAPI>()
     dependencies {
         add("minecraft", "com.mojang:minecraft:$minecraftVersion")
-        add("implementation", "net.fabricmc:fabric-loader:$loaderVersion")
-        add("implementation", "net.fabricmc.fabric-api:fabric-api:$fabricApiVersion")
-        add("compileOnly", "maven.modrinth:simple-voice-chat:$voicechatArtifact")
-        add("runtimeOnly", "maven.modrinth:simple-voice-chat:$voicechatArtifact")
+        if (obfuscated) {
+            add("mappings", loom.officialMojangMappings())
+            add("modImplementation", "net.fabricmc:fabric-loader:$loaderVersion")
+            add("modImplementation", "net.fabricmc.fabric-api:fabric-api:$fabricApiVersion")
+            add("modCompileOnly", "maven.modrinth:simple-voice-chat:$voicechatArtifact")
+            add("modRuntimeOnly", "maven.modrinth:simple-voice-chat:$voicechatArtifact")
+        } else {
+            add("implementation", "net.fabricmc:fabric-loader:$loaderVersion")
+            add("implementation", "net.fabricmc.fabric-api:fabric-api:$fabricApiVersion")
+            add("compileOnly", "maven.modrinth:simple-voice-chat:$voicechatArtifact")
+            add("runtimeOnly", "maven.modrinth:simple-voice-chat:$voicechatArtifact")
+        }
         add("productionRuntimeMods", "net.fabricmc.fabric-api:fabric-api:$fabricApiVersion")
         add("productionRuntimeMods", "maven.modrinth:simple-voice-chat:$voicechatArtifact")
     }
@@ -236,7 +292,7 @@ project(":client-fabric:compat-runner") {
             resources.setSrcDirs(listOf(rootProject.file("client-fabric/src/gametest/resources")))
         }
     }
-    configureJava25()
+    configureJava(javaVersion)
 
     tasks.named<ProcessResources>("processGametestResources") {
         inputs.property("fabricLoaderVersion", loaderVersion)
@@ -249,10 +305,25 @@ project(":client-fabric:compat-runner") {
         archiveClassifier.set("gametest")
         from(project.extensions.getByType<SourceSetContainer>().named("gametest").map { it.output })
     }
+    val runtimeGametestJar = if (obfuscated) {
+        val remapped = tasks.register<RemapJarTask>("remapGametestJar") {
+            dependsOn(gametestJar)
+            inputFile.set(gametestJar.flatMap { it.archiveFile })
+            archiveClassifier.set("gametest-remapped")
+        }
+        remapped.flatMap { it.archiveFile }
+    } else {
+        gametestJar.flatMap { it.archiveFile }
+    }
 
     val selectedClient = project(target.getValue("projectPath") as String)
     val archiveBaseName = target.getValue("archiveBaseName") as String
-    val selectedArchiveTaskPath = "${selectedClient.path}:${if (probe) "compatProbeJar" else "jar"}"
+    val selectedArchiveTask = when {
+        probe -> "compatProbeJar"
+        obfuscated -> "remapJar"
+        else -> "jar"
+    }
+    val selectedArchiveTaskPath = "${selectedClient.path}:$selectedArchiveTask"
     val selectedArchiveFile = selectedClient.layout.buildDirectory.file(
         if (probe) "libs/$archiveBaseName-$runnerVersion-compat-probe.jar"
         else "libs/$archiveBaseName-$runnerVersion.jar"
@@ -267,14 +338,14 @@ project(":client-fabric:compat-runner") {
     tasks.register<ClientProductionRunTask>("runProductionClientGameTest") {
         group = "verification"
         description = "Runs an exact packaged addon against one Minecraft/SVC compatibility pair"
-        dependsOn(gametestJar)
+        dependsOn(runtimeGametestJar)
         if (!explicitReleaseJar.isPresent) {
             dependsOn(selectedArchiveTaskPath)
         }
         // Replace Loom's default project jar: the runner itself is only a
         // launcher. Keep the explicit runtime mods alongside the two mods
         // that must be exercised.
-        mods.setFrom(gametestJar, addonFile, configurations.named("productionRuntimeMods"))
+        mods.setFrom(runtimeGametestJar, addonFile, configurations.named("productionRuntimeMods"))
         useXVFB.set(System.getProperty("os.name").equals("Linux", ignoreCase = true))
         jvmArgs.add("-Dfabric.client.gametest")
         jvmArgs.add("-Dfabric.client.gametest.disableNetworkSynchronizer=true")
@@ -288,5 +359,5 @@ project(":client-fabric:compat-runner") {
 }
 
 tasks.named("build") {
-    dependsOn(":client-fabric:mc26_1:build", ":client-fabric:mc26_2:build")
+    dependsOn(fabricTargets.values.map { "${it.getValue("projectPath")}:build" })
 }

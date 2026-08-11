@@ -40,6 +40,7 @@ Place the server artifact in the server's `plugins` directory and restart the se
 
 | Artifact                                                                                                                                                                      | Minecraft       | Mod loader              | Fabric API      | Java  | Simple Voice Chat        |
 | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- | ----------------------- | --------------- | ----- | ------------------------ |
+| [`svc-better-groups-fabric-1.21.11-0.7.0.jar`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.7.0/svc-better-groups-fabric-1.21.11-0.7.0.jar) | `1.21.11`       | Fabric Loader `0.18.1`+ | `0.139.4+1.21.11`+ | `21`+ | Fabric `2.6.6`–`2.6.22`  |
 | [`svc-better-groups-fabric-26.1-0.7.0.jar`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.7.0/svc-better-groups-fabric-26.1-0.7.0.jar) | `26.1`–`26.1.2` | Fabric Loader `0.18.4`+ | `0.144.3+26.1`+ | `25`+ | Fabric `2.6.14`–`2.6.22` |
 | [`svc-better-groups-fabric-26.2-0.7.0.jar`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.7.0/svc-better-groups-fabric-26.2-0.7.0.jar) | `26.2.x`        | Fabric Loader `0.19.3`+ | `0.152.1+26.2`+ | `25`+ | Fabric `2.6.18`–`2.6.22` |
 
@@ -78,4 +79,4 @@ The `vanillagame.svc_better_groups.use` permission allows `/voicegroup` and is g
 
 ## Development
 
-Run `./gradlew build` to execute the tests and build the Paper plugin and both Fabric variants. Release artifacts are staged in `build/release/`.
+Run `./gradlew build` to execute the tests and build the Paper plugin and all three Fabric variants. Release artifacts are staged in `build/release/`.

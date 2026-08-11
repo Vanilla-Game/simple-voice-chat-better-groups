@@ -1,8 +1,9 @@
 # Architecture
 
-This repository builds three release artifacts:
+This repository builds four release artifacts:
 
 - one Paper-compatible plugin that owns group state and authorizes every action;
+- an optional Fabric 1.21.11 mod built with Mojang mappings, remapped to intermediary names, and targeting Java 21;
 - an optional Fabric 26.1.x mod that adds controls to the Simple Voice Chat UI;
 - an optional Fabric 26.2.x mod built from the same client sources.
 
@@ -17,10 +18,11 @@ is treated as experimental: minimum and maximum supported SVC releases receive
 blocking smoke tests on both Minecraft versions. Server versions 26.1 and
 26.1.1 are outside the contract.
 
-The two Fabric jars deliberately share code, protocol, and mod ID while carrying
-Minecraft-specific dependency metadata. The 26.1 jar covers 26.1, 26.1.1, and
-26.1.2; the 26.2 jar covers 26.2.x. A client must install exactly one. Forge,
-NeoForge, and Quilt clients are not supported.
+The three Fabric jars deliberately share protocol and mod ID while carrying
+Minecraft-specific dependency metadata. The 1.21.11 jar uses a small legacy UI
+and networking adapter over the shared protocol; the 26.1 jar covers 26.1,
+26.1.1, and 26.1.2; the 26.2 jar covers 26.2.x. A client must install exactly
+one. Forge, NeoForge, and Quilt clients are not supported.
 
 Compatibility is defined by `compatibility.json`. The complete published jar,
 not a separately recompiled substitute, is launched for every declared
@@ -35,7 +37,7 @@ use different formats:
 | Purpose | Value |
 | --- | --- |
 | Display name | Simple Voice Chat Better Groups |
-| Artifact names | `svc-better-groups`, `svc-better-groups-fabric-26.1`, `svc-better-groups-fabric-26.2` |
+| Artifact names | `svc-better-groups`, `svc-better-groups-fabric-1.21.11`, `svc-better-groups-fabric-26.1`, `svc-better-groups-fabric-26.2` |
 | Protocol and resource namespaces | `svc_better_groups[_client]` |
 
 `/voicegroup` is the primary command. `/vcgroup` is a permanent compatibility
