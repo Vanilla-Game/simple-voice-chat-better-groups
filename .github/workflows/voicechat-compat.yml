@@ -103,7 +103,6 @@ jobs:
     timeout-minutes: 40
     strategy:
       fail-fast: false
-      max-parallel: 6
       matrix:
         include: ${{ fromJSON(inputs.matrix) }}
     name: Fabric ${{ matrix.target }} / MC ${{ matrix.minecraft }} / shard ${{ matrix.part }}/${{ matrix.parts }}
