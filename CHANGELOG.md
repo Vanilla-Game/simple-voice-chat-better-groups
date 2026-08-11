@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.8.0](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/compare/v0.7.0...v0.8.0) (2026-08-11)
+
+
+### Features
+
+* **fabric:** support Minecraft 1.21.11 clients ([#55](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/issues/55)) ([ba1b04e](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/commit/ba1b04e1f174577a7b98df759933433fff013e10))
+
+
+### Bug Fixes
+
+* deduplicate join notifications ([#57](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/issues/57)) ([77bf9f2](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/commit/77bf9f2bb715c7d617e46a6fb40ce1cdff6f0f99))
+* hide join notifications for vanished players ([#53](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/issues/53)) ([a32758e](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/commit/a32758e5641c86db0ac2fd6d395e9c97466ef433))
+
 ## [0.7.0](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/compare/v0.6.0...v0.7.0) (2026-08-10)
 
 
