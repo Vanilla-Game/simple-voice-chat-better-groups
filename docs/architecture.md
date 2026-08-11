@@ -19,15 +19,51 @@ blocking smoke tests on both Minecraft versions. Server versions 26.1 and
 26.1.1 are outside the contract.
 
 The three Fabric jars deliberately share protocol and mod ID while carrying
-Minecraft-specific dependency metadata. The 1.21.11 jar uses a small legacy UI
-and networking adapter over the shared protocol; the 26.1 jar covers 26.1,
-26.1.1, and 26.1.2; the 26.2 jar covers 26.2.x. A client must install exactly
-one. Forge, NeoForge, and Quilt clients are not supported.
+Minecraft-specific dependency metadata. The 1.21.11 jar uses the `mc1_21_11`
+UI and networking adapter set over the shared protocol; the 26.1 and 26.2 jars
+use the `mc26` adapter set. The 26.1 jar covers 26.1, 26.1.1, and 26.1.2; the
+26.2 jar covers 26.2.x. A client must install exactly one. Forge, NeoForge, and
+Quilt clients are not supported.
 
 Compatibility is defined by `compatibility.json`. The complete published jar,
 not a separately recompiled substitute, is launched for every declared
 Minecraft/SVC pair. SVC server and client patch numbers may differ inside the
 supported 2.6 line, but 2.5.x, 2.7.x, beta, and unlisted builds are excluded.
+
+## Client source layout and version evolution
+
+Client source ownership is symmetric: no supported Minecraft line is treated
+as the main, modern, or legacy implementation.
+
+- `client-fabric/src/shared` contains code and resources compiled into every
+  Fabric target;
+- `client-fabric/src/adapters/<adapterSet>` contains the Minecraft, Fabric, and
+  Simple Voice Chat API integration for one stable compatibility family;
+- `client-fabric/targets/<target>` contains only the thin Gradle project for a
+  published Minecraft target;
+- every Fabric target in `compatibility.json` selects exactly one `adapterSet`.
+
+The current mapping is:
+
+| Target | Adapter set |
+| --- | --- |
+| `1.21.11` | `mc1_21_11` |
+| `26.1` | `mc26` |
+| `26.2` | `mc26` |
+
+These names describe API families, not their relative age. A newly supported
+Minecraft version must first be compiled and runtime-tested with an existing
+adapter set. Create a new adapter set only after a concrete source or runtime
+API incompatibility is demonstrated. Name it after the stable Minecraft/API
+family it supports, never `legacy`, `modern`, `latest`, or `main`.
+
+Code belongs in `shared` only while it compiles and behaves consistently for
+every target. When a shared integration point diverges, move all variants of
+that point into their respective adapter sets so no target is the implicit
+default. Changes to a shared source or an adapter set require the complete
+compatibility matrix for every target that consumes it. Removing a target or
+adapter set is an explicit support-policy decision, not an automatic result of
+adding a newer Minecraft version.
 
 ## Stable identifiers
 

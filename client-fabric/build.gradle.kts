@@ -66,6 +66,7 @@ fun Project.configureReleaseClient(target: Map<String, Any?>) {
     version = rootProject.version
 
     val targetId = target.getValue("id") as String
+    val adapterSet = target.getValue("adapterSet") as String
     val clientVersion = version.toString()
     val compile = target.getValue("compile") as Map<String, String>
     val minecraftVersion = compile.getValue("minecraft")
@@ -104,24 +105,11 @@ fun Project.configureReleaseClient(target: Map<String, Any?>) {
 
     extensions.configure<SourceSetContainer> {
         named("main") {
-            java.setSrcDirs(listOf(rootProject.file("client-fabric/src/main/java")))
-            resources.setSrcDirs(listOf(rootProject.file("client-fabric/src/main/resources")))
-        }
-    }
-    if (obfuscated) {
-        val legacyOverrides = listOf(
-            "ru/vanillagame/voicechat/bettergroups/client/ClientNetworking.java",
-            "ru/vanillagame/voicechat/bettergroups/client/gui/InvitePlayerEntry.java",
-            "ru/vanillagame/voicechat/bettergroups/client/gui/InvitePlayerScreen.java",
-            "ru/vanillagame/voicechat/bettergroups/client/mixin/GroupEntryMixin.java"
-        )
-        extensions.configure<SourceSetContainer> {
-            named("main") {
-                java.exclude(legacyOverrides)
-            }
-        }
-        tasks.named<JavaCompile>("compileJava") {
-            source(rootProject.fileTree("client-fabric/src/legacy/java"))
+            java.setSrcDirs(listOf(
+                rootProject.file("client-fabric/src/shared/java"),
+                rootProject.file("client-fabric/src/adapters/$adapterSet/java")
+            ))
+            resources.setSrcDirs(listOf(rootProject.file("client-fabric/src/shared/resources")))
         }
     }
     configureJava(javaVersion)
@@ -155,7 +143,7 @@ fun Project.configureReleaseClient(target: Map<String, Any?>) {
     val generateCompatProbeMetadata = tasks.register("generateCompatProbeMetadata") {
         group = "verification"
         description = "Generates probe-only Fabric metadata with an unrestricted SVC dependency"
-        inputs.file(rootProject.file("client-fabric/src/main/resources/fabric.mod.json"))
+        inputs.file(rootProject.file("client-fabric/src/shared/resources/fabric.mod.json"))
         inputs.properties(
             mapOf(
                 "version" to clientVersion,
@@ -171,7 +159,7 @@ fun Project.configureReleaseClient(target: Map<String, Any?>) {
             val output = probeMetadataDir.get().file("fabric.mod.json").asFile
             output.parentFile.mkdirs()
             output.writeText(
-                rootProject.file("client-fabric/src/main/resources/fabric.mod.json").readText()
+                rootProject.file("client-fabric/src/shared/resources/fabric.mod.json").readText()
                     .replace("\${version}", clientVersion)
                     .replace("\${minecraft_version}", minecraftDependency)
                     .replace("\${fabric_loader_version}", loaderVersion)

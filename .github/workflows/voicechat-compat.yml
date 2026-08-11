@@ -42,7 +42,7 @@ jobs:
 
       - name: Package discovery probe jars
         if: ${{ inputs.probe }}
-        run: ./gradlew --no-daemon :client-fabric:mc1_21_11:compatProbeJar :client-fabric:mc26_1:compatProbeJar :client-fabric:mc26_2:compatProbeJar --warning-mode all
+        run: ./gradlew --no-daemon :client-fabric:targets:mc1_21_11:compatProbeJar :client-fabric:targets:mc26_1:compatProbeJar :client-fabric:targets:mc26_2:compatProbeJar --warning-mode all
 
       - name: Record packaged client hashes
         shell: bash
@@ -53,9 +53,9 @@ jobs:
             build/release/svc-better-groups-fabric-1.21.11-*.jar
             build/release/svc-better-groups-fabric-26.1-*.jar
             build/release/svc-better-groups-fabric-26.2-*.jar
-            client-fabric/mc1_21_11/build/libs/*-compat-probe.jar
-            client-fabric/mc26_1/build/libs/*-compat-probe.jar
-            client-fabric/mc26_2/build/libs/*-compat-probe.jar
+            client-fabric/targets/mc1_21_11/build/libs/*-compat-probe.jar
+            client-fabric/targets/mc26_1/build/libs/*-compat-probe.jar
+            client-fabric/targets/mc26_2/build/libs/*-compat-probe.jar
           )
           test "${#jars[@]}" -eq 3
           for jar in "${jars[@]}"; do
@@ -70,15 +70,15 @@ jobs:
             build/release/svc-better-groups-fabric-1.21.11-*.jar
             build/release/svc-better-groups-fabric-26.1-*.jar
             build/release/svc-better-groups-fabric-26.2-*.jar
-            client-fabric/mc1_21_11/build/libs/*-compat-probe.jar
-            client-fabric/mc26_1/build/libs/*-compat-probe.jar
-            client-fabric/mc26_2/build/libs/*-compat-probe.jar
+            client-fabric/targets/mc1_21_11/build/libs/*-compat-probe.jar
+            client-fabric/targets/mc26_1/build/libs/*-compat-probe.jar
+            client-fabric/targets/mc26_2/build/libs/*-compat-probe.jar
             build/release/svc-better-groups-fabric-1.21.11-*.jar.sha256
             build/release/svc-better-groups-fabric-26.1-*.jar.sha256
             build/release/svc-better-groups-fabric-26.2-*.jar.sha256
-            client-fabric/mc1_21_11/build/libs/*-compat-probe.jar.sha256
-            client-fabric/mc26_1/build/libs/*-compat-probe.jar.sha256
-            client-fabric/mc26_2/build/libs/*-compat-probe.jar.sha256
+            client-fabric/targets/mc1_21_11/build/libs/*-compat-probe.jar.sha256
+            client-fabric/targets/mc26_1/build/libs/*-compat-probe.jar.sha256
+            client-fabric/targets/mc26_2/build/libs/*-compat-probe.jar.sha256
           if-no-files-found: error
           retention-days: 1
 

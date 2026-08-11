@@ -59,7 +59,7 @@ jobs:
                 "$CHANGED_FILES"; then
                 mode=full
               elif grep -Eq \
-                '^(src/|client-fabric/src/|client-fabric/build\.gradle\.kts$|client-fabric/compat-runner/|client-fabric/mc1_21_11/|client-fabric/mc26_[12]/|build\.gradle\.kts$|settings\.gradle\.kts$|gradle\.properties$|gradle/|gradlew(\.bat)?$)' \
+                '^(src/|client-fabric/src/|client-fabric/build\.gradle\.kts$|client-fabric/compat-runner/|client-fabric/targets/|build\.gradle\.kts$|settings\.gradle\.kts$|gradle\.properties$|gradle/|gradlew(\.bat)?$)' \
                 "$CHANGED_FILES"; then
                 mode=smoke
               fi

@@ -47,7 +47,7 @@ class PluginTranslationsTest {
 
     @Test
     void everyClientLocaleContainsTheEnglishKeysAndPlaceholders() throws IOException {
-        Path languageDirectory = Path.of("client-fabric/src/main/resources/assets/svc_better_groups_client/lang");
+        Path languageDirectory = Path.of("client-fabric/src/shared/resources/assets/svc_better_groups_client/lang");
         Map<String, String> english = clientEntries(languageDirectory.resolve("en_us.json"));
         assertFalse(english.isEmpty());
 
