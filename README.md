@@ -21,33 +21,23 @@ Developed for [Vanilla Game](https://vanilla-game.ru).
 
 ## Installation
 
-### Players
+### Server
 
-You do not need the client mod to use Better Groups on a supported server.
+| Artifact | Minecraft | Server software | Java | Simple Voice Chat |
+| --- | --- | --- | --- | --- |
+| [`svc-better-groups-<version>.jar`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/latest#assets) | `26.1.2` | Paper; Leaf (experimental) | `25`+ | Bukkit `2.6.16`–`2.6.21` |
+| [`svc-better-groups-<version>.jar`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/latest#assets) | `26.2` | Paper; Leaf (experimental) | `25`+ | Bukkit `2.6.19`–`2.6.21` |
 
-For buttons and the leader crown, download the matching Fabric jar from [GitHub Releases](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/latest) and place it in your `mods` directory:
+Place the server artifact in the server's `plugins` directory and restart the server. Simple Voice Chat is a required dependency. Plugin reload tools are not supported. Paper is fully tested; Leaf support is experimental and smoke-tested.
 
-- `fabric-26.1` for Minecraft 26.1, 26.1.1, or 26.1.2;
-- `fabric-26.2` for Minecraft 26.2.x.
+### Client (optional)
 
-Install only one variant. Fabric API and Simple Voice Chat Fabric are required. On servers without a compatible Better Groups plugin, the extra controls stay hidden.
+| Artifact | Minecraft | Mod loader | Fabric API | Java | Simple Voice Chat |
+| --- | --- | --- | --- | --- | --- |
+| [`svc-better-groups-fabric-26.1-<version>.jar`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/latest#assets) | `26.1`–`26.1.2` | Fabric Loader `0.18.4`+ | `0.144.3+26.1`+ | `25`+ | Fabric `2.6.14`–`2.6.22` |
+| [`svc-better-groups-fabric-26.2-<version>.jar`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/latest#assets) | `26.2.x` | Fabric Loader `0.19.3`+ | `0.152.1+26.2`+ | `25`+ | Fabric `2.6.18`–`2.6.22` |
 
-### Server owners
-
-Download the Paper jar from [GitHub Releases](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/latest), place it in the server's `plugins` directory, and restart the server. Simple Voice Chat is a required dependency. Plugin reload tools are not supported.
-
-Paper is fully tested. Leaf support is experimental and smoke-tested.
-
-## Compatibility
-
-- Minecraft server `26.1.2` or `26.2`
-- Java `25` or newer
-- Simple Voice Chat Bukkit `2.6.16`–`2.6.21` on Minecraft `26.1.2`, or `2.6.19`–`2.6.21` on Minecraft `26.2`
-
-For the optional client mod:
-
-- Minecraft 26.1–26.1.2 requires Fabric Loader `0.18.4`+, Fabric API `0.144.3+26.1`+, and Simple Voice Chat Fabric `2.6.14`–`2.6.22`;
-- Minecraft 26.2.x requires Fabric Loader `0.19.3`+, Fabric API `0.152.1+26.2`+, and Simple Voice Chat Fabric `2.6.18`–`2.6.22`.
+You do not need the client mod to use Better Groups. For buttons and the leader crown, place exactly one matching client artifact in your `mods` directory. On servers without a compatible Better Groups plugin, the extra controls stay hidden.
 
 Client and server Simple Voice Chat patch versions may differ when both are in the supported `2.6` range. SVC `2.5.x`, `2.7.x`, beta, and unlisted builds are unsupported. The client addon does not support Forge, NeoForge, or Quilt.
 
