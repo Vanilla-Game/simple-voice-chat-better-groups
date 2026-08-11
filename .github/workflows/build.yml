@@ -5,11 +5,80 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      compatibility:
+        description: Compatibility suite
+        type: choice
+        options:
+          - full
+          - smoke
+          - none
+        default: full
 
 permissions:
   contents: read
 
 jobs:
+  plan-compatibility:
+    runs-on: ubuntu-latest
+    outputs:
+      mode: ${{ steps.plan.outputs.mode }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Select compatibility mode
+        id: plan
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          HEAD_REF: ${{ github.head_ref }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          INPUT_MODE: ${{ inputs.compatibility }}
+          CHANGED_FILES: ${{ runner.temp }}/changed-files.txt
+        run: |
+          set -euo pipefail
+
+          mode=none
+          : > "$CHANGED_FILES"
+
+          if [ "$EVENT_NAME" = workflow_dispatch ]; then
+            mode="$INPUT_MODE"
+          elif [ "$EVENT_NAME" = pull_request ]; then
+            if [[ "$HEAD_REF" == release-please--branches--main--components--* ]]; then
+              mode=full
+            else
+              git diff --name-only "$BASE_SHA"..."$HEAD_SHA" > "$CHANGED_FILES"
+
+              if grep -Eq \
+                '^(compatibility\.json|\.github/workflows/(build|release-please|voicechat-compat|server-compat)\.yml)$' \
+                "$CHANGED_FILES"; then
+                mode=full
+              elif grep -Eq \
+                '^(src/|client-fabric/src/|client-fabric/compat-runner/|client-fabric/mc26_[12]/|build\.gradle\.kts$|settings\.gradle\.kts$|gradle/|gradlew(\.bat)?$)' \
+                "$CHANGED_FILES"; then
+                mode=smoke
+              fi
+            fi
+          fi
+
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+          {
+            echo "Compatibility mode: \`$mode\`"
+            if [ -s "$CHANGED_FILES" ]; then
+              echo
+              echo '<details><summary>Changed files</summary>'
+              echo
+              sed 's/^/- `/' "$CHANGED_FILES" | sed 's/$/`/'
+              echo
+              echo '</details>'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
   build:
     runs-on: ubuntu-latest
     steps:
@@ -63,6 +132,8 @@ jobs:
           retention-days: 14
 
   read-compatibility:
+    needs: plan-compatibility
+    if: ${{ needs.plan-compatibility.outputs.mode != 'none' }}
     runs-on: ubuntu-latest
     outputs:
       fabric: ${{ steps.read.outputs.fabric }}
@@ -74,73 +145,121 @@ jobs:
       - name: Read compatibility matrices
         id: read
         shell: bash
+        env:
+          MODE: ${{ needs.plan-compatibility.outputs.mode }}
         run: |
           set -euo pipefail
-          fabric=$(jq -c '[.fabric.targets[] as $target | $target.compatibility[] | {
-            target: $target.id,
-            minecraft: .minecraft,
-            voicechatArtifact: .voicechatArtifact
-          }]' compatibility.json)
-          paper=$(jq -c '[.server.targets[] as $target | $target.voicechatArtifacts[] | {
-            platform: "paper",
-            minecraft: $target.minecraft,
-            build: $target.paperBuild,
-            voicechatArtifact: .
-          }]' compatibility.json)
-          leaf=$(jq -c '[.server.targets[] as $target
-            | [$target.voicechatArtifacts[0], $target.voicechatArtifacts[-1]][]
-            | {
+
+          if [ "$MODE" = full ]; then
+            fabric=$(jq -c '[.fabric.targets[] as $target | $target.compatibility[] | {
+              target: $target.id,
+              minecraft: .minecraft,
+              voicechatArtifact: .voicechatArtifact
+            }]' compatibility.json)
+            paper=$(jq -c '[.server.targets[] as $target | $target.voicechatArtifacts[] | {
+              platform: "paper",
+              minecraft: $target.minecraft,
+              build: $target.paperBuild,
+              voicechatArtifact: .
+            }]' compatibility.json)
+            leaf=$(jq -c '[.server.targets[] as $target
+              | [$target.voicechatArtifacts[0], $target.voicechatArtifacts[-1]][]
+              | {
                 platform: "leaf",
                 minecraft: $target.minecraft,
                 build: $target.leafBuild,
                 voicechatArtifact: .
               }
-          ]' compatibility.json)
-          test "$(jq 'length' <<< "$fabric")" -ge 32
-          test "$(jq 'length' <<< "$paper")" -ge 9
-          test "$(jq 'length' <<< "$leaf")" -eq 4
-          server=$(jq -cn --argjson paper "$paper" --argjson leaf "$leaf" '$paper + $leaf')
+            ]' compatibility.json)
+            test "$(jq 'length' <<< "$fabric")" -ge 32
+            test "$(jq 'length' <<< "$paper")" -ge 9
+            test "$(jq 'length' <<< "$leaf")" -eq 4
+            server=$(jq -cn --argjson paper "$paper" --argjson leaf "$leaf" '$paper + $leaf')
+          elif [ "$MODE" = smoke ]; then
+            fabric=$(jq -c '[.fabric.targets[] as $target
+              | [$target.compatibility[0], $target.compatibility[-1]][]
+              | {
+                  target: $target.id,
+                  minecraft: .minecraft,
+                  voicechatArtifact: .voicechatArtifact
+                }
+            ]' compatibility.json)
+            server=$(jq -c '[.server.targets[] as $target
+              | [$target.voicechatArtifacts[0], $target.voicechatArtifacts[-1]][]
+              | {
+                  platform: "paper",
+                  minecraft: $target.minecraft,
+                  build: $target.paperBuild,
+                  voicechatArtifact: .
+                }
+            ]' compatibility.json)
+            test "$(jq 'length' <<< "$fabric")" -eq 4
+            test "$(jq 'length' <<< "$server")" -eq 4
+          else
+            echo "Unsupported compatibility mode: $MODE" >&2
+            exit 1
+          fi
+
           {
             echo "fabric=$fabric"
             echo "server=$server"
           } >> "$GITHUB_OUTPUT"
 
   client-compatibility:
-    needs: read-compatibility
+    needs: [plan-compatibility, read-compatibility]
+    if: ${{ needs.plan-compatibility.outputs.mode != 'none' }}
     uses: ./.github/workflows/voicechat-compat.yml
     with:
       matrix: ${{ needs.read-compatibility.outputs.fabric }}
 
   server-compatibility:
-    needs: read-compatibility
+    needs: [plan-compatibility, read-compatibility]
+    if: ${{ needs.plan-compatibility.outputs.mode != 'none' }}
     uses: ./.github/workflows/server-compat.yml
     with:
       matrix: ${{ needs.read-compatibility.outputs.server }}
-      suite: supported
+      suite: ${{ needs.plan-compatibility.outputs.mode }}
 
   compatibility-gate:
     name: Compatibility gate
     if: always()
-    needs: [build, read-compatibility, client-compatibility, server-compatibility]
+    needs: [build, plan-compatibility, read-compatibility, client-compatibility, server-compatibility]
     runs-on: ubuntu-latest
     steps:
-      - name: Require every build and compatibility suite
+      - name: Require selected compatibility suite
         env:
+          MODE: ${{ needs.plan-compatibility.outputs.mode }}
           BUILD_RESULT: ${{ needs.build.result }}
+          PLAN_RESULT: ${{ needs.plan-compatibility.result }}
           MATRIX_RESULT: ${{ needs.read-compatibility.result }}
           CLIENT_RESULT: ${{ needs.client-compatibility.result }}
           SERVER_RESULT: ${{ needs.server-compatibility.result }}
         shell: bash
         run: |
           set -euo pipefail
-          failed=false
-          for result in "$BUILD_RESULT" "$MATRIX_RESULT" "$CLIENT_RESULT" "$SERVER_RESULT"; do
-            if [ "$result" != success ]; then
-              failed=true
-            fi
-          done
-          if [ "$failed" = true ]; then
-            printf 'Required jobs: build=%s matrix=%s client=%s server=%s\n' \
-              "$BUILD_RESULT" "$MATRIX_RESULT" "$CLIENT_RESULT" "$SERVER_RESULT" >&2
+
+          if [ "$BUILD_RESULT" != success ] || [ "$PLAN_RESULT" != success ]; then
+            printf 'Required jobs: build=%s plan=%s\n' "$BUILD_RESULT" "$PLAN_RESULT" >&2
             exit 1
           fi
+
+          case "$MODE" in
+            none)
+              expected=skipped
+              ;;
+            smoke|full)
+              expected=success
+              ;;
+            *)
+              echo "Unknown compatibility mode: $MODE" >&2
+              exit 1
+              ;;
+          esac
+
+          for result in "$MATRIX_RESULT" "$CLIENT_RESULT" "$SERVER_RESULT"; do
+            if [ "$result" != "$expected" ]; then
+              printf 'Compatibility mode=%s expected=%s matrix=%s client=%s server=%s\n' \
+                "$MODE" "$expected" "$MATRIX_RESULT" "$CLIENT_RESULT" "$SERVER_RESULT" >&2
+              exit 1
+            fi
+          done
