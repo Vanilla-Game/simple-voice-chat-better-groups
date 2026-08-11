@@ -55,7 +55,7 @@ jobs:
               git diff --name-only "$BASE_SHA"..."$HEAD_SHA" > "$CHANGED_FILES"
 
               if grep -Eq \
-                '^(compatibility\.json|scripts/shard-fabric-compatibility\.rb|\.github/workflows/(build|release-please|voicechat-compat|voicechat-discovery|server-compat)\.yml)$' \
+                '^(compatibility\.json|\.github/workflows/(build|release-please|voicechat-compat|voicechat-discovery|server-compat)\.yml)$' \
                 "$CHANGED_FILES"; then
                 mode=full
               elif grep -Eq \
@@ -164,7 +164,7 @@ jobs:
           set -euo pipefail
 
           if [ "$MODE" = full ]; then
-            fabric_rows=$(jq -c '[.fabric.targets[] as $target | $target.compatibility[] | {
+            fabric=$(jq -c '[.fabric.targets[] as $target | $target.compatibility[] | {
               target: $target.id,
               minecraft: .minecraft,
               voicechatArtifact: .voicechatArtifact
@@ -184,12 +184,12 @@ jobs:
                 voicechatArtifact: .
               }
             ]' compatibility.json)
-            test "$(jq 'length' <<< "$fabric_rows")" -ge 49
+            test "$(jq 'length' <<< "$fabric")" -ge 49
             test "$(jq 'length' <<< "$paper")" -ge 9
             test "$(jq 'length' <<< "$leaf")" -eq 4
             server=$(jq -cn --argjson paper "$paper" --argjson leaf "$leaf" '$paper + $leaf')
           elif [ "$MODE" = smoke ]; then
-            fabric_rows=$(jq -c '[.fabric.targets[] as $target
+            fabric=$(jq -c '[.fabric.targets[] as $target
               | [$target.compatibility[0], $target.compatibility[-1]][]
               | {
                   target: $target.id,
@@ -206,24 +206,12 @@ jobs:
                   voicechatArtifact: .
                 }
             ]' compatibility.json)
-            test "$(jq 'length' <<< "$fabric_rows")" -eq 6
+            test "$(jq 'length' <<< "$fabric")" -eq 6
             test "$(jq 'length' <<< "$server")" -eq 4
           else
             echo "Unsupported compatibility mode: $MODE" >&2
             exit 1
           fi
-
-          fabric=$(ruby scripts/shard-fabric-compatibility.rb 10 <<< "$fabric_rows")
-          test "$(jq 'length' <<< "$fabric")" -gt 0
-          test "$(jq '[.[].rows[]] | length' <<< "$fabric")" -eq "$(jq 'length' <<< "$fabric_rows")"
-          jq -e 'all(.[];
-            . as $shard |
-            ($shard.rows | length) > 0 and
-            ($shard.rows | length) <= 10 and
-            all($shard.rows[];
-              .target == $shard.target and .minecraft == $shard.minecraft
-            )
-          )' <<< "$fabric" >/dev/null
 
           {
             echo "fabric=$fabric"

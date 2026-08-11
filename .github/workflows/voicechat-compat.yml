@@ -6,7 +6,7 @@ on:
   workflow_call:
     inputs:
       matrix:
-        description: JSON array of runtime-homogeneous compatibility shards
+        description: JSON array of individual Fabric compatibility checks
         required: true
         type: string
       probe:
@@ -105,7 +105,7 @@ jobs:
       fail-fast: false
       matrix:
         include: ${{ fromJSON(inputs.matrix) }}
-    name: Fabric ${{ matrix.target }} / MC ${{ matrix.minecraft }} / shard ${{ matrix.part }}/${{ matrix.parts }}
+    name: Fabric ${{ matrix.target }} / MC ${{ matrix.minecraft }} / Voice Chat ${{ matrix.voicechatArtifact }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -159,53 +159,36 @@ jobs:
       - name: Run packaged client compatibility test
         env:
           ALSOFT_DRIVERS: 'null'
-          ROWS_JSON: ${{ toJSON(matrix.rows) }}
+          TARGET: ${{ matrix.target }}
+          MINECRAFT: ${{ matrix.minecraft }}
+          VOICECHAT_ARTIFACT: ${{ matrix.voicechatArtifact }}
+          CLIENT_JAR: ${{ steps.client.outputs.path }}
+          PROBE: ${{ inputs.probe }}
         shell: bash
         run: |
           set -euo pipefail
-          jq -e 'type == "array" and length > 0' <<< "$ROWS_JSON" >/dev/null
-
           mkdir -p compat-results
-          failed=false
-          processed=0
-          while IFS= read -r row; do
-            target=$(jq -r '.target' <<< "$row")
-            minecraft=$(jq -r '.minecraft' <<< "$row")
-            voicechat_artifact=$(jq -r '.voicechatArtifact' <<< "$row")
-            if [ "$target" != '${{ matrix.target }}' ] || [ "$minecraft" != '${{ matrix.minecraft }}' ]; then
-              echo "Shard metadata mismatch: $target / $minecraft" >&2
-              exit 1
-            fi
-
-            args=(
-              --build-cache
-              :client-fabric:compat-runner:runProductionClientGameTest
-              -PcompatRunnerOnly=true
-              "-PcompatTarget=$target"
-              "-PcompatMinecraftVersion=$minecraft"
-              "-PcompatVoicechatArtifact=$voicechat_artifact"
-              "-PcompatReleaseJar=${{ steps.client.outputs.path }}"
-            )
-            if [ '${{ inputs.probe }}' = true ]; then
-              args+=("-PcompatProbe=true")
-            fi
-
-            result=fail
-            if ./gradlew "${args[@]}" </dev/null; then
-              result=ok
-            else
-              failed=true
-            fi
-            file="fabric__${target}__${minecraft}__${voicechat_artifact}"
-            printf '%s\n' "$result" > "compat-results/$file"
-            echo "- \`$target / $minecraft / $voicechat_artifact\`: $result" >> "$GITHUB_STEP_SUMMARY"
-            processed=$((processed + 1))
-          done < <(jq -c '.[]' <<< "$ROWS_JSON")
-
-          test "$processed" -eq "$(jq 'length' <<< "$ROWS_JSON")"
-          if [ "$failed" = true ]; then
-            exit 1
+          args=(
+            --build-cache
+            :client-fabric:compat-runner:runProductionClientGameTest
+            -PcompatRunnerOnly=true
+            "-PcompatTarget=$TARGET"
+            "-PcompatMinecraftVersion=$MINECRAFT"
+            "-PcompatVoicechatArtifact=$VOICECHAT_ARTIFACT"
+            "-PcompatReleaseJar=$CLIENT_JAR"
+          )
+          if [ "$PROBE" = true ]; then
+            args+=("-PcompatProbe=true")
           fi
+
+          result=fail
+          if ./gradlew "${args[@]}"; then
+            result=ok
+          fi
+          file="fabric__${TARGET}__${MINECRAFT}__${VOICECHAT_ARTIFACT}"
+          printf '%s\n' "$result" > "compat-results/$file"
+          echo "- \`$TARGET / $MINECRAFT / $VOICECHAT_ARTIFACT\`: $result" >> "$GITHUB_STEP_SUMMARY"
+          test "$result" = ok
 
       - name: Confirm packaged client was not modified
         if: ${{ always() && steps.client.outcome == 'success' }}
@@ -219,7 +202,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: compat-result-fabric-${{ matrix.id }}
+          name: compat-result-fabric-${{ matrix.target }}-${{ matrix.minecraft }}-${{ matrix.voicechatArtifact }}
           path: compat-results/
           if-no-files-found: error
           retention-days: 7
@@ -228,7 +211,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v6
         with:
-          name: compat-logs-fabric-${{ matrix.id }}
+          name: compat-logs-fabric-${{ matrix.target }}-${{ matrix.minecraft }}-${{ matrix.voicechatArtifact }}
           path: client-fabric/compat-runner/build/run/
           if-no-files-found: ignore
           retention-days: 7

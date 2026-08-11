@@ -141,8 +141,7 @@ jobs:
             minecraft: .,
             voicechatArtifact: $candidate.artifact
           }]' fabric-candidates.json)
-          fabric_matrix=$(ruby scripts/shard-fabric-compatibility.rb 10 <<< "$fabric_rows")
-          test "$(jq '[.[].rows[]] | length' <<< "$fabric_matrix")" -eq "$(jq 'length' <<< "$fabric_rows")"
+          fabric_matrix=$fabric_rows
           server_matrix=$(jq -c '[.[] | {
             platform: "paper",
             minecraft: .minecraft,
