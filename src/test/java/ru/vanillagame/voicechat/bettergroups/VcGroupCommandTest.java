@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -293,11 +294,14 @@ class VcGroupCommandTest {
                     any(net.kyori.adventure.sound.Sound.class),
                     any(net.kyori.adventure.sound.Sound.Emitter.class)
             );
+            clearInvocations(leader);
 
             command.onCommand(leader, mock(Command.class), "vcgroup", new String[]{"approve", "req-token"});
         }
 
         verify(requesterBefore).setGroup(group);
+        verify(leader, never()).sendMessage(any(Component.class));
+        verify(requester, times(2)).sendMessage(any(Component.class));
         assertEquals(RequestStore.LookupStatus.NOT_FOUND, requests.lookup("req-token").status());
     }
 
