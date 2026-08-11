@@ -27,25 +27,24 @@ server_26_1 = artifact_range(server.fetch("26.1.2").fetch("voicechatArtifacts"))
 server_26_2 = artifact_range(server.fetch("26.2").fetch("voicechatArtifacts"))
 fabric_26_1 = declared_range(fabric.fetch("26.1").fetch("voicechatRange"))
 fabric_26_2 = declared_range(fabric.fetch("26.2").fetch("voicechatRange"))
-release_assets_url = "https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/latest#assets"
 
 replacements = {
   "README.md" => [
     [
-      /\| \[`svc-better-groups-<version>\.jar`\]\([^\n]+\) \| `26\.1\.2` \| Paper; Leaf \(experimental\) \| `25`\+ \| Bukkit `\d+\.\d+\.\d+`–`\d+\.\d+\.\d+` \|/,
-      "| [`svc-better-groups-<version>.jar`](#{release_assets_url}) | `26.1.2` | Paper; Leaf (experimental) | `25`+ | Bukkit `#{server_26_1.split('–').join('`–`')}` |"
+      /(\| \[`svc-better-groups-\d+\.\d+\.\d+\.jar`\]\([^\n]+\) \| `26\.1\.2` \| Paper; Leaf \(experimental\) \| `25`\+ \| Bukkit `)\d+\.\d+\.\d+`–`\d+\.\d+\.\d+(` \|)/,
+      "\\1#{server_26_1.split('–').join('`–`')}\\2"
     ],
     [
-      /\| \[`svc-better-groups-<version>\.jar`\]\([^\n]+\) \| `26\.2` \| Paper; Leaf \(experimental\) \| `25`\+ \| Bukkit `\d+\.\d+\.\d+`–`\d+\.\d+\.\d+` \|/,
-      "| [`svc-better-groups-<version>.jar`](#{release_assets_url}) | `26.2` | Paper; Leaf (experimental) | `25`+ | Bukkit `#{server_26_2.split('–').join('`–`')}` |"
+      /(\| \[`svc-better-groups-\d+\.\d+\.\d+\.jar`\]\([^\n]+\) \| `26\.2` \| Paper; Leaf \(experimental\) \| `25`\+ \| Bukkit `)\d+\.\d+\.\d+`–`\d+\.\d+\.\d+(` \|)/,
+      "\\1#{server_26_2.split('–').join('`–`')}\\2"
     ],
     [
-      /\| \[`svc-better-groups-fabric-26\.1-<version>\.jar`\]\([^\n]+\) \| `26\.1`–`26\.1\.2` \| Fabric Loader `0\.18\.4`\+ \| `0\.144\.3\+26\.1`\+ \| `25`\+ \| Fabric `\d+\.\d+\.\d+`–`\d+\.\d+\.\d+` \|/,
-      "| [`svc-better-groups-fabric-26.1-<version>.jar`](#{release_assets_url}) | `26.1`–`26.1.2` | Fabric Loader `0.18.4`+ | `0.144.3+26.1`+ | `25`+ | Fabric `#{fabric_26_1.split('–').join('`–`')}` |"
+      /(\| \[`svc-better-groups-fabric-26\.1-\d+\.\d+\.\d+\.jar`\]\([^\n]+\) \| `26\.1`–`26\.1\.2` \| Fabric Loader `0\.18\.4`\+ \| `0\.144\.3\+26\.1`\+ \| `25`\+ \| Fabric `)\d+\.\d+\.\d+`–`\d+\.\d+\.\d+(` \|)/,
+      "\\1#{fabric_26_1.split('–').join('`–`')}\\2"
     ],
     [
-      /\| \[`svc-better-groups-fabric-26\.2-<version>\.jar`\]\([^\n]+\) \| `26\.2\.x` \| Fabric Loader `0\.19\.3`\+ \| `0\.152\.1\+26\.2`\+ \| `25`\+ \| Fabric `\d+\.\d+\.\d+`–`\d+\.\d+\.\d+` \|/,
-      "| [`svc-better-groups-fabric-26.2-<version>.jar`](#{release_assets_url}) | `26.2.x` | Fabric Loader `0.19.3`+ | `0.152.1+26.2`+ | `25`+ | Fabric `#{fabric_26_2.split('–').join('`–`')}` |"
+      /(\| \[`svc-better-groups-fabric-26\.2-\d+\.\d+\.\d+\.jar`\]\([^\n]+\) \| `26\.2\.x` \| Fabric Loader `0\.19\.3`\+ \| `0\.152\.1\+26\.2`\+ \| `25`\+ \| Fabric `)\d+\.\d+\.\d+`–`\d+\.\d+\.\d+(` \|)/,
+      "\\1#{fabric_26_2.split('–').join('`–`')}\\2"
     ]
   ],
   "assets/modrinth-description.md" => [

@@ -25,8 +25,8 @@ Developed for [Vanilla Game](https://vanilla-game.ru).
 
 | Artifact | Minecraft | Server software | Java | Simple Voice Chat |
 | --- | --- | --- | --- | --- |
-| [`svc-better-groups-<version>.jar`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/latest#assets) | `26.1.2` | Paper; Leaf (experimental) | `25`+ | Bukkit `2.6.16`–`2.6.21` |
-| [`svc-better-groups-<version>.jar`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/latest#assets) | `26.2` | Paper; Leaf (experimental) | `25`+ | Bukkit `2.6.19`–`2.6.21` |
+| [`svc-better-groups-0.7.0.jar`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.7.0/svc-better-groups-0.7.0.jar) | `26.1.2` | Paper; Leaf (experimental) | `25`+ | Bukkit `2.6.16`–`2.6.21` |
+| [`svc-better-groups-0.7.0.jar`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.7.0/svc-better-groups-0.7.0.jar) | `26.2` | Paper; Leaf (experimental) | `25`+ | Bukkit `2.6.19`–`2.6.21` |
 
 Place the server artifact in the server's `plugins` directory and restart the server. Simple Voice Chat is a required dependency. Plugin reload tools are not supported. Paper is fully tested; Leaf support is experimental and smoke-tested.
 
@@ -34,8 +34,8 @@ Place the server artifact in the server's `plugins` directory and restart the se
 
 | Artifact | Minecraft | Mod loader | Fabric API | Java | Simple Voice Chat |
 | --- | --- | --- | --- | --- | --- |
-| [`svc-better-groups-fabric-26.1-<version>.jar`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/latest#assets) | `26.1`–`26.1.2` | Fabric Loader `0.18.4`+ | `0.144.3+26.1`+ | `25`+ | Fabric `2.6.14`–`2.6.22` |
-| [`svc-better-groups-fabric-26.2-<version>.jar`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/latest#assets) | `26.2.x` | Fabric Loader `0.19.3`+ | `0.152.1+26.2`+ | `25`+ | Fabric `2.6.18`–`2.6.22` |
+| [`svc-better-groups-fabric-26.1-0.7.0.jar`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.7.0/svc-better-groups-fabric-26.1-0.7.0.jar) | `26.1`–`26.1.2` | Fabric Loader `0.18.4`+ | `0.144.3+26.1`+ | `25`+ | Fabric `2.6.14`–`2.6.22` |
+| [`svc-better-groups-fabric-26.2-0.7.0.jar`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.7.0/svc-better-groups-fabric-26.2-0.7.0.jar) | `26.2.x` | Fabric Loader `0.19.3`+ | `0.152.1+26.2`+ | `25`+ | Fabric `2.6.18`–`2.6.22` |
 
 You do not need the client mod to use Better Groups. For buttons and the leader crown, place exactly one matching client artifact in your `mods` directory. On servers without a compatible Better Groups plugin, the extra controls stay hidden.
 
