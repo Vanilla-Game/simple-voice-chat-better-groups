@@ -44,7 +44,7 @@ final class JoinNotifier {
                     continue;
                 }
                 Player member = Bukkit.getPlayer(memberId);
-                if (member == null || !member.isOnline()) {
+                if (member == null || !member.isOnline() || !member.canSee(joiner)) {
                     continue;
                 }
                 member.sendMessage(inviterName == null
