@@ -6,7 +6,7 @@ on:
   workflow_call:
     inputs:
       matrix:
-        description: JSON array of target, Minecraft runtime, and SVC artifact tuples
+        description: JSON array of runtime-homogeneous compatibility shards
         required: true
         type: string
       probe:
@@ -14,6 +14,11 @@ on:
         required: false
         default: false
         type: boolean
+      clients-artifact:
+        description: Existing workflow artifact containing the packaged release clients
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: read
@@ -23,9 +28,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
+        if: ${{ inputs.probe || inputs.clients-artifact == '' }}
         uses: actions/checkout@v7
 
       - name: Set up JDKs 21 and 25
+        if: ${{ inputs.probe || inputs.clients-artifact == '' }}
         uses: actions/setup-java@v5
         with:
           java-version: |
@@ -34,11 +41,19 @@ jobs:
           distribution: temurin
 
       - name: Set up Gradle
+        if: ${{ inputs.probe || inputs.clients-artifact == '' }}
         uses: gradle/actions/setup-gradle@v5
 
       - name: Package release jars
-        if: ${{ !inputs.probe }}
+        if: ${{ !inputs.probe && inputs.clients-artifact == '' }}
         run: ./gradlew --no-daemon stageReleaseArtifacts --warning-mode all
+
+      - name: Download packaged release clients
+        if: ${{ !inputs.probe && inputs.clients-artifact != '' }}
+        uses: actions/download-artifact@v7
+        with:
+          name: ${{ inputs.clients-artifact }}
+          path: build/release
 
       - name: Package discovery probe jars
         if: ${{ inputs.probe }}
@@ -91,7 +106,7 @@ jobs:
       max-parallel: 6
       matrix:
         include: ${{ fromJSON(inputs.matrix) }}
-    name: Fabric ${{ matrix.target }} / MC ${{ matrix.minecraft }} / ${{ matrix.voicechatArtifact }}
+    name: Fabric ${{ matrix.target }} / MC ${{ matrix.minecraft }} / shard ${{ matrix.part }}/${{ matrix.parts }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -107,8 +122,10 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v5
 
-      - name: Install Xvfb
-        run: sudo apt-get update && sudo apt-get install -y xvfb
+      - name: Verify preinstalled Xvfb
+        run: |
+          command -v Xvfb
+          command -v xvfb-run
 
       - name: Download packaged clients
         uses: actions/download-artifact@v7
@@ -143,21 +160,53 @@ jobs:
       - name: Run packaged client compatibility test
         env:
           ALSOFT_DRIVERS: 'null'
+          ROWS_JSON: ${{ toJSON(matrix.rows) }}
         shell: bash
         run: |
           set -euo pipefail
-          args=(
-            --no-daemon
-            :client-fabric:compat-runner:runProductionClientGameTest
-            "-PcompatTarget=${{ matrix.target }}"
-            "-PcompatMinecraftVersion=${{ matrix.minecraft }}"
-            "-PcompatVoicechatArtifact=${{ matrix.voicechatArtifact }}"
-            "-PcompatReleaseJar=${{ steps.client.outputs.path }}"
-          )
-          if [ '${{ inputs.probe }}' = true ]; then
-            args+=("-PcompatProbe=true")
+          jq -e 'type == "array" and length > 0' <<< "$ROWS_JSON" >/dev/null
+
+          mkdir -p compat-results
+          failed=false
+          processed=0
+          while IFS= read -r row; do
+            target=$(jq -r '.target' <<< "$row")
+            minecraft=$(jq -r '.minecraft' <<< "$row")
+            voicechat_artifact=$(jq -r '.voicechatArtifact' <<< "$row")
+            if [ "$target" != '${{ matrix.target }}' ] || [ "$minecraft" != '${{ matrix.minecraft }}' ]; then
+              echo "Shard metadata mismatch: $target / $minecraft" >&2
+              exit 1
+            fi
+
+            args=(
+              --build-cache
+              :client-fabric:compat-runner:runProductionClientGameTest
+              -PcompatRunnerOnly=true
+              "-PcompatTarget=$target"
+              "-PcompatMinecraftVersion=$minecraft"
+              "-PcompatVoicechatArtifact=$voicechat_artifact"
+              "-PcompatReleaseJar=${{ steps.client.outputs.path }}"
+            )
+            if [ '${{ inputs.probe }}' = true ]; then
+              args+=("-PcompatProbe=true")
+            fi
+
+            result=fail
+            if ./gradlew "${args[@]}"; then
+              result=ok
+            else
+              failed=true
+            fi
+            file="fabric__${target}__${minecraft}__${voicechat_artifact}"
+            printf '%s\n' "$result" > "compat-results/$file"
+            echo "- \`$target / $minecraft / $voicechat_artifact\`: $result" >> "$GITHUB_STEP_SUMMARY"
+            processed=$((processed + 1))
+          done < <(jq -c '.[]' <<< "$ROWS_JSON")
+
+          test "$processed" -eq "$(jq 'length' <<< "$ROWS_JSON")"
+          if [ "$failed" = true ]; then
+            exit 1
           fi
-          ./gradlew "${args[@]}"
 
       - name: Confirm packaged client was not modified
         if: ${{ always() && steps.client.outcome == 'success' }}
@@ -167,25 +216,11 @@ jobs:
           actual=$(sha256sum '${{ steps.client.outputs.path }}' | awk '{ print $1 }')
           test "$actual" = '${{ steps.client.outputs.sha256 }}'
 
-      - name: Record result
-        if: always()
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p compat-results
-          result=fail
-          if [ '${{ job.status }}' = success ]; then
-            result=ok
-          fi
-          file="fabric__${{ matrix.target }}__${{ matrix.minecraft }}__${{ matrix.voicechatArtifact }}"
-          printf '%s\n' "$result" > "compat-results/$file"
-          echo "- \`${{ matrix.target }} / ${{ matrix.minecraft }} / ${{ matrix.voicechatArtifact }}\`: $result" >> "$GITHUB_STEP_SUMMARY"
-
       - name: Upload result
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: compat-result-fabric-${{ matrix.target }}-${{ matrix.minecraft }}-${{ matrix.voicechatArtifact }}
+          name: compat-result-fabric-${{ matrix.id }}
           path: compat-results/
           if-no-files-found: error
           retention-days: 7
@@ -194,7 +229,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v6
         with:
-          name: compat-logs-fabric-${{ matrix.target }}-${{ matrix.minecraft }}-${{ matrix.voicechatArtifact }}
+          name: compat-logs-fabric-${{ matrix.id }}
           path: client-fabric/compat-runner/build/run/
           if-no-files-found: ignore
           retention-days: 7

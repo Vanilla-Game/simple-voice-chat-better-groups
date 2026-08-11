@@ -31,6 +31,14 @@ val catalogJavaVersion = (catalog.getValue("java") as Number).toInt()
 val fabricCatalog = catalog.getValue("fabric") as Map<String, Any?>
 val fabricTargets = (fabricCatalog.getValue("targets") as List<Map<String, Any?>>)
     .associateBy { it.getValue("id") as String }
+val compatRunnerOnly = providers.gradleProperty("compatRunnerOnly")
+    .map(String::toBoolean)
+    .getOrElse(false)
+val compatReleaseJar = providers.gradleProperty("compatReleaseJar")
+
+require(!compatRunnerOnly || compatReleaseJar.isPresent) {
+    "-PcompatRunnerOnly=true requires an explicit -PcompatReleaseJar"
+}
 
 fun Project.addFabricRepositories() {
     repositories {
@@ -203,8 +211,10 @@ fun Project.configureReleaseClient(target: Map<String, Any?>) {
     }
 }
 
-fabricTargets.values.forEach { target ->
-    project(target.getValue("projectPath") as String).configureReleaseClient(target)
+if (!compatRunnerOnly) {
+    fabricTargets.values.forEach { target ->
+        project(target.getValue("projectPath") as String).configureReleaseClient(target)
+    }
 }
 
 project(":client-fabric:compat-runner") {
@@ -304,30 +314,28 @@ project(":client-fabric:compat-runner") {
         gametestJar.flatMap { it.archiveFile }
     }
 
-    val selectedClient = project(target.getValue("projectPath") as String)
     val archiveBaseName = target.getValue("archiveBaseName") as String
     val selectedArchiveTask = when {
         probe -> "compatProbeJar"
         obfuscated -> "remapJar"
         else -> "jar"
     }
-    val selectedArchiveTaskPath = "${selectedClient.path}:$selectedArchiveTask"
-    val selectedArchiveFile = selectedClient.layout.buildDirectory.file(
-        if (probe) "libs/$archiveBaseName-$runnerVersion-compat-probe.jar"
-        else "libs/$archiveBaseName-$runnerVersion.jar"
-    )
-    val explicitReleaseJar = providers.gradleProperty("compatReleaseJar")
-    val addonFile = if (explicitReleaseJar.isPresent) {
-        layout.file(providers.provider { file(explicitReleaseJar.get()) })
+    val selectedClientPath = target.getValue("projectPath") as String
+    val selectedArchiveTaskPath = "$selectedClientPath:$selectedArchiveTask"
+    val addonFile = if (compatReleaseJar.isPresent) {
+        layout.file(providers.provider { file(compatReleaseJar.get()) })
     } else {
-        selectedArchiveFile
+        project(selectedClientPath).layout.buildDirectory.file(
+            if (probe) "libs/$archiveBaseName-$runnerVersion-compat-probe.jar"
+            else "libs/$archiveBaseName-$runnerVersion.jar"
+        )
     }
 
     tasks.register<ClientProductionRunTask>("runProductionClientGameTest") {
         group = "verification"
         description = "Runs an exact packaged addon against one Minecraft/SVC compatibility pair"
         dependsOn(runtimeGametestJar)
-        if (!explicitReleaseJar.isPresent) {
+        if (!compatReleaseJar.isPresent) {
             dependsOn(selectedArchiveTaskPath)
         }
         // Replace Loom's default project jar: the runner itself is only a
