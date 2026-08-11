@@ -10,8 +10,6 @@ Better group controls for [Simple Voice Chat](https://modrepo.de/minecraft/voice
 
 The Paper plugin contains all gameplay logic. Players can use every feature through chat; the optional Fabric mod adds buttons and a leader crown to the existing Simple Voice Chat screens.
 
-Developed for [Vanilla Game](https://vanilla-game.ru).
-
 ## ✨ Features
 
 - One-time invites that expire without exposing a group password.
@@ -19,7 +17,7 @@ Developed for [Vanilla Game](https://vanilla-game.ru).
 - A group leader who can remove members or transfer leadership.
 - Automatic succession to the longest-standing member when the leader leaves.
 - Group chat announcements when a player joins, including who invited them.
-- Messages in 15 languages, selected from each player's Minecraft locale.
+- In-chat notifications in 15 languages, selected based on each player’s Minecraft locale.
 
 ## 📦 Installation
 
@@ -27,31 +25,27 @@ Developed for [Vanilla Game](https://vanilla-game.ru).
 
 <!-- modrinth:exclude:start -->
 
-| Artifact | Minecraft | Server software | Java | Simple Voice Chat |
-| --- | --- | --- | --- | --- |
-| [`svc-better-groups-0.7.0.jar`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.7.0/svc-better-groups-0.7.0.jar) | `26.1.2` | Paper; Leaf (experimental) | `25`+ | Bukkit `2.6.16`–`2.6.21` |
-| [`svc-better-groups-0.7.0.jar`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.7.0/svc-better-groups-0.7.0.jar) | `26.2` | Paper; Leaf (experimental) | `25`+ | Bukkit `2.6.19`–`2.6.21` |
+| Artifact                                                                                                                                              | Minecraft | Server software            | Java  | Simple Voice Chat        |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------- | --------- | -------------------------- | ----- | ------------------------ |
+| [`svc-better-groups-0.7.0.jar`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.7.0/svc-better-groups-0.7.0.jar) | `26.1.2`  | Paper; Leaf (experimental) | `25`+ | Bukkit `2.6.16`–`2.6.21` |
+| [`svc-better-groups-0.7.0.jar`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.7.0/svc-better-groups-0.7.0.jar) | `26.2`    | Paper; Leaf (experimental) | `25`+ | Bukkit `2.6.19`–`2.6.21` |
 
 <!-- modrinth:exclude:end -->
 
-Place the server artifact in the server's `plugins` directory and restart the server. Simple Voice Chat is a required dependency. Plugin reload tools are not supported. Paper is fully tested; Leaf support is experimental and smoke-tested.
+Place the server artifact in the server's `plugins` directory and restart the server. Simple Voice Chat is a required dependency.
 
 ### Client (optional)
 
 <!-- modrinth:exclude:start -->
 
-| Artifact | Minecraft | Mod loader | Fabric API | Java | Simple Voice Chat |
-| --- | --- | --- | --- | --- | --- |
+| Artifact                                                                                                                                                                      | Minecraft       | Mod loader              | Fabric API      | Java  | Simple Voice Chat        |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- | ----------------------- | --------------- | ----- | ------------------------ |
 | [`svc-better-groups-fabric-26.1-0.7.0.jar`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.7.0/svc-better-groups-fabric-26.1-0.7.0.jar) | `26.1`–`26.1.2` | Fabric Loader `0.18.4`+ | `0.144.3+26.1`+ | `25`+ | Fabric `2.6.14`–`2.6.22` |
-| [`svc-better-groups-fabric-26.2-0.7.0.jar`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.7.0/svc-better-groups-fabric-26.2-0.7.0.jar) | `26.2.x` | Fabric Loader `0.19.3`+ | `0.152.1+26.2`+ | `25`+ | Fabric `2.6.18`–`2.6.22` |
+| [`svc-better-groups-fabric-26.2-0.7.0.jar`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.7.0/svc-better-groups-fabric-26.2-0.7.0.jar) | `26.2.x`        | Fabric Loader `0.19.3`+ | `0.152.1+26.2`+ | `25`+ | Fabric `2.6.18`–`2.6.22` |
 
 <!-- modrinth:exclude:end -->
 
-You do not need the client mod to use Better Groups. For buttons and the leader crown, place exactly one matching client artifact in your `mods` directory. On servers without a compatible Better Groups plugin, the extra controls stay hidden.
-
-Client and server Simple Voice Chat patch versions may differ when both are in the supported `2.6` range. SVC `2.5.x`, `2.7.x`, beta, and unlisted builds are unsupported. The client addon does not support Forge, NeoForge, or Quilt.
-
-See [`compatibility.json`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/blob/main/compatibility.json) for the exact tested combinations.
+The client mod is optional but recommended: the server plugin works without it, while the mod makes group management much easier.
 
 ## 🎮 Usage
 
@@ -70,17 +64,13 @@ The optional client mod adds:
 - a remove button beside each member, visible only to the leader;
 - a join-request button on the password screen.
 
-The server checks every action. Installing or modifying the client mod cannot grant leader permissions.
-
 ## 👑 Leadership
 
 The group creator becomes its first leader. If the leader leaves the group or quits the server, the longest-standing remaining member takes over. A returning former leader joins the end of that order. The current leader can hand the role to another member with `/voicegroup transfer`.
 
-Leadership exists only in memory because the public Simple Voice Chat API does not expose historical group ownership. If the plugin is reloaded while groups still exist, it cannot safely identify their leaders. For those groups, leader-only actions are denied and the crown stays hidden until the groups are recreated.
-
 ## ⚙️ Server configuration
 
-Settings are generated in `plugins/SVCBetterGroups/config.yml`. Server owners can change invite and join-request expiration, cooldown, and notification sound. Set a cooldown to `0` or a sound to `none` to disable it. Restart the plugin or server after editing the file.
+> Settings are stored in [`plugins/SVCBetterGroups/config.yml`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/blob/main/src/main/resources/config.yml). See the comments in the file for descriptions and examples.
 
 The `vanillagame.svc_better_groups.use` permission allows `/voicegroup` and is granted to all players by default. Leader-only commands always require actual group leadership.
 
