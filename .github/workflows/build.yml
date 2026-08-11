@@ -97,6 +97,13 @@ jobs:
       - name: Validate generated compatibility documentation
         run: ruby scripts/update-compatibility-docs.rb --check
 
+      - name: Validate Modrinth description
+        shell: bash
+        run: |
+          set -euo pipefail
+          ruby scripts/render-modrinth-description.rb > "$RUNNER_TEMP/modrinth-description.md"
+          test -s "$RUNNER_TEMP/modrinth-description.md"
+
       - name: Build, test, and stage release artifacts
         run: ./gradlew --no-daemon clean build stageReleaseArtifacts --warning-mode all
 

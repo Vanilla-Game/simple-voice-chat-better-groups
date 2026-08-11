@@ -1,0 +1,76 @@
+name: Sync Modrinth Description
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - README.md
+      - scripts/render-modrinth-description.rb
+      - .github/workflows/modrinth-description.yml
+  workflow_dispatch:
+
+concurrency:
+  group: modrinth-description
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      MODRINTH_PROJECT_ID: scOrYDTf
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Render project description
+        shell: bash
+        run: |
+          set -euo pipefail
+          ruby scripts/render-modrinth-description.rb > "$RUNNER_TEMP/modrinth-description.md"
+          test -s "$RUNNER_TEMP/modrinth-description.md"
+          jq -Rs '{body: .}' "$RUNNER_TEMP/modrinth-description.md" \
+            > "$RUNNER_TEMP/modrinth-project.json"
+
+      - name: Update Modrinth project
+        shell: bash
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$MODRINTH_TOKEN" || {
+            echo 'MODRINTH_TOKEN with PROJECT_WRITE scope is required.' >&2
+            exit 1
+          }
+          curl \
+            --fail-with-body \
+            --silent \
+            --show-error \
+            --request PATCH \
+            --header "Authorization: $MODRINTH_TOKEN" \
+            --header 'Content-Type: application/json' \
+            --header 'User-Agent: Vanilla-Game/simple-voice-chat-better-groups description sync' \
+            --data-binary @"$RUNNER_TEMP/modrinth-project.json" \
+            "https://api.modrinth.com/v2/project/$MODRINTH_PROJECT_ID"
+
+      - name: Verify Modrinth project description
+        shell: bash
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+        run: |
+          set -euo pipefail
+          curl \
+            --fail-with-body \
+            --silent \
+            --show-error \
+            --header "Authorization: $MODRINTH_TOKEN" \
+            --header 'User-Agent: Vanilla-Game/simple-voice-chat-better-groups description sync' \
+            "https://api.modrinth.com/v2/project/$MODRINTH_PROJECT_ID" \
+            > "$RUNNER_TEMP/modrinth-project-response.json"
+          jq \
+            --rawfile expected "$RUNNER_TEMP/modrinth-description.md" \
+            --exit-status \
+            '.body == $expected' \
+            "$RUNNER_TEMP/modrinth-project-response.json"

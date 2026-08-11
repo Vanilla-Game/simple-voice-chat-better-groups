@@ -46,12 +46,6 @@ replacements = {
       /(\| \[`svc-better-groups-fabric-26\.2-\d+\.\d+\.\d+\.jar`\]\([^\n]+\) \| `26\.2\.x` \| Fabric Loader `0\.19\.3`\+ \| `0\.152\.1\+26\.2`\+ \| `25`\+ \| Fabric `)\d+\.\d+\.\d+`–`\d+\.\d+\.\d+(` \|)/,
       "\\1#{fabric_26_2.split('–').join('`–`')}\\2"
     ]
-  ],
-  "assets/modrinth-description.md" => [
-    [/- server 26\.1\.2: Bukkit SVC \d+\.\d+\.\d+–\d+\.\d+\.\d+;/, "- server 26.1.2: Bukkit SVC #{server_26_1};"],
-    [/- server 26\.2: Bukkit SVC \d+\.\d+\.\d+–\d+\.\d+\.\d+;/, "- server 26.2: Bukkit SVC #{server_26_2};"],
-    [/- Fabric client 26\.1\.x: SVC \d+\.\d+\.\d+–\d+\.\d+\.\d+;/, "- Fabric client 26.1.x: SVC #{fabric_26_1};"],
-    [/- Fabric client 26\.2\.x: SVC \d+\.\d+\.\d+–\d+\.\d+\.\d+\./, "- Fabric client 26.2.x: SVC #{fabric_26_2}."],
   ]
 }
 
