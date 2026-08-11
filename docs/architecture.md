@@ -29,6 +29,9 @@ Compatibility is defined by `compatibility.json`. The complete published jar,
 not a separately recompiled substitute, is launched for every declared
 Minecraft/SVC pair. SVC server and client patch numbers may differ inside the
 supported 2.6 line, but 2.5.x, 2.7.x, beta, and unlisted builds are excluded.
+CI runs every pair as an independently named job so GitHub shows the exact
+Fabric target, Minecraft runtime, and Simple Voice Chat artifact under test.
+Results and failure artifacts remain independent for every declared pair.
 
 ## Client source layout and version evolution
 

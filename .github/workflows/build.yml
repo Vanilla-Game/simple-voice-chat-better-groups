@@ -219,11 +219,12 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
   client-compatibility:
-    needs: [plan-compatibility, read-compatibility]
+    needs: [build, plan-compatibility, read-compatibility]
     if: ${{ needs.plan-compatibility.outputs.mode != 'none' }}
     uses: ./.github/workflows/voicechat-compat.yml
     with:
       matrix: ${{ needs.read-compatibility.outputs.fabric }}
+      clients-artifact: svc-better-groups-${{ github.sha }}
 
   server-compatibility:
     needs: [plan-compatibility, read-compatibility]
