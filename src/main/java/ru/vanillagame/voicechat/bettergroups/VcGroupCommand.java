@@ -506,11 +506,6 @@ final class VcGroupCommand implements CommandExecutor, TabCompleter {
 
         requests.consume(token, request);
         requests.invalidateRequester(requester.getUniqueId());
-        approver.sendMessage(Messages.component(
-                Messages.APPROVE_SUCCESS,
-                NamedTextColor.GREEN,
-                Component.text(requester.getName())
-        ));
         requester.sendMessage(Messages.component(Messages.APPROVE_JOINED, NamedTextColor.GREEN));
     }
 

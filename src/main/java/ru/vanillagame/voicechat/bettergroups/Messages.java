@@ -68,7 +68,6 @@ final class Messages {
     static final String APPROVE_REQUESTER_OFFLINE = key("approve.requester_offline");
     static final String APPROVE_REQUESTER_IN_GROUP = key("approve.requester_in_group");
     static final String APPROVE_FAILED = key("approve.failed");
-    static final String APPROVE_SUCCESS = key("approve.success");
     static final String APPROVE_JOINED = key("approve.joined");
     static final String LEADER_PROMOTED = key("leader.promoted");
 
@@ -131,7 +130,6 @@ final class Messages {
             APPROVE_REQUESTER_OFFLINE,
             APPROVE_REQUESTER_IN_GROUP,
             APPROVE_FAILED,
-            APPROVE_SUCCESS,
             APPROVE_JOINED,
             LEADER_PROMOTED
     );

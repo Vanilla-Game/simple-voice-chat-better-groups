@@ -12,6 +12,8 @@ import de.maxhenkel.voicechat.api.events.RemoveGroupEvent;
 import de.maxhenkel.voicechat.api.events.VoicechatServerStartedEvent;
 import de.maxhenkel.voicechat.api.events.VoicechatServerStoppedEvent;
 
+import java.util.UUID;
+
 final class VoiceChatAddon implements VoicechatPlugin {
 
     static final String PLUGIN_ID = "vanilla_game_svc_better_groups";
@@ -86,11 +88,18 @@ final class VoiceChatAddon implements VoicechatPlugin {
         if (!plugin.isEnabled() || event.isCancelled() || event.getConnection().getPlayer() == null) {
             return;
         }
-        plugin.publishLeadership(leadership.join(
+        handleGroupJoin(
                 event.getGroup().getId(),
                 event.getConnection().getPlayer().getUuid()
-        ));
-        plugin.notifyGroupJoin(event.getGroup().getId(), event.getConnection().getPlayer().getUuid());
+        );
+    }
+
+    void handleGroupJoin(UUID groupId, UUID playerId) {
+        GroupLeadershipRegistry.Transition transition = leadership.join(groupId, playerId);
+        plugin.publishLeadership(transition);
+        if (transition.changed()) {
+            plugin.notifyGroupJoin(groupId, playerId);
+        }
     }
 
     private void onGroupLeft(LeaveGroupEvent event) {
