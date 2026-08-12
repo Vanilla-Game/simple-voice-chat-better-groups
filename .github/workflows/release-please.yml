@@ -20,6 +20,30 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
+      - name: Checkout the release PR
+        if: ${{ steps.release.outputs.prs_created == 'true' }}
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
+
+      - name: Update generated download tables in the release PR
+        if: ${{ steps.release.outputs.prs_created == 'true' }}
+        env:
+          RELEASE_BRANCH: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          ruby scripts/update-compatibility-docs.rb
+          if git diff --quiet -- README.md; then
+            exit 0
+          fi
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add README.md
+          git commit -m 'docs: update release download tables'
+          git push origin "HEAD:$RELEASE_BRANCH"
+
       - name: Checkout
         if: ${{ steps.release.outputs.release_created == 'true' }}
         uses: actions/checkout@v7

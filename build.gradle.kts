@@ -1,5 +1,6 @@
 @file:Suppress("UNCHECKED_CAST")
 
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import groovy.json.JsonSlurper
 import java.util.zip.ZipFile
 import org.gradle.api.file.DuplicatesStrategy
@@ -7,6 +8,7 @@ import org.gradle.api.tasks.Sync
 
 plugins {
     java
+    id("com.gradleup.shadow") version "9.3.1"
 }
 
 group = "ru.vanillagame.voicechat"
@@ -33,6 +35,8 @@ val voicechatApiVersion = serverCompile.getValue("voicechatApi") as String
 val catalogJavaVersion = (compatibilityCatalog.getValue("java") as Number).toInt()
 
 dependencies {
+    implementation("org.bstats:bstats-bukkit:3.2.1")
+
     compileOnly("io.papermc.paper:paper-api:$paperApiVersion")
     compileOnly("de.maxhenkel.voicechat:voicechat-api:$voicechatApiVersion")
 
@@ -70,6 +74,19 @@ tasks.test {
 
 tasks.jar {
     archiveBaseName = "svc-better-groups"
+    archiveClassifier = "plain"
+}
+
+tasks.shadowJar {
+    archiveBaseName = "svc-better-groups"
+    archiveClassifier = ""
+    configurations = project.configurations.runtimeClasspath.map { setOf(it) }
+
+    dependencies {
+        exclude { it.moduleGroup != "org.bstats" }
+    }
+
+    relocate("org.bstats", "ru.vanillagame.voicechat.bettergroups.lib.bstats")
 }
 
 val validateCompatibilityCatalog = tasks.register("validateCompatibilityCatalog") {
@@ -177,7 +194,7 @@ val validateCompatibilityCatalog = tasks.register("validateCompatibilityCatalog"
     }
 }
 
-val serverJar = tasks.named<Jar>("jar")
+val serverJar = tasks.named<ShadowJar>("shadowJar")
 val fabricTargets = (compatibilityCatalog.getValue("fabric") as Map<String, Any?>)
     .getValue("targets") as List<Map<String, Any?>>
 val clientJars = fabricTargets.associate { target ->
@@ -216,6 +233,15 @@ val stageReleaseArtifacts = tasks.register<Sync>("stageReleaseArtifacts") {
 
         val serverMetadata = zipText(staged.single { it.name.startsWith("svc-better-groups-$pluginVersion") }, "plugin.yml")
         check("api-version: \"26.1.2\"" in serverMetadata) { "Server plugin.yml has the wrong api-version" }
+        ZipFile(staged.single { it.name.startsWith("svc-better-groups-$pluginVersion") }).use { zip ->
+            val entries = zip.entries().asSequence().map { it.name }.toList()
+            check(entries.any { it.startsWith("ru/vanillagame/voicechat/bettergroups/lib/bstats/") }) {
+                "Server plugin is missing its relocated bStats classes"
+            }
+            check(entries.none { it.startsWith("org/bstats/") }) {
+                "Server plugin contains unrelocated bStats classes"
+            }
+        }
 
         fabricTargets.forEach { target ->
             val id = target.getValue("id") as String
