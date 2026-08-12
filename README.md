@@ -30,8 +30,8 @@ The Paper plugin contains all gameplay logic. Players can use every feature thro
 
 | Artifact                                                                                                                                              | Minecraft | Server software            | Java  | Simple Voice Chat        |
 | ----------------------------------------------------------------------------------------------------------------------------------------------------- | --------- | -------------------------- | ----- | ------------------------ |
-| [`svc-better-groups-0.8.0.jar`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.8.0/svc-better-groups-0.8.0.jar) | `26.1.2`  | Paper; Leaf (experimental) | `25`+ | Bukkit `2.6.16`–`2.6.21` |
-| [`svc-better-groups-0.8.0.jar`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.8.0/svc-better-groups-0.8.0.jar) | `26.2`    | Paper; Leaf (experimental) | `25`+ | Bukkit `2.6.19`–`2.6.21` |
+| [`svc-better-groups-0.9.0.jar`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.9.0/svc-better-groups-0.9.0.jar) | `26.1.2`  | Paper; Leaf (experimental) | `25`+ | Bukkit `2.6.16`–`2.6.21` |
+| [`svc-better-groups-0.9.0.jar`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.9.0/svc-better-groups-0.9.0.jar) | `26.2`    | Paper; Leaf (experimental) | `25`+ | Bukkit `2.6.19`–`2.6.21` |
 
 <!-- generated:server-downloads:end -->
 
@@ -47,9 +47,9 @@ Place the server artifact in the server's `plugins` directory and restart the se
 
 | Artifact                                                                                                                                                                            | Minecraft       | Mod loader              | Fabric API         | Java  | Simple Voice Chat        |
 | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- | ----------------------- | ------------------ | ----- | ------------------------ |
-| [`svc-better-groups-fabric-1.21.11-0.8.0.jar`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.8.0/svc-better-groups-fabric-1.21.11-0.8.0.jar) | `1.21.11`       | Fabric Loader `0.18.1`+ | `0.139.4+1.21.11`+ | `21`+ | Fabric `2.6.6`–`2.6.22`  |
-| [`svc-better-groups-fabric-26.1-0.8.0.jar`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.8.0/svc-better-groups-fabric-26.1-0.8.0.jar)       | `26.1`–`26.1.2` | Fabric Loader `0.18.4`+ | `0.144.3+26.1`+    | `25`+ | Fabric `2.6.14`–`2.6.22` |
-| [`svc-better-groups-fabric-26.2-0.8.0.jar`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.8.0/svc-better-groups-fabric-26.2-0.8.0.jar)       | `26.2.x`        | Fabric Loader `0.19.3`+ | `0.152.1+26.2`+    | `25`+ | Fabric `2.6.18`–`2.6.22` |
+| [`svc-better-groups-fabric-1.21.11-0.9.0.jar`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.9.0/svc-better-groups-fabric-1.21.11-0.9.0.jar) | `1.21.11`       | Fabric Loader `0.18.1`+ | `0.139.4+1.21.11`+ | `21`+ | Fabric `2.6.6`–`2.6.22`  |
+| [`svc-better-groups-fabric-26.1-0.9.0.jar`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.9.0/svc-better-groups-fabric-26.1-0.9.0.jar)       | `26.1`–`26.1.2` | Fabric Loader `0.18.4`+ | `0.144.3+26.1`+    | `25`+ | Fabric `2.6.14`–`2.6.22` |
+| [`svc-better-groups-fabric-26.2-0.9.0.jar`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.9.0/svc-better-groups-fabric-26.2-0.9.0.jar)       | `26.2.x`        | Fabric Loader `0.19.3`+ | `0.152.1+26.2`+    | `25`+ | Fabric `2.6.18`–`2.6.22` |
 
 <!-- generated:fabric-downloads:end -->
 
