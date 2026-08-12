@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/compare/v0.8.0...v0.9.0) (2026-08-12)
+
+
+### Features
+
+* add bStats and automate release download tables ([#58](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/issues/58)) ([d85393b](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/commit/d85393b9aa7cd74c212afbbc19d72b2dee99da55))
+
 ## [0.8.0](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/compare/v0.7.0...v0.8.0) (2026-08-11)
 
 
