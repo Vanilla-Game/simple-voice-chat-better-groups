@@ -304,6 +304,9 @@ jobs:
               | select(any($current[];
                   . as $candidate
                   | $previous.id != $candidate.id
+                  and ($previous.date_published // "") != ""
+                  and ($candidate.date_published // "") != ""
+                  and $previous.date_published < $candidate.date_published
                   and (($previous.game_versions // []) - ($candidate.game_versions // []) | length == 0)
                   and (($previous.loaders // []) - ($candidate.loaders // []) | length == 0)
                   and (($previous.version_type // "release") == ($candidate.version_type // "release"))))
