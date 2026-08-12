@@ -2,6 +2,7 @@ package ru.vanillagame.voicechat.bettergroups;
 
 import de.maxhenkel.voicechat.api.BukkitVoicechatService;
 import de.maxhenkel.voicechat.api.VoicechatServerApi;
+import org.bstats.bukkit.Metrics;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -13,6 +14,8 @@ import java.util.UUID;
 import java.util.logging.Level;
 
 public final class BetterGroupsPlugin extends JavaPlugin implements Listener {
+
+    private static final int BSTATS_PLUGIN_ID = 33318;
 
     private volatile VoicechatServerApi voicechatApi;
     private InviteStore invites;
@@ -75,6 +78,7 @@ public final class BetterGroupsPlugin extends JavaPlugin implements Listener {
         groupSync.register();
         getServer().getPluginManager().registerEvents(this, this);
         getServer().getScheduler().runTaskTimer(this, this::cleanupExpiredState, 20L * 60L, 20L * 60L);
+        new Metrics(this, BSTATS_PLUGIN_ID);
         getLogger().info("Simple Voice Chat Group Management enabled.");
     }
 

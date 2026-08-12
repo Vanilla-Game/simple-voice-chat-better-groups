@@ -3,72 +3,118 @@
 
 require "json"
 
-root = File.expand_path("..", __dir__)
-catalog = JSON.parse(File.read(File.join(root, "compatibility.json")))
+ROOT = File.expand_path("..", __dir__)
+REPOSITORY = "Vanilla-Game/simple-voice-chat-better-groups"
 
 def artifact_core(artifact)
   artifact.sub(/^(fabric|bukkit)-/, "").sub(/\+.*/, "").split("-").last
 end
 
 def artifact_range(artifacts)
-  versions = artifacts.map { |artifact| artifact_core(artifact) }.uniq.sort_by { |version| version.split(".").map(&:to_i) }
+  versions = artifacts.map { |artifact| artifact_core(artifact) }.uniq.sort_by do |version|
+    version.split(".").map(&:to_i)
+  end
+  raise "Artifact list must not be empty" if versions.empty?
+
   "#{versions.first}–#{versions.last}"
 end
 
 def declared_range(range)
-  match = range.match(/\A>=(?:\d+\.\d+\.\d+-)?(\d+\.\d+\.\d+) <(?:\d+\.\d+\.\d+-)?(\d+)\.(\d+)\.(\d+)\z/) or raise "Invalid range: #{range}"
+  match = range.match(/\A>=(?:\d+\.\d+\.\d+-)?(\d+\.\d+\.\d+) <(?:\d+\.\d+\.\d+-)?(\d+)\.(\d+)\.(\d+)\z/) or
+    raise "Invalid range: #{range}"
   "#{match[1]}–#{match[2]}.#{match[3]}.#{match[4].to_i - 1}"
 end
 
-server = catalog.fetch("server").fetch("targets").to_h { |target| [target.fetch("minecraft"), target] }
-fabric = catalog.fetch("fabric").fetch("targets").to_h { |target| [target.fetch("id"), target] }
-
-server_26_1 = artifact_range(server.fetch("26.1.2").fetch("voicechatArtifacts"))
-server_26_2 = artifact_range(server.fetch("26.2").fetch("voicechatArtifacts"))
-fabric_1_21_11 = declared_range(fabric.fetch("1.21.11").fetch("voicechatRange"))
-fabric_26_1 = declared_range(fabric.fetch("26.1").fetch("voicechatRange"))
-fabric_26_2 = declared_range(fabric.fetch("26.2").fetch("voicechatRange"))
-
-replacements = {
-  "README.md" => [
-    [
-      /(\| \[`svc-better-groups-\d+\.\d+\.\d+\.jar`\]\([^\n]+\) +\| `26\.1\.2` +\| Paper; Leaf \(experimental\) +\| `25`\+ +\| Bukkit `)\d+\.\d+\.\d+`–`\d+\.\d+\.\d+(` +\|)/,
-      "\\1#{server_26_1.split('–').join('`–`')}\\2"
-    ],
-    [
-      /(\| \[`svc-better-groups-\d+\.\d+\.\d+\.jar`\]\([^\n]+\) +\| `26\.2` +\| Paper; Leaf \(experimental\) +\| `25`\+ +\| Bukkit `)\d+\.\d+\.\d+`–`\d+\.\d+\.\d+(` +\|)/,
-      "\\1#{server_26_2.split('–').join('`–`')}\\2"
-    ],
-    [
-      /(\| \[`svc-better-groups-fabric-1\.21\.11-\d+\.\d+\.\d+\.jar`\]\([^\n]+\) +\| `1\.21\.11` +\| Fabric Loader `0\.18\.1`\+ +\| `0\.139\.4\+1\.21\.11`\+ +\| `21`\+ +\| Fabric `)\d+\.\d+\.\d+`–`\d+\.\d+\.\d+(` +\|)/,
-      "\\1#{fabric_1_21_11.split('–').join('`–`')}\\2"
-    ],
-    [
-      /(\| \[`svc-better-groups-fabric-26\.1-\d+\.\d+\.\d+\.jar`\]\([^\n]+\) +\| `26\.1`–`26\.1\.2` +\| Fabric Loader `0\.18\.4`\+ +\| `0\.144\.3\+26\.1`\+ +\| `25`\+ +\| Fabric `)\d+\.\d+\.\d+`–`\d+\.\d+\.\d+(` +\|)/,
-      "\\1#{fabric_26_1.split('–').join('`–`')}\\2"
-    ],
-    [
-      /(\| \[`svc-better-groups-fabric-26\.2-\d+\.\d+\.\d+\.jar`\]\([^\n]+\) +\| `26\.2\.x` +\| Fabric Loader `0\.19\.3`\+ +\| `0\.152\.1\+26\.2`\+ +\| `25`\+ +\| Fabric `)\d+\.\d+\.\d+`–`\d+\.\d+\.\d+(` +\|)/,
-      "\\1#{fabric_26_2.split('–').join('`–`')}\\2"
-    ]
-  ]
-}
-
-check_only = ARGV == ["--check"]
-changed = []
-
-replacements.each do |relative_path, rules|
-  path = File.join(root, relative_path)
-  original = File.read(path)
-  updated = rules.reduce(original) do |content, (pattern, replacement)|
-    raise "Expected compatibility text not found in #{relative_path}: #{pattern.inspect}" unless content.match?(pattern)
-
-    content.sub(pattern, replacement)
-  end
-  next if updated == original
-
-  changed << relative_path
-  File.write(path, updated) unless check_only
+def download_link(filename, version)
+  url = "https://github.com/#{REPOSITORY}/releases/download/v#{version}/#{filename}"
+  "[`#{filename}`](#{url})"
 end
 
-abort "Compatibility documentation is stale: #{changed.join(', ')}" if check_only && !changed.empty?
+def minecraft_versions(target)
+  versions = target.fetch("releaseMinecraftVersions")
+  raise "releaseMinecraftVersions must not be empty for #{target.fetch('id')}" if versions.empty?
+
+  return "#{versions.first}–#{versions.last}" if versions.length > 1
+
+  dependency = target.fetch("minecraftDependency")
+  dependency.end_with?(".x") ? dependency : versions.first
+end
+
+def markdown_table(headers, rows)
+  widths = headers.each_index.map do |index|
+    ([headers[index]] + rows.map { |row| row[index] }).map(&:length).max
+  end
+  render = lambda do |values|
+    "| #{values.each_with_index.map { |value, index| value.ljust(widths[index]) }.join(' | ')} |"
+  end
+
+  ([render.call(headers), render.call(widths.map { |width| "-" * width })] + rows.map(&render)).join("\n")
+end
+
+def replace_generated_block(content, name, table)
+  start_marker = "<!-- generated:#{name}:start -->"
+  end_marker = "<!-- generated:#{name}:end -->"
+  unless content.scan(start_marker).length == 1 && content.scan(end_marker).length == 1
+    raise "README.md must contain exactly one #{start_marker} and one #{end_marker}"
+  end
+
+  pattern = /#{Regexp.escape(start_marker)}.*?#{Regexp.escape(end_marker)}/m
+  content.sub(pattern, "#{start_marker}\n\n#{table}\n\n#{end_marker}")
+end
+
+abort "Usage: #{File.basename($PROGRAM_NAME)} [--check]" unless ARGV.empty? || ARGV == ["--check"]
+
+catalog = JSON.parse(File.read(File.join(ROOT, "compatibility.json")))
+manifest = JSON.parse(File.read(File.join(ROOT, ".release-please-manifest.json")))
+version = manifest.fetch(".")
+raise "Invalid release version: #{version}" unless version.match?(/\A\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?\z/)
+
+build = File.read(File.join(ROOT, "build.gradle.kts"))
+build_version = build[/^version = "([^"]+)"/, 1] or raise "Project version not found in build.gradle.kts"
+raise "Release manifest version #{version} does not match build version #{build_version}" unless version == build_version
+
+server_filename = "svc-better-groups-#{version}.jar"
+server_rows = catalog.fetch("server").fetch("targets").map do |target|
+  software = ["Paper"]
+  software << "Leaf (experimental)" if target.key?("leafBuild")
+  [
+    download_link(server_filename, version),
+    "`#{target.fetch('minecraft')}`",
+    software.join("; "),
+    "`#{catalog.fetch('java')}`+",
+    "Bukkit `#{artifact_range(target.fetch('voicechatArtifacts')).sub('–', '`–`')}`"
+  ]
+end
+server_table = markdown_table(
+  ["Artifact", "Minecraft", "Server software", "Java", "Simple Voice Chat"],
+  server_rows
+)
+
+fabric_rows = catalog.fetch("fabric").fetch("targets").map do |target|
+  compile = target.fetch("compile")
+  filename = "#{target.fetch('archiveBaseName')}-#{version}.jar"
+  [
+    download_link(filename, version),
+    "`#{minecraft_versions(target).sub('–', '`–`')}`",
+    "Fabric Loader `#{compile.fetch('fabricLoader')}`+",
+    "`#{compile.fetch('fabricApi')}`+",
+    "`#{target.fetch('java')}`+",
+    "Fabric `#{declared_range(target.fetch('voicechatRange')).sub('–', '`–`')}`"
+  ]
+end
+fabric_table = markdown_table(
+  ["Artifact", "Minecraft", "Mod loader", "Fabric API", "Java", "Simple Voice Chat"],
+  fabric_rows
+)
+
+readme_path = File.join(ROOT, "README.md")
+original = File.read(readme_path)
+updated = replace_generated_block(original, "server-downloads", server_table)
+updated = replace_generated_block(updated, "fabric-downloads", fabric_table)
+changed = updated != original
+
+if ARGV == ["--check"]
+  abort "Compatibility documentation is stale: README.md" if changed
+elsif changed
+  File.write(readme_path, updated)
+end
