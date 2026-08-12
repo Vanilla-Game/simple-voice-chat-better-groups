@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      recover_version:
+        description: Existing release version to recover (without the v prefix)
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -14,6 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Create or update the release PR
+        if: ${{ inputs.recover_version == '' }}
         uses: googleapis/release-please-action@v5
         id: release
         with:
@@ -29,10 +35,11 @@ jobs:
       - name: Update generated download tables in the release PR
         if: ${{ steps.release.outputs.prs_created == 'true' }}
         env:
-          RELEASE_BRANCH: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
+          RELEASE_PR: ${{ steps.release.outputs.pr }}
         shell: bash
         run: |
           set -euo pipefail
+          release_branch=$(jq -er '.headBranchName' <<< "$RELEASE_PR")
           ruby scripts/update-compatibility-docs.rb
           if git diff --quiet -- README.md; then
             exit 0
@@ -42,14 +49,46 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add README.md
           git commit -m 'docs: update release download tables'
-          git push origin "HEAD:$RELEASE_BRANCH"
+          git push origin "HEAD:$release_branch"
+
+      - name: Resolve release context
+        id: release_context
+        shell: bash
+        env:
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_CREATED: ${{ steps.release.outputs.release_created }}
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag_name }}
+          RECOVER_VERSION: ${{ inputs.recover_version }}
+        run: |
+          set -euo pipefail
+          if [[ "$RELEASE_CREATED" == 'true' ]]; then
+            version="$RELEASE_VERSION"
+            tag="$RELEASE_TAG"
+          elif [[ -n "$RECOVER_VERSION" ]]; then
+            version="$RECOVER_VERSION"
+            tag="v$RECOVER_VERSION"
+          else
+            echo 'active=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          gh release view "$tag" --json tagName --jq .tagName >/dev/null
+          {
+            echo 'active=true'
+            echo "version=$version"
+            echo "tag_name=$tag"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Checkout
-        if: ${{ steps.release.outputs.release_created == 'true' }}
+        if: ${{ steps.release_context.outputs.active == 'true' }}
         uses: actions/checkout@v7
+        with:
+          ref: ${{ steps.release_context.outputs.tag_name }}
 
       - name: Set up JDKs 21 and 25
-        if: ${{ steps.release.outputs.release_created == 'true' }}
+        if: ${{ steps.release_context.outputs.active == 'true' }}
         uses: actions/setup-java@v5
         with:
           java-version: |
@@ -58,19 +97,19 @@ jobs:
           distribution: temurin
 
       - name: Set up Gradle
-        if: ${{ steps.release.outputs.release_created == 'true' }}
+        if: ${{ steps.release_context.outputs.active == 'true' }}
         uses: gradle/actions/setup-gradle@v5
 
       - name: Validate generated compatibility documentation
-        if: ${{ steps.release.outputs.release_created == 'true' }}
+        if: ${{ steps.release_context.outputs.active == 'true' }}
         run: ruby scripts/update-compatibility-docs.rb --check
 
       - name: Build, test, and stage release artifacts
-        if: ${{ steps.release.outputs.release_created == 'true' }}
+        if: ${{ steps.release_context.outputs.active == 'true' }}
         run: ./gradlew --no-daemon clean build stageReleaseArtifacts --warning-mode all
 
       - name: Validate and locate staged artifacts
-        if: ${{ steps.release.outputs.release_created == 'true' }}
+        if: ${{ steps.release_context.outputs.active == 'true' }}
         id: artifacts
         shell: bash
         run: |
@@ -94,11 +133,11 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Attach the four jars to the GitHub release
-        if: ${{ steps.release.outputs.release_created == 'true' }}
+        if: ${{ steps.release_context.outputs.active == 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload "${{ steps.release.outputs.tag_name }}" \
+          gh release upload "${{ steps.release_context.outputs.tag_name }}" \
             "${{ steps.artifacts.outputs.server }}" \
             "${{ steps.artifacts.outputs.fabric_1_21_11 }}" \
             "${{ steps.artifacts.outputs.fabric_26_1 }}" \
@@ -106,17 +145,17 @@ jobs:
             --clobber
 
       - name: Fetch release notes
-        if: ${{ steps.release.outputs.release_created == 'true' }}
+        if: ${{ steps.release_context.outputs.active == 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release view "${{ steps.release.outputs.tag_name }}" --json body -q .body > changelog.md
+        run: gh release view "${{ steps.release_context.outputs.tag_name }}" --json body -q .body > changelog.md
 
       - name: Prepare Modrinth versions
-        if: ${{ steps.release.outputs.release_created == 'true' }}
+        if: ${{ steps.release_context.outputs.active == 'true' }}
         id: modrinth
         shell: bash
         env:
-          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+          RELEASE_VERSION: ${{ steps.release_context.outputs.version }}
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
         run: |
           set -euo pipefail
@@ -160,13 +199,13 @@ jobs:
           } > "$GITHUB_OUTPUT"
 
       - name: Publish server plugin to Modrinth
-        if: ${{ steps.release.outputs.release_created == 'true' && steps.modrinth.outputs.paper_publish == 'true' }}
+        if: ${{ steps.release_context.outputs.active == 'true' && steps.modrinth.outputs.paper_publish == 'true' }}
         uses: Kir-Antipov/mc-publish@v3.3
         with:
           modrinth-id: scOrYDTf
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
           files: ${{ steps.artifacts.outputs.server }}
-          name: "[PAPER][26.1.2-26.2] Simple Voice Chat Better Groups ${{ steps.release.outputs.version }}"
+          name: "[PAPER][26.1.2-26.2] Simple Voice Chat Better Groups ${{ steps.release_context.outputs.version }}"
           version: ${{ steps.modrinth.outputs.paper_version }}
           version-type: release
           loaders: |
@@ -177,13 +216,13 @@ jobs:
           changelog-file: changelog.md
 
       - name: Publish Fabric 1.21.11 client to Modrinth
-        if: ${{ steps.release.outputs.release_created == 'true' && steps.modrinth.outputs.fabric_1_21_11_publish == 'true' }}
+        if: ${{ steps.release_context.outputs.active == 'true' && steps.modrinth.outputs.fabric_1_21_11_publish == 'true' }}
         uses: Kir-Antipov/mc-publish@v3.3
         with:
           modrinth-id: scOrYDTf
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
           files: ${{ steps.artifacts.outputs.fabric_1_21_11 }}
-          name: "[FABRIC][1.21.11] Simple Voice Chat Better Groups ${{ steps.release.outputs.version }}"
+          name: "[FABRIC][1.21.11] Simple Voice Chat Better Groups ${{ steps.release_context.outputs.version }}"
           version: ${{ steps.modrinth.outputs.fabric_1_21_11_version }}
           version-type: release
           loaders: fabric
@@ -194,13 +233,13 @@ jobs:
           changelog-file: changelog.md
 
       - name: Publish Fabric 26.1 client to Modrinth
-        if: ${{ steps.release.outputs.release_created == 'true' && steps.modrinth.outputs.fabric_26_1_publish == 'true' }}
+        if: ${{ steps.release_context.outputs.active == 'true' && steps.modrinth.outputs.fabric_26_1_publish == 'true' }}
         uses: Kir-Antipov/mc-publish@v3.3
         with:
           modrinth-id: scOrYDTf
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
           files: ${{ steps.artifacts.outputs.fabric_26_1 }}
-          name: "[FABRIC][26.1.x] Simple Voice Chat Better Groups ${{ steps.release.outputs.version }}"
+          name: "[FABRIC][26.1.x] Simple Voice Chat Better Groups ${{ steps.release_context.outputs.version }}"
           version: ${{ steps.modrinth.outputs.fabric_26_1_version }}
           version-type: release
           loaders: fabric
@@ -211,13 +250,13 @@ jobs:
           changelog-file: changelog.md
 
       - name: Publish Fabric 26.2 client to Modrinth
-        if: ${{ steps.release.outputs.release_created == 'true' && steps.modrinth.outputs.fabric_26_2_publish == 'true' }}
+        if: ${{ steps.release_context.outputs.active == 'true' && steps.modrinth.outputs.fabric_26_2_publish == 'true' }}
         uses: Kir-Antipov/mc-publish@v3.3
         with:
           modrinth-id: scOrYDTf
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
           files: ${{ steps.artifacts.outputs.fabric_26_2 }}
-          name: "[FABRIC][26.2] Simple Voice Chat Better Groups ${{ steps.release.outputs.version }}"
+          name: "[FABRIC][26.2] Simple Voice Chat Better Groups ${{ steps.release_context.outputs.version }}"
           version: ${{ steps.modrinth.outputs.fabric_26_2_version }}
           version-type: release
           loaders: fabric
@@ -226,3 +265,68 @@ jobs:
             simple-voice-chat(required)
             fabric-api(required)
           changelog-file: changelog.md
+
+      - name: Reconcile featured Modrinth versions
+        if: ${{ steps.release_context.outputs.active == 'true' }}
+        shell: bash
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+        run: |
+          set -euo pipefail
+          curl \
+            --fail-with-body \
+            --silent \
+            --show-error \
+            --header "Authorization: $MODRINTH_TOKEN" \
+            --header 'User-Agent: Vanilla-Game/simple-voice-chat-better-groups release recovery' \
+            'https://api.modrinth.com/v2/project/scOrYDTf/version' \
+            > modrinth-versions-after.json
+
+          expected_versions=$(jq -cn \
+            --arg paper "${{ steps.modrinth.outputs.paper_version }}" \
+            --arg fabric_1_21_11 "${{ steps.modrinth.outputs.fabric_1_21_11_version }}" \
+            --arg fabric_26_1 "${{ steps.modrinth.outputs.fabric_26_1_version }}" \
+            --arg fabric_26_2 "${{ steps.modrinth.outputs.fabric_26_2_version }}" \
+            '[$paper, $fabric_1_21_11, $fabric_26_1, $fabric_26_2]')
+
+          jq --exit-status \
+            --argjson expected "$expected_versions" \
+            '[.[].version_number] as $actual
+            | all($expected[]; . as $version | $actual | index($version) != null)' \
+            modrinth-versions-after.json >/dev/null
+
+          mapfile -t unfeature_ids < <(
+            jq --raw-output \
+              --argjson expected "$expected_versions" \
+              '[.[] | select(.version_number as $number | $expected | index($number))] as $current
+              | .[] as $previous
+              | select($previous.featured == true)
+              | select(any($current[];
+                  . as $candidate
+                  | $previous.id != $candidate.id
+                  and ($previous.date_published // "") != ""
+                  and ($candidate.date_published // "") != ""
+                  and $previous.date_published < $candidate.date_published
+                  and (($previous.game_versions // []) - ($candidate.game_versions // []) | length == 0)
+                  and (($previous.loaders // []) - ($candidate.loaders // []) | length == 0)
+                  and (($previous.version_type // "release") == ($candidate.version_type // "release"))))
+              | $previous.id' \
+              modrinth-versions-after.json \
+              | sort --unique
+          )
+
+          for version_id in "${unfeature_ids[@]}"; do
+            curl \
+              --fail-with-body \
+              --silent \
+              --show-error \
+              --request PATCH \
+              --header "Authorization: $MODRINTH_TOKEN" \
+              --header 'Content-Type: application/json' \
+              --header 'User-Agent: Vanilla-Game/simple-voice-chat-better-groups release recovery' \
+              --data '{"featured":false}' \
+              "https://api.modrinth.com/v2/version/$version_id"
+          done
+
+          echo "Verified all four Modrinth versions; unfeatured ${#unfeature_ids[@]} superseded version(s)." \
+            >> "$GITHUB_STEP_SUMMARY"
