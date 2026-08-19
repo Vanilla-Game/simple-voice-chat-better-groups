@@ -13,6 +13,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import ru.vanillagame.voicechat.bettergroups.client.Icons;
+import ru.vanillagame.voicechat.bettergroups.client.ScreenNavigation;
 import ru.vanillagame.voicechat.bettergroups.client.ServerSupport;
 
 @Mixin(value = EnterPasswordScreen.class, remap = false)
@@ -47,7 +48,7 @@ public abstract class EnterPasswordScreenMixin extends VoiceChatScreenBase {
                                 .withStyle(style -> style.withFont(Icons.FONT)),
                         button -> {
                     ServerSupport.requestJoin(group.getId());
-                    minecraft.setScreenAndShow(null);
+                    ScreenNavigation.setScreen(minecraft, null);
                 })
                 .bounds(
                         guiLeft + xSize - 7 - SVC_BETTER_GROUPS$BUTTON_SIZE,
