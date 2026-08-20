@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.1](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/compare/v0.9.0...v0.9.1) (2026-08-20)
+
+
+### Bug Fixes
+
+* **client:** avoid screen flicker ([#61](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/issues/61)) ([40811cc](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/commit/40811ccea56ce2ab40eb236d47d3271cb27c7b5d))
+
 ## [0.9.0](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/compare/v0.8.0...v0.9.0) (2026-08-12)
 
 
