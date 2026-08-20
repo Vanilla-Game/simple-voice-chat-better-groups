@@ -7,6 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.sounds.SoundEvents;
+import ru.vanillagame.voicechat.bettergroups.client.ScreenNavigation;
 import ru.vanillagame.voicechat.bettergroups.client.ServerSupport;
 
 import java.util.ArrayList;
@@ -67,7 +68,7 @@ public class InvitePlayerList extends ListScreenListBase<InvitePlayerEntry> {
         Minecraft minecraft = Minecraft.getInstance();
         minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1F));
         ServerSupport.invite(entry.getState().getName());
-        minecraft.setScreenAndShow(null);
+        ScreenNavigation.setScreen(minecraft, null);
         return true;
     }
 

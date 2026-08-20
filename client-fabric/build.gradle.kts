@@ -75,6 +75,7 @@ fun Project.configureReleaseClient(target: Map<String, Any?>) {
 
     val targetId = target.getValue("id") as String
     val adapterSet = target.getValue("adapterSet") as String
+    val screenAdapterSet = target.getValue("screenAdapterSet") as String
     val clientVersion = version.toString()
     val compile = target.getValue("compile") as Map<String, String>
     val minecraftVersion = compile.getValue("minecraft")
@@ -115,8 +116,9 @@ fun Project.configureReleaseClient(target: Map<String, Any?>) {
         named("main") {
             java.setSrcDirs(listOf(
                 rootProject.file("client-fabric/src/shared/java"),
-                rootProject.file("client-fabric/src/adapters/$adapterSet/java")
-            ))
+                rootProject.file("client-fabric/src/adapters/$adapterSet/java"),
+                rootProject.file("client-fabric/src/adapters/$screenAdapterSet/java")
+            ).distinct())
             resources.setSrcDirs(listOf(rootProject.file("client-fabric/src/shared/resources")))
         }
     }

@@ -10,6 +10,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import ru.vanillagame.voicechat.bettergroups.client.ScreenNavigation;
 import ru.vanillagame.voicechat.bettergroups.client.ServerSupport;
 import ru.vanillagame.voicechat.bettergroups.client.gui.InvitePlayerScreen;
 
@@ -27,7 +28,7 @@ public abstract class GroupScreenMixin extends VoiceChatScreenBase {
     private void svcBetterGroups$addInviteButton(CallbackInfo callbackInfo) {
         int buttonY = guiTop + ySize - 27;
         svcBetterGroups$inviteButton = Button.builder(Component.literal("+"), button -> {
-                    minecraft.setScreenAndShow(new InvitePlayerScreen());
+                    ScreenNavigation.setScreen(minecraft, new InvitePlayerScreen());
                 })
                 .bounds(guiLeft + 76, buttonY, 20, 20)
                 .tooltip(Tooltip.create(Component.translatable("gui.svc_better_groups.invite")))

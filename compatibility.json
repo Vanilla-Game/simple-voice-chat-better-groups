@@ -39,6 +39,7 @@
         "projectPath": ":client-fabric:targets:mc1_21_11",
         "archiveBaseName": "svc-better-groups-fabric-1.21.11",
         "adapterSet": "mc1_21_11",
+        "screenAdapterSet": "mc1_21_11",
         "java": 21,
         "obfuscated": true,
         "compile": {
@@ -77,6 +78,7 @@
         "projectPath": ":client-fabric:targets:mc26_1",
         "archiveBaseName": "svc-better-groups-fabric-26.1",
         "adapterSet": "mc26",
+        "screenAdapterSet": "mc26_1",
         "java": 25,
         "obfuscated": false,
         "compile": {
@@ -127,6 +129,7 @@
         "projectPath": ":client-fabric:targets:mc26_2",
         "archiveBaseName": "svc-better-groups-fabric-26.2",
         "adapterSet": "mc26",
+        "screenAdapterSet": "mc26_2",
         "java": 25,
         "obfuscated": false,
         "compile": {

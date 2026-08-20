@@ -155,11 +155,18 @@ val validateCompatibilityCatalog = tasks.register("validateCompatibilityCatalog"
             val targetJava = (target.getValue("java") as Number).toInt()
             val obfuscated = target.getValue("obfuscated") as Boolean
             val adapterSet = target.getValue("adapterSet") as String
+            val screenAdapterSet = target.getValue("screenAdapterSet") as String
             check(adapterSet.matches(Regex("[a-z0-9_]+"))) {
                 "Fabric $id has an invalid adapterSet name: $adapterSet"
             }
             check(file("client-fabric/src/adapters/$adapterSet/java").isDirectory) {
                 "Fabric $id references missing adapterSet $adapterSet"
+            }
+            check(screenAdapterSet.matches(Regex("[a-z0-9_]+"))) {
+                "Fabric $id has an invalid screenAdapterSet name: $screenAdapterSet"
+            }
+            check(file("client-fabric/src/adapters/$screenAdapterSet/java").isDirectory) {
+                "Fabric $id references missing screenAdapterSet $screenAdapterSet"
             }
             check(targetJava == if (obfuscated) 21 else 25) {
                 "Fabric $id has an invalid Java baseline"
