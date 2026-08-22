@@ -63,7 +63,7 @@ public class InvitePlayerList extends ListScreenListBase<InvitePlayerEntry> {
     public boolean mouseClicked(MouseButtonEvent mouseButtonEvent, boolean bl) {
         InvitePlayerEntry entry = getEntryAtPosition(mouseButtonEvent.x(), mouseButtonEvent.y());
         if (entry == null) {
-            return false;
+            return super.mouseClicked(mouseButtonEvent, bl);
         }
         Minecraft minecraft = Minecraft.getInstance();
         minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1F));
