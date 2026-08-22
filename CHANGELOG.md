@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.2](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/compare/v0.9.1...v0.9.2) (2026-08-22)
+
+
+### Bug Fixes
+
+* enable invite player scrollbar dragging ([#63](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/issues/63)) ([4804047](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/commit/48040474d3c6a69d325fb25d6b7372c1269b58f3))
+
 ## [0.9.1](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/compare/v0.9.0...v0.9.1) (2026-08-20)
 
 
