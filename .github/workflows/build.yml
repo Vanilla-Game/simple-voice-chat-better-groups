@@ -55,7 +55,7 @@ jobs:
               git diff --name-only "$BASE_SHA"..."$HEAD_SHA" > "$CHANGED_FILES"
 
               if grep -Eq \
-                '^(compatibility\.json|\.github/workflows/(build|release-please|voicechat-compat|voicechat-discovery|server-compat)\.yml)$' \
+                '^(compatibility\.json|\.github/workflows/(build|release-please|voicechat-compat|voicechat-discovery|server-compat)\.yml|scripts/(apply-voicechat-compatibility-results|voicechat-version-discovery)\.rb)$' \
                 "$CHANGED_FILES"; then
                 mode=full
               elif grep -Eq \
@@ -99,6 +99,9 @@ jobs:
       - name: Validate generated compatibility documentation
         run: ruby scripts/update-compatibility-docs.rb --check
 
+      - name: Test workflow helpers
+        run: ruby test/scripts/workflow_scripts_test.rb
+
       - name: Validate Modrinth description
         shell: bash
         run: |
@@ -109,38 +112,11 @@ jobs:
       - name: Build, test, and stage release artifacts
         run: ./gradlew --no-daemon clean build stageReleaseArtifacts --warning-mode all
 
-      - name: Locate staged artifacts
-        id: artifacts
-        shell: bash
-        run: |
-          set -euo pipefail
-          shopt -s nullglob
-          server=(build/release/svc-better-groups-[0-9]*.jar)
-          fabric_1_21_11=(build/release/svc-better-groups-fabric-1.21.11-[0-9]*.jar)
-          fabric_26_1=(build/release/svc-better-groups-fabric-26.1-[0-9]*.jar)
-          fabric_26_2=(build/release/svc-better-groups-fabric-26.2-[0-9]*.jar)
-          all=(build/release/*.jar)
-          test "${#server[@]}" -eq 1
-          test "${#fabric_1_21_11[@]}" -eq 1
-          test "${#fabric_26_1[@]}" -eq 1
-          test "${#fabric_26_2[@]}" -eq 1
-          test "${#all[@]}" -eq 4
-          {
-            echo "server=${server[0]}"
-            echo "fabric_1_21_11=${fabric_1_21_11[0]}"
-            echo "fabric_26_1=${fabric_26_1[0]}"
-            echo "fabric_26_2=${fabric_26_2[0]}"
-          } >> "$GITHUB_OUTPUT"
-
       - name: Upload staged release jars
         uses: actions/upload-artifact@v6
         with:
           name: svc-better-groups-${{ github.sha }}
-          path: |
-            ${{ steps.artifacts.outputs.server }}
-            ${{ steps.artifacts.outputs.fabric_1_21_11 }}
-            ${{ steps.artifacts.outputs.fabric_26_1 }}
-            ${{ steps.artifacts.outputs.fabric_26_2 }}
+          path: build/release/*.jar
           if-no-files-found: error
           retention-days: 14
 

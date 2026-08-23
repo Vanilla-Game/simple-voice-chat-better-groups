@@ -108,47 +108,19 @@ jobs:
         if: ${{ steps.release_context.outputs.active == 'true' }}
         run: ./gradlew --no-daemon clean build stageReleaseArtifacts --warning-mode all
 
-      - name: Validate and locate staged artifacts
-        if: ${{ steps.release_context.outputs.active == 'true' }}
-        id: artifacts
-        shell: bash
-        run: |
-          set -euo pipefail
-          shopt -s nullglob
-          server=(build/release/svc-better-groups-[0-9]*.jar)
-          fabric_1_21_11=(build/release/svc-better-groups-fabric-1.21.11-[0-9]*.jar)
-          fabric_26_1=(build/release/svc-better-groups-fabric-26.1-[0-9]*.jar)
-          fabric_26_2=(build/release/svc-better-groups-fabric-26.2-[0-9]*.jar)
-          all=(build/release/*.jar)
-          test "${#server[@]}" -eq 1
-          test "${#fabric_1_21_11[@]}" -eq 1
-          test "${#fabric_26_1[@]}" -eq 1
-          test "${#fabric_26_2[@]}" -eq 1
-          test "${#all[@]}" -eq 4
-          {
-            echo "server=${server[0]}"
-            echo "fabric_1_21_11=${fabric_1_21_11[0]}"
-            echo "fabric_26_1=${fabric_26_1[0]}"
-            echo "fabric_26_2=${fabric_26_2[0]}"
-          } >> "$GITHUB_OUTPUT"
-
       - name: Attach the four jars to the GitHub release
         if: ${{ steps.release_context.outputs.active == 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release upload "${{ steps.release_context.outputs.tag_name }}" \
-            "${{ steps.artifacts.outputs.server }}" \
-            "${{ steps.artifacts.outputs.fabric_1_21_11 }}" \
-            "${{ steps.artifacts.outputs.fabric_26_1 }}" \
-            "${{ steps.artifacts.outputs.fabric_26_2 }}" \
-            --clobber
+          RELEASE_TAG: ${{ steps.release_context.outputs.tag_name }}
+        run: gh release upload "$RELEASE_TAG" build/release/*.jar --clobber
 
       - name: Fetch release notes
         if: ${{ steps.release_context.outputs.active == 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release view "${{ steps.release_context.outputs.tag_name }}" --json body -q .body > changelog.md
+          RELEASE_TAG: ${{ steps.release_context.outputs.tag_name }}
+        run: gh release view "$RELEASE_TAG" --json body -q .body > changelog.md
 
       - name: Prepare Modrinth versions
         if: ${{ steps.release_context.outputs.active == 'true' }}
@@ -204,7 +176,7 @@ jobs:
         with:
           modrinth-id: scOrYDTf
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
-          files: ${{ steps.artifacts.outputs.server }}
+          files: build/release/svc-better-groups-${{ steps.release_context.outputs.version }}.jar
           name: "[PAPER][26.1.2-26.2] Simple Voice Chat Better Groups ${{ steps.release_context.outputs.version }}"
           version: ${{ steps.modrinth.outputs.paper_version }}
           version-type: release
@@ -221,7 +193,7 @@ jobs:
         with:
           modrinth-id: scOrYDTf
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
-          files: ${{ steps.artifacts.outputs.fabric_1_21_11 }}
+          files: build/release/svc-better-groups-fabric-1.21.11-${{ steps.release_context.outputs.version }}.jar
           name: "[FABRIC][1.21.11] Simple Voice Chat Better Groups ${{ steps.release_context.outputs.version }}"
           version: ${{ steps.modrinth.outputs.fabric_1_21_11_version }}
           version-type: release
@@ -238,7 +210,7 @@ jobs:
         with:
           modrinth-id: scOrYDTf
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
-          files: ${{ steps.artifacts.outputs.fabric_26_1 }}
+          files: build/release/svc-better-groups-fabric-26.1-${{ steps.release_context.outputs.version }}.jar
           name: "[FABRIC][26.1.x] Simple Voice Chat Better Groups ${{ steps.release_context.outputs.version }}"
           version: ${{ steps.modrinth.outputs.fabric_26_1_version }}
           version-type: release
@@ -255,7 +227,7 @@ jobs:
         with:
           modrinth-id: scOrYDTf
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
-          files: ${{ steps.artifacts.outputs.fabric_26_2 }}
+          files: build/release/svc-better-groups-fabric-26.2-${{ steps.release_context.outputs.version }}.jar
           name: "[FABRIC][26.2] Simple Voice Chat Better Groups ${{ steps.release_context.outputs.version }}"
           version: ${{ steps.modrinth.outputs.fabric_26_2_version }}
           version-type: release
@@ -270,7 +242,11 @@ jobs:
         if: ${{ steps.release_context.outputs.active == 'true' }}
         shell: bash
         env:
+          FABRIC_1_21_11_VERSION: ${{ steps.modrinth.outputs.fabric_1_21_11_version }}
+          FABRIC_26_1_VERSION: ${{ steps.modrinth.outputs.fabric_26_1_version }}
+          FABRIC_26_2_VERSION: ${{ steps.modrinth.outputs.fabric_26_2_version }}
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          PAPER_VERSION: ${{ steps.modrinth.outputs.paper_version }}
         run: |
           set -euo pipefail
           curl \
@@ -282,38 +258,14 @@ jobs:
             'https://api.modrinth.com/v2/project/scOrYDTf/version' \
             > modrinth-versions-after.json
 
-          expected_versions=$(jq -cn \
-            --arg paper "${{ steps.modrinth.outputs.paper_version }}" \
-            --arg fabric_1_21_11 "${{ steps.modrinth.outputs.fabric_1_21_11_version }}" \
-            --arg fabric_26_1 "${{ steps.modrinth.outputs.fabric_26_1_version }}" \
-            --arg fabric_26_2 "${{ steps.modrinth.outputs.fabric_26_2_version }}" \
-            '[$paper, $fabric_1_21_11, $fabric_26_1, $fabric_26_2]')
-
-          jq --exit-status \
-            --argjson expected "$expected_versions" \
-            '[.[].version_number] as $actual
-            | all($expected[]; . as $version | $actual | index($version) != null)' \
-            modrinth-versions-after.json >/dev/null
-
-          mapfile -t unfeature_ids < <(
-            jq --raw-output \
-              --argjson expected "$expected_versions" \
-              '[.[] | select(.version_number as $number | $expected | index($number))] as $current
-              | .[] as $previous
-              | select($previous.featured == true)
-              | select(any($current[];
-                  . as $candidate
-                  | $previous.id != $candidate.id
-                  and ($previous.date_published // "") != ""
-                  and ($candidate.date_published // "") != ""
-                  and $previous.date_published < $candidate.date_published
-                  and (($previous.game_versions // []) - ($candidate.game_versions // []) | length == 0)
-                  and (($previous.loaders // []) - ($candidate.loaders // []) | length == 0)
-                  and (($previous.version_type // "release") == ($candidate.version_type // "release"))))
-              | $previous.id' \
-              modrinth-versions-after.json \
-              | sort --unique
-          )
+          ruby scripts/modrinth-featured-versions.rb \
+            modrinth-versions-after.json \
+            "$PAPER_VERSION" \
+            "$FABRIC_1_21_11_VERSION" \
+            "$FABRIC_26_1_VERSION" \
+            "$FABRIC_26_2_VERSION" \
+            > modrinth-unfeature-ids.txt
+          mapfile -t unfeature_ids < modrinth-unfeature-ids.txt
 
           for version_id in "${unfeature_ids[@]}"; do
             curl \

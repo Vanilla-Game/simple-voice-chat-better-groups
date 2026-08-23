@@ -193,10 +193,13 @@ jobs:
       - name: Confirm packaged client was not modified
         if: ${{ always() && steps.client.outcome == 'success' }}
         shell: bash
+        env:
+          CLIENT_PATH: ${{ steps.client.outputs.path }}
+          CLIENT_SHA256: ${{ steps.client.outputs.sha256 }}
         run: |
           set -euo pipefail
-          actual=$(sha256sum '${{ steps.client.outputs.path }}' | awk '{ print $1 }')
-          test "$actual" = '${{ steps.client.outputs.sha256 }}'
+          actual=$(sha256sum "$CLIENT_PATH" | awk '{ print $1 }')
+          test "$actual" = "$CLIENT_SHA256"
 
       - name: Upload result
         if: always()

@@ -1,0 +1,7 @@
+{
+  "updated": true,
+  "summary": "Fabric mc26_1 -> >=1.21.11-2.6.20 <1.21.11-2.6.22,Bukkit 26.2 -> bukkit-2.6.21",
+  "messages": [
+    "Stopping Fabric mc26_1 at fabric-2.6.22+26.1: at least one runtime failed."
+  ]
+}

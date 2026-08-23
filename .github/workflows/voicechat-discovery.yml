@@ -36,136 +36,19 @@ jobs:
             -H 'User-Agent: Vanilla-Game/simple-voice-chat-better-groups discovery workflow' \
             'https://api.modrinth.com/v2/project/simple-voice-chat/version' > versions.json
 
-          jq --slurpfile versions versions.json '
-            def core:
-              sub("^(fabric|bukkit)-"; "")
-              | capture("(?<core>[0-9]+\\.[0-9]+\\.[0-9]+)(?:\\+.*)?$").core
-              | split(".")
-              | map(tonumber);
-            def contiguous_after($maximum):
-              sort_by([.core, .artifact])
-              | unique_by(.core)
-              | reduce .[] as $candidate (
-                  {accepted: [], next_patch: ($maximum[2] + 1), open: true};
-                  if .open and $candidate.core[2] == .next_patch then
-                    .accepted += [$candidate]
-                    | .next_patch += 1
-                  elif .open then
-                    .open = false
-                  else
-                    .
-                  end
-                )
-              | .accepted;
-            [
-              .fabric.targets[] as $target
-              | ($target.compatibility | map(.voicechatArtifact | core) | max) as $maximum
-              | ($maximum[0:2]) as $minor
-              | ([
-                  $versions[0][]
-                  | select(
-                      .version_type == "release" and
-                      .status == "listed" and
-                      (.loaders | index("fabric")) != null and
-                      (.game_versions | index($target.compile.minecraft)) != null and
-                      (.version_number | startswith("fabric-")) and
-                      (.version_number | core | .[0:2]) == $minor and
-                      (.version_number | core) > $maximum
-                    )
-                  | {
-                      target: $target.id,
-                      artifact: .version_number,
-                      core: (.version_number | core),
-                      runtimes: $target.releaseMinecraftVersions
-                    }
-                ]
-                | contiguous_after($maximum)[])
-            ]
-            | unique_by([.target, .artifact])
-            | sort_by([.target, .core])
-          ' compatibility.json > fabric-candidates.json
+          ruby scripts/voicechat-version-discovery.rb \
+            compatibility.json versions.json > discovery.json
 
-          jq --slurpfile versions versions.json '
-            def core:
-              sub("^(fabric|bukkit)-"; "")
-              | capture("(?<core>[0-9]+\\.[0-9]+\\.[0-9]+)(?:\\+.*)?$").core
-              | split(".")
-              | map(tonumber);
-            def contiguous_after($maximum):
-              sort_by([.core, .artifact])
-              | unique_by(.core)
-              | reduce .[] as $candidate (
-                  {accepted: [], next_patch: ($maximum[2] + 1), open: true};
-                  if .open and $candidate.core[2] == .next_patch then
-                    .accepted += [$candidate]
-                    | .next_patch += 1
-                  elif .open then
-                    .open = false
-                  else
-                    .
-                  end
-                )
-              | .accepted;
-            [
-              .server.targets[] as $target
-              | ($target.voicechatArtifacts | map(core) | max) as $maximum
-              | ($maximum[0:2]) as $minor
-              | ([
-                  $versions[0][]
-                  | select(
-                      .version_type == "release" and
-                      .status == "listed" and
-                      (.loaders | index("bukkit")) != null and
-                      (.game_versions | index($target.minecraft)) != null and
-                      (.version_number | startswith("bukkit-")) and
-                      (.version_number | core | .[0:2]) == $minor and
-                      (.version_number | core) > $maximum
-                    )
-                  | {
-                      minecraft: $target.minecraft,
-                      build: $target.paperBuild,
-                      artifact: .version_number,
-                      core: (.version_number | core)
-                    }
-                ]
-                | contiguous_after($maximum)[])
-            ]
-            | unique_by([.minecraft, .artifact])
-            | sort_by([.minecraft, .core])
-          ' compatibility.json > server-candidates.json
-
-          fabric_candidates=$(jq -c . fabric-candidates.json)
-          server_candidates=$(jq -c . server-candidates.json)
-          fabric_rows=$(jq -c '[.[] as $candidate | $candidate.runtimes[] | {
-            target: $candidate.target,
-            minecraft: .,
-            voicechatArtifact: $candidate.artifact
-          }]' fabric-candidates.json)
-          fabric_matrix=$fabric_rows
-          server_matrix=$(jq -c '[.[] | {
-            platform: "paper",
-            minecraft: .minecraft,
-            build: .build,
-            voicechatArtifact: .artifact
-          }]' server-candidates.json)
-
-          has_fabric=$(jq -r 'length > 0' fabric-candidates.json)
-          has_server=$(jq -r 'length > 0' server-candidates.json)
-          has_any=false
-          if [ "$has_fabric" = true ] || [ "$has_server" = true ]; then
-            has_any=true
-          fi
           {
-            echo "fabric-matrix=$fabric_matrix"
-            echo "server-matrix=$server_matrix"
-            echo "fabric-candidates=$fabric_candidates"
-            echo "server-candidates=$server_candidates"
-            echo "has-fabric=$has_fabric"
-            echo "has-server=$has_server"
-            echo "has-any=$has_any"
+            for key in \
+              fabric-matrix server-matrix \
+              fabric-candidates server-candidates \
+              has-fabric has-server has-any; do
+              echo "$key=$(jq -c --arg key "$key" '.[$key]' discovery.json)"
+            done
           } >> "$GITHUB_OUTPUT"
-          echo "Fabric candidates: \`$fabric_candidates\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "Bukkit candidates: \`$server_candidates\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Fabric candidates: \`$(jq -c '.["fabric-candidates"]' discovery.json)\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Bukkit candidates: \`$(jq -c '.["server-candidates"]' discovery.json)\`" >> "$GITHUB_STEP_SUMMARY"
 
   check-fabric:
     needs: discover
@@ -209,69 +92,17 @@ jobs:
           SERVER_CANDIDATES: ${{ needs.discover.outputs.server-candidates }}
         run: |
           set -euo pipefail
-          updated=false
-          changes=()
+          printf '%s\n' "$FABRIC_CANDIDATES" > fabric-candidates.json
+          printf '%s\n' "$SERVER_CANDIDATES" > server-candidates.json
+          ruby scripts/apply-voicechat-compatibility-results.rb \
+            compatibility.json fabric-candidates.json server-candidates.json compat-results \
+            > compatibility-update.json
 
-          while IFS= read -r target; do
-            green='[]'
-            while IFS= read -r candidate; do
-              artifact=$(jq -r '.artifact' <<< "$candidate")
-              all_green=true
-              while IFS= read -r runtime; do
-                result="compat-results/fabric__${target}__${runtime}__${artifact}"
-                if [ ! -f "$result" ] || [ "$(cat "$result")" != ok ]; then
-                  all_green=false
-                  break
-                fi
-              done < <(jq -r '.runtimes[]' <<< "$candidate")
-              if [ "$all_green" != true ]; then
-                echo "Stopping Fabric $target at $artifact: at least one runtime failed." >> "$GITHUB_STEP_SUMMARY"
-                break
-              fi
-              green=$(jq -c --argjson item "$candidate" '. + [$item]' <<< "$green")
-            done < <(jq -c --arg target "$target" '[.[] | select(.target == $target)] | sort_by(.core)[]' <<< "$FABRIC_CANDIDATES")
-
-            if [ "$(jq 'length' <<< "$green")" -gt 0 ]; then
-              entries=$(jq -c '[.[] as $candidate | $candidate.runtimes[] | {
-                minecraft: ., voicechatArtifact: $candidate.artifact
-              }]' <<< "$green")
-              last_core=$(jq -r 'last | .core | map(tostring) | join(".")' <<< "$green")
-              IFS=. read -r major minor patch <<< "$last_core"
-              old_range=$(jq -r --arg target "$target" '.fabric.targets[] | select(.id == $target) | .voicechatRange' compatibility.json)
-              lower=${old_range%% *}
-              old_upper=${old_range#* <}
-              upper_prefix=${old_upper%"${old_upper##*-}"}
-              new_range="$lower <${upper_prefix}$major.$minor.$((patch + 1))"
-              jq --arg target "$target" --arg range "$new_range" --argjson entries "$entries" '
-                (.fabric.targets[] | select(.id == $target) | .voicechatRange) = $range |
-                (.fabric.targets[] | select(.id == $target) | .compatibility) += $entries
-              ' compatibility.json > compatibility.json.new
-              mv compatibility.json.new compatibility.json
-              updated=true
-              changes+=("Fabric $target -> $new_range")
-            fi
-          done < <(jq -r 'map(.target) | unique[]' <<< "$FABRIC_CANDIDATES")
-
-          while IFS= read -r minecraft; do
-            while IFS= read -r candidate; do
-              artifact=$(jq -r '.artifact' <<< "$candidate")
-              result="compat-results/server__paper__${minecraft}__${artifact}"
-              if [ ! -f "$result" ] || [ "$(cat "$result")" != ok ]; then
-                echo "Stopping Bukkit $minecraft at $artifact: compatibility check failed." >> "$GITHUB_STEP_SUMMARY"
-                break
-              fi
-              jq --arg minecraft "$minecraft" --arg artifact "$artifact" '
-                (.server.targets[] | select(.minecraft == $minecraft) | .voicechatArtifacts) += [$artifact]
-              ' compatibility.json > compatibility.json.new
-              mv compatibility.json.new compatibility.json
-              updated=true
-              changes+=("Bukkit $minecraft -> $artifact")
-            done < <(jq -c --arg minecraft "$minecraft" '[.[] | select(.minecraft == $minecraft)] | sort_by(.core)[]' <<< "$SERVER_CANDIDATES")
-          done < <(jq -r 'map(.minecraft) | unique[]' <<< "$SERVER_CANDIDATES")
-
+          jq -r '.messages[]' compatibility-update.json >> "$GITHUB_STEP_SUMMARY"
+          updated=$(jq -r '.updated' compatibility-update.json)
           echo "updated=$updated" >> "$GITHUB_OUTPUT"
           if [ "$updated" = true ]; then
-            summary=$(IFS=', '; echo "${changes[*]}")
+            summary=$(jq -r '.summary' compatibility-update.json)
             echo "summary=$summary" >> "$GITHUB_OUTPUT"
             echo "Proposed: $summary" >> "$GITHUB_STEP_SUMMARY"
           else
@@ -284,35 +115,27 @@ jobs:
 
       - name: Create or update draft PR
         if: steps.widen.outputs.updated == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          branch='ci/voicechat-compat-bump'
-          title='fix: widen Simple Voice Chat compatibility'
-          body=$(cat <<'EOF'
-          Automated compatibility update from the Voice Chat discovery workflow.
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          add-paths: |
+            compatibility.json
+            README.md
+          author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+          committer: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+          commit-message: 'fix: widen Simple Voice Chat compatibility'
+          branch: ci/voicechat-compat-bump
+          base: main
+          draft: true
+          title: 'fix: widen Simple Voice Chat compatibility'
+          body: |
+            Automated compatibility update from the Voice Chat discovery workflow.
 
-          Each added listed release passed its target's runtime harness. Fabric
-          candidates were tested with a non-publishable metadata probe; normal
-          PR CI will rebuild and verify the real release jars before merge.
+            Each added listed release passed its target's runtime harness. Fabric
+            candidates were tested with a non-publishable metadata probe; normal
+            PR CI will rebuild and verify the real release jars before merge.
 
-          New Minecraft lines and new Simple Voice Chat minor lines are never
-          added automatically. Close and reopen this PR to trigger normal PR CI.
-          EOF
-          )
-          body="$body"$'\n\n'"Changes: ${{ steps.widen.outputs.summary }}"
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git fetch origin "$branch:refs/remotes/origin/$branch" || true
-          git checkout -B "$branch"
-          git add compatibility.json README.md
-          git commit -m "$title"
-          git push --force-with-lease origin "$branch"
-          existing=$(gh pr list --head "$branch" --state open --json number -q '.[0].number')
-          if [ -n "$existing" ]; then
-            gh pr edit "$existing" --title "$title" --body "$body"
-          else
-            gh pr create --draft --base main --head "$branch" --title "$title" --body "$body"
-          fi
+            New Minecraft lines and new Simple Voice Chat minor lines are never
+            added automatically. Close and reopen this PR to trigger normal PR CI.
+
+            Changes: ${{ steps.widen.outputs.summary }}

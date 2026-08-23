@@ -1,0 +1,57 @@
+{
+  "fabric-candidates": [
+    {
+      "target": "mc26_1",
+      "artifact": "fabric-2.6.21+26.1",
+      "core": [2, 6, 21],
+      "runtimes": ["26.1", "26.1.2"]
+    },
+    {
+      "target": "mc26_1",
+      "artifact": "fabric-2.6.22+26.1",
+      "core": [2, 6, 22],
+      "runtimes": ["26.1", "26.1.2"]
+    }
+  ],
+  "server-candidates": [
+    {
+      "minecraft": "26.2",
+      "build": 111,
+      "artifact": "bukkit-2.6.21",
+      "core": [2, 6, 21]
+    }
+  ],
+  "fabric-matrix": [
+    {
+      "target": "mc26_1",
+      "minecraft": "26.1",
+      "voicechatArtifact": "fabric-2.6.21+26.1"
+    },
+    {
+      "target": "mc26_1",
+      "minecraft": "26.1.2",
+      "voicechatArtifact": "fabric-2.6.21+26.1"
+    },
+    {
+      "target": "mc26_1",
+      "minecraft": "26.1",
+      "voicechatArtifact": "fabric-2.6.22+26.1"
+    },
+    {
+      "target": "mc26_1",
+      "minecraft": "26.1.2",
+      "voicechatArtifact": "fabric-2.6.22+26.1"
+    }
+  ],
+  "server-matrix": [
+    {
+      "platform": "paper",
+      "minecraft": "26.2",
+      "build": 111,
+      "voicechatArtifact": "bukkit-2.6.21"
+    }
+  ],
+  "has-fabric": true,
+  "has-server": true,
+  "has-any": true
+}

@@ -1,0 +1,39 @@
+{
+  "server": {
+    "targets": [
+      {
+        "minecraft": "26.2",
+        "paperBuild": 111,
+        "voicechatArtifacts": [
+          "bukkit-2.6.19",
+          "bukkit-2.6.20"
+        ]
+      }
+    ]
+  },
+  "fabric": {
+    "targets": [
+      {
+        "id": "mc26_1",
+        "compile": {
+          "minecraft": "26.1.2"
+        },
+        "releaseMinecraftVersions": [
+          "26.1",
+          "26.1.2"
+        ],
+        "voicechatRange": ">=1.21.11-2.6.20 <1.21.11-2.6.21",
+        "compatibility": [
+          {
+            "minecraft": "26.1",
+            "voicechatArtifact": "fabric-2.6.20+26.1"
+          },
+          {
+            "minecraft": "26.1.2",
+            "voicechatArtifact": "fabric-2.6.20+26.1"
+          }
+        ]
+      }
+    ]
+  }
+}
