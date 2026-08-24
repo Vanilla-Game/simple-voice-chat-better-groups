@@ -98,6 +98,7 @@ jobs:
       - name: Download and verify server and Simple Voice Chat
         shell: bash
         env:
+          PLUGIN_PATH: ${{ steps.plugin.outputs.path }}
           PLATFORM: ${{ matrix.platform }}
           MINECRAFT: ${{ matrix.minecraft }}
           SERVER_BUILD: ${{ matrix.build }}
@@ -138,7 +139,7 @@ jobs:
           fi
           curl -fsSL "$server_url" -o server/server.jar
           printf '%s  %s\n' "$server_sha256" server/server.jar | sha256sum --check --strict
-          cp '${{ steps.plugin.outputs.path }}' server/plugins/svc-better-groups.jar
+          cp "$PLUGIN_PATH" server/plugins/svc-better-groups.jar
 
       - name: Boot server and verify plugins
         shell: bash
@@ -203,24 +204,32 @@ jobs:
       - name: Confirm packaged server plugin was not modified
         if: ${{ always() && steps.plugin.outcome == 'success' }}
         shell: bash
+        env:
+          PLUGIN_PATH: ${{ steps.plugin.outputs.path }}
+          PLUGIN_SHA256: ${{ steps.plugin.outputs.sha256 }}
         run: |
           set -euo pipefail
-          actual=$(sha256sum '${{ steps.plugin.outputs.path }}' | awk '{ print $1 }')
-          test "$actual" = '${{ steps.plugin.outputs.sha256 }}'
+          actual=$(sha256sum "$PLUGIN_PATH" | awk '{ print $1 }')
+          test "$actual" = "$PLUGIN_SHA256"
 
       - name: Record result
         if: always()
         shell: bash
+        env:
+          JOB_STATUS: ${{ job.status }}
+          MINECRAFT: ${{ matrix.minecraft }}
+          PLATFORM: ${{ matrix.platform }}
+          VOICECHAT_ARTIFACT: ${{ matrix.voicechatArtifact }}
         run: |
           set -euo pipefail
           mkdir -p compat-results
           result=fail
-          if [ '${{ job.status }}' = success ]; then
+          if [ "$JOB_STATUS" = success ]; then
             result=ok
           fi
-          file="server__${{ matrix.platform }}__${{ matrix.minecraft }}__${{ matrix.voicechatArtifact }}"
+          file="server__${PLATFORM}__${MINECRAFT}__${VOICECHAT_ARTIFACT}"
           printf '%s\n' "$result" > "compat-results/$file"
-          echo "- \`${{ matrix.platform }} / ${{ matrix.minecraft }} / ${{ matrix.voicechatArtifact }}\`: $result" >> "$GITHUB_STEP_SUMMARY"
+          echo "- \`$PLATFORM / $MINECRAFT / $VOICECHAT_ARTIFACT\`: $result" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload result
         if: always()
