@@ -102,19 +102,15 @@ class WorkflowScriptsTest < Minitest::Test
     assert_match "fabric-0.9.2+missing", error.message
   end
 
-  def test_modrinth_environment_plan_resolves_each_expected_version
-    environments = {
-      EXPECTED_VERSIONS.fetch(0) => "dedicated_server_only",
-      EXPECTED_VERSIONS.fetch(1) => "client_only",
-      EXPECTED_VERSIONS.fetch(2) => "client_only",
-      EXPECTED_VERSIONS.fetch(3) => "client_only"
-    }
+  def test_modrinth_environment_plan_resolves_each_supported_version
+    environments = EXPECTED_VERSIONS.drop(1).to_h { |version| [version, "client_only"] }
 
     plan = ModrinthVersionEnvironments.plan(fixture("featured-versions.json"), environments)
 
     actual = plan.to_h { |version| [version.fetch("version_number"), version.fetch("environment")] }
 
     assert_equal environments, actual
+    refute actual.key?(EXPECTED_VERSIONS.first)
     assert plan.all? { |version| version.fetch("id").is_a?(String) }
   end
 
