@@ -190,7 +190,6 @@ jobs:
           name: "Simple Voice Chat Better Groups ${{ steps.release_context.outputs.version }}"
           version: ${{ steps.modrinth.outputs.paper_version }}
           version-type: release
-          environment: dedicated-server
           loaders: |
             paper
             purpur
@@ -272,9 +271,9 @@ jobs:
             'https://api.modrinth.com/v2/project/scOrYDTf/version' \
             > modrinth-versions-after.json
 
+          # Modrinth does not expose the environment loader field for Paper/Purpur versions.
           ruby "$RUNNER_TEMP/modrinth-version-environments.rb" \
             modrinth-versions-after.json \
-            "$PAPER_VERSION=dedicated_server_only" \
             "$FABRIC_1_21_11_VERSION=client_only" \
             "$FABRIC_26_1_VERSION=client_only" \
             "$FABRIC_26_2_VERSION=client_only" \
@@ -295,7 +294,6 @@ jobs:
               --header 'Content-Type: application/json' \
               --header 'User-Agent: Vanilla-Game/simple-voice-chat-better-groups release recovery' \
               --data "$patch" \
-              --output /dev/null \
               "https://api.modrinth.com/v3/version/$version_id"
 
             curl \
