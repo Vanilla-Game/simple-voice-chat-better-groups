@@ -93,9 +93,8 @@ jobs:
         run: |
           set -euo pipefail
           git fetch --no-tags --depth=1 origin "$GITHUB_SHA"
-          for helper in modrinth-featured-versions.rb modrinth-version-environments.rb; do
-            git show "${GITHUB_SHA}:scripts/${helper}" > "$RUNNER_TEMP/$helper"
-          done
+          git show "${GITHUB_SHA}:scripts/modrinth-featured-versions.rb" \
+            > "$RUNNER_TEMP/modrinth-featured-versions.rb"
 
       - name: Set up JDKs 21 and 25
         if: ${{ steps.release_context.outputs.active == 'true' }}
@@ -270,45 +269,6 @@ jobs:
             --header 'User-Agent: Vanilla-Game/simple-voice-chat-better-groups release recovery' \
             'https://api.modrinth.com/v2/project/scOrYDTf/version' \
             > modrinth-versions-after.json
-
-          # Modrinth does not expose the environment loader field for Paper/Purpur versions.
-          ruby "$RUNNER_TEMP/modrinth-version-environments.rb" \
-            modrinth-versions-after.json \
-            "$FABRIC_1_21_11_VERSION=client_only" \
-            "$FABRIC_26_1_VERSION=client_only" \
-            "$FABRIC_26_2_VERSION=client_only" \
-            > modrinth-environment-plan.json
-
-          while IFS= read -r update; do
-            version_id=$(jq -r '.id' <<< "$update")
-            version_number=$(jq -r '.version_number' <<< "$update")
-            environment=$(jq -r '.environment' <<< "$update")
-            patch=$(jq -cn --arg environment "$environment" '{environment: $environment}')
-
-            curl \
-              --fail-with-body \
-              --silent \
-              --show-error \
-              --request PATCH \
-              --header "Authorization: $MODRINTH_TOKEN" \
-              --header 'Content-Type: application/json' \
-              --header 'User-Agent: Vanilla-Game/simple-voice-chat-better-groups release recovery' \
-              --data "$patch" \
-              "https://api.modrinth.com/v3/version/$version_id"
-
-            curl \
-              --fail-with-body \
-              --silent \
-              --show-error \
-              --header "Authorization: $MODRINTH_TOKEN" \
-              --header 'User-Agent: Vanilla-Game/simple-voice-chat-better-groups release recovery' \
-              "https://api.modrinth.com/v3/version/$version_id" \
-              | jq --exit-status --arg environment "$environment" \
-                '.environment == $environment' >/dev/null
-
-            echo "Verified Modrinth environment $environment for $version_number." \
-              >> "$GITHUB_STEP_SUMMARY"
-          done < <(jq -c '.[]' modrinth-environment-plan.json)
 
           ruby "$RUNNER_TEMP/modrinth-featured-versions.rb" \
             modrinth-versions-after.json \
