@@ -177,7 +177,7 @@ jobs:
           modrinth-id: scOrYDTf
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
           files: build/release/svc-better-groups-${{ steps.release_context.outputs.version }}.jar
-          name: "[PAPER][26.1.2-26.2] Simple Voice Chat Better Groups ${{ steps.release_context.outputs.version }}"
+          name: "Simple Voice Chat Better Groups ${{ steps.release_context.outputs.version }}"
           version: ${{ steps.modrinth.outputs.paper_version }}
           version-type: release
           environment: dedicated-server
@@ -195,7 +195,7 @@ jobs:
           modrinth-id: scOrYDTf
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
           files: build/release/svc-better-groups-fabric-1.21.11-${{ steps.release_context.outputs.version }}.jar
-          name: "[FABRIC][1.21.11] Simple Voice Chat Better Groups ${{ steps.release_context.outputs.version }}"
+          name: "Simple Voice Chat Better Groups ${{ steps.release_context.outputs.version }}"
           version: ${{ steps.modrinth.outputs.fabric_1_21_11_version }}
           version-type: release
           environment: client
@@ -213,7 +213,7 @@ jobs:
           modrinth-id: scOrYDTf
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
           files: build/release/svc-better-groups-fabric-26.1-${{ steps.release_context.outputs.version }}.jar
-          name: "[FABRIC][26.1.x] Simple Voice Chat Better Groups ${{ steps.release_context.outputs.version }}"
+          name: "Simple Voice Chat Better Groups ${{ steps.release_context.outputs.version }}"
           version: ${{ steps.modrinth.outputs.fabric_26_1_version }}
           version-type: release
           environment: client
@@ -231,7 +231,7 @@ jobs:
           modrinth-id: scOrYDTf
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
           files: build/release/svc-better-groups-fabric-26.2-${{ steps.release_context.outputs.version }}.jar
-          name: "[FABRIC][26.2] Simple Voice Chat Better Groups ${{ steps.release_context.outputs.version }}"
+          name: "Simple Voice Chat Better Groups ${{ steps.release_context.outputs.version }}"
           version: ${{ steps.modrinth.outputs.fabric_26_2_version }}
           version-type: release
           environment: client
