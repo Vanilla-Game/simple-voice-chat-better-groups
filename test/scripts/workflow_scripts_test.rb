@@ -13,6 +13,7 @@ FIXTURES = File.join(ROOT, "test", "fixtures", "workflows")
 
 require File.join(ROOT, "scripts", "apply-voicechat-compatibility-results")
 require File.join(ROOT, "scripts", "modrinth-featured-versions")
+require File.join(ROOT, "scripts", "modrinth-version-environments")
 require File.join(ROOT, "scripts", "voicechat-version-discovery")
 
 class WorkflowScriptsTest < Minitest::Test
@@ -99,6 +100,35 @@ class WorkflowScriptsTest < Minitest::Test
     end
 
     assert_match "fabric-0.9.2+missing", error.message
+  end
+
+  def test_modrinth_environment_plan_resolves_each_expected_version
+    environments = {
+      EXPECTED_VERSIONS.fetch(0) => "dedicated_server_only",
+      EXPECTED_VERSIONS.fetch(1) => "client_only",
+      EXPECTED_VERSIONS.fetch(2) => "client_only",
+      EXPECTED_VERSIONS.fetch(3) => "client_only"
+    }
+
+    plan = ModrinthVersionEnvironments.plan(fixture("featured-versions.json"), environments)
+
+    actual = plan.to_h { |version| [version.fetch("version_number"), version.fetch("environment")] }
+
+    assert_equal environments, actual
+    assert plan.all? { |version| version.fetch("id").is_a?(String) }
+  end
+
+  def test_modrinth_environment_plan_rejects_missing_or_duplicate_versions
+    versions = fixture("featured-versions.json")
+    missing = assert_raises(ArgumentError) do
+      ModrinthVersionEnvironments.plan(versions, "fabric-0.9.2+missing" => "client_only")
+    end
+    duplicate = assert_raises(ArgumentError) do
+      ModrinthVersionEnvironments.plan(versions + [versions.first], EXPECTED_VERSIONS.first => "client_only")
+    end
+
+    assert_match "found 0", missing.message
+    assert_match "found 2", duplicate.message
   end
 
   private
