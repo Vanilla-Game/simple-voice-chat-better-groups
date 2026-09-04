@@ -3,7 +3,7 @@ package ru.vanillagame.voicechat.bettergroups;
 import de.maxhenkel.voicechat.api.BukkitVoicechatService;
 import de.maxhenkel.voicechat.api.VoicechatServerApi;
 import org.bstats.bukkit.Metrics;
-import org.bukkit.command.PluginCommand;
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -57,7 +57,7 @@ public final class BetterGroupsPlugin extends JavaPlugin implements Listener {
 
         service.registerPlugin(new VoiceChatAddon(this, leadership, invites, requests));
 
-        VcGroupCommand commandHandler = new VcGroupCommand(
+        VoiceGroupCommand commandHandler = new VoiceGroupCommand(
                 this,
                 invites,
                 leadership,
@@ -66,14 +66,9 @@ public final class BetterGroupsPlugin extends JavaPlugin implements Listener {
                 requestCooldowns,
                 settings
         );
-        PluginCommand command = getCommand("voicegroup");
-        if (command == null) {
-            getLogger().severe("The /voicegroup command is missing from plugin.yml; disabling plugin.");
-            getServer().getPluginManager().disablePlugin(this);
-            return;
-        }
-        command.setExecutor(commandHandler);
-        command.setTabCompleter(commandHandler);
+        getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event ->
+                event.registrar().register(commandHandler.createCommand(),
+                        "Manage Simple Voice Chat group invites and members."));
 
         groupSync.register();
         getServer().getPluginManager().registerEvents(this, this);

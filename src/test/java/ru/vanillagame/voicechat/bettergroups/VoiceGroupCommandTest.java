@@ -4,8 +4,13 @@ import de.maxhenkel.voicechat.api.Group;
 import de.maxhenkel.voicechat.api.VoicechatConnection;
 import de.maxhenkel.voicechat.api.VoicechatServerApi;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
-import org.bukkit.command.Command;
+import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.suggestion.Suggestion;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
@@ -18,6 +23,9 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
@@ -29,7 +37,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class VcGroupCommandTest {
+class VoiceGroupCommandTest {
 
     private static final Instant NOW = Instant.parse("2026-08-08T10:00:00Z");
 
@@ -60,7 +68,7 @@ class VcGroupCommandTest {
         UUID groupIdValue = group.getId();
         when(invites.create(eq(targetId), eq(groupIdValue), any(), any())).thenReturn("token");
         when(invites.create(eq(otherId), eq(groupIdValue), any(), any())).thenReturn("token2");
-        VcGroupCommand command = new VcGroupCommand(
+        VoiceGroupCommand command = new VoiceGroupCommand(
                 plugin,
                 invites,
                 leadership,
@@ -74,9 +82,9 @@ class VcGroupCommandTest {
             bukkit.when(() -> Bukkit.getPlayerExact("Target")).thenReturn(target);
             bukkit.when(() -> Bukkit.getPlayerExact("Other")).thenReturn(other);
 
-            command.onCommand(inviter, mock(Command.class), "voicegroup", new String[]{"invite", "Target"});
-            command.onCommand(inviter, mock(Command.class), "voicegroup", new String[]{"invite", "Target"});
-            command.onCommand(inviter, mock(Command.class), "voicegroup", new String[]{"invite", "Other"});
+            execute(command, inviter, "voicegroup invite Target");
+            execute(command, inviter, "voicegroup invite Target");
+            execute(command, inviter, "voicegroup invite Other");
         }
 
         verify(invites, times(1)).create(eq(targetId), eq(groupIdValue), any(), any());
@@ -108,14 +116,9 @@ class VcGroupCommandTest {
                 () -> "one-time-token"
         );
         invites.create(playerId, groupId, UUID.randomUUID(), "Inviter");
-        VcGroupCommand command = command(plugin, invites, new GroupLeadershipRegistry());
+        VoiceGroupCommand command = command(plugin, invites, new GroupLeadershipRegistry());
 
-        command.onCommand(
-                player,
-                mock(Command.class),
-                "voicegroup",
-                new String[]{"accept", "one-time-token"}
-        );
+        execute(command, player, "voicegroup accept one-time-token");
 
         verify(beforeJoin).setGroup(group);
         assertEquals(InviteStore.LookupStatus.NOT_FOUND, invites.lookup("one-time-token", playerId).status());
@@ -143,14 +146,14 @@ class VcGroupCommandTest {
         UUID memberId = member.getUniqueId();
         UUID ownGroupId = ownGroup.getId();
         when(invites.create(eq(busyId), eq(ownGroupId), any(), any())).thenReturn("token");
-        VcGroupCommand command = command(plugin, invites, new GroupLeadershipRegistry());
+        VoiceGroupCommand command = command(plugin, invites, new GroupLeadershipRegistry());
 
         try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
             bukkit.when(() -> Bukkit.getPlayerExact("Busy")).thenReturn(busy);
             bukkit.when(() -> Bukkit.getPlayerExact("Member")).thenReturn(member);
 
-            command.onCommand(inviter, mock(Command.class), "voicegroup", new String[]{"invite", "Busy"});
-            command.onCommand(inviter, mock(Command.class), "voicegroup", new String[]{"invite", "Member"});
+            execute(command, inviter, "voicegroup invite Busy");
+            execute(command, inviter, "voicegroup invite Member");
         }
 
         verify(invites, times(1)).create(eq(busyId), eq(ownGroupId), any(), any());
@@ -179,9 +182,9 @@ class VcGroupCommandTest {
                 () -> "switch-token"
         );
         invites.create(playerId, newGroupId, UUID.randomUUID(), "Inviter");
-        VcGroupCommand command = command(plugin, invites, new GroupLeadershipRegistry());
+        VoiceGroupCommand command = command(plugin, invites, new GroupLeadershipRegistry());
 
-        command.onCommand(player, mock(Command.class), "voicegroup", new String[]{"accept", "switch-token"});
+        execute(command, player, "voicegroup accept switch-token");
 
         verify(beforeSwitch).setGroup(newGroup);
         assertEquals(InviteStore.LookupStatus.NOT_FOUND, invites.lookup("switch-token", playerId).status());
@@ -202,11 +205,11 @@ class VcGroupCommandTest {
         when(plugin.getVoicechatApi()).thenReturn(api);
         when(api.getConnectionOf(leader.getUniqueId())).thenReturn(leaderConnection);
         when(api.getConnectionOf(target.getUniqueId())).thenReturn(targetBeforeKick, targetAfterKick);
-        VcGroupCommand command = command(plugin, mock(InviteStore.class), leadership);
+        VoiceGroupCommand command = command(plugin, mock(InviteStore.class), leadership);
 
         try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
             bukkit.when(() -> Bukkit.getPlayerExact("Target")).thenReturn(target);
-            command.onCommand(leader, mock(Command.class), "voicegroup", new String[]{"kick", "Target"});
+            execute(command, leader, "voicegroup kick Target");
         }
 
         verify(targetBeforeKick).setGroup(null);
@@ -229,11 +232,11 @@ class VcGroupCommandTest {
         when(plugin.getVoicechatApi()).thenReturn(api);
         when(api.getConnectionOf(leader.getUniqueId())).thenReturn(leaderConnection);
         when(api.getConnectionOf(target.getUniqueId())).thenReturn(targetConnection);
-        VcGroupCommand command = command(plugin, mock(InviteStore.class), leadership);
+        VoiceGroupCommand command = command(plugin, mock(InviteStore.class), leadership);
 
         try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
             bukkit.when(() -> Bukkit.getPlayerExact("Target")).thenReturn(target);
-            command.onCommand(leader, mock(Command.class), "voicegroup", new String[]{"transfer", "Target"});
+            execute(command, leader, "voicegroup transfer Target");
         }
 
         assertEquals(
@@ -254,7 +257,7 @@ class VcGroupCommandTest {
         Player leader = player("Leader");
         Player requester = player("Requester");
         Group group = group();
-        when(group.getName()).thenReturn("Secret");
+        when(group.getName()).thenReturn("Secret Room");
         when(group.hasPassword()).thenReturn(true);
         when(group.isHidden()).thenReturn(false);
         GroupLeadershipRegistry leadership = new GroupLeadershipRegistry();
@@ -272,7 +275,7 @@ class VcGroupCommandTest {
                 Duration.ofMinutes(5),
                 () -> "req-token"
         );
-        VcGroupCommand command = new VcGroupCommand(
+        VoiceGroupCommand command = new VoiceGroupCommand(
                 plugin,
                 mock(InviteStore.class),
                 leadership,
@@ -288,7 +291,7 @@ class VcGroupCommandTest {
             when(leader.isOnline()).thenReturn(true);
             when(requester.isOnline()).thenReturn(true);
 
-            command.onCommand(requester, mock(Command.class), "voicegroup", new String[]{"request", "Secret"});
+            execute(command, requester, "voicegroup request Secret Room");
             verify(leader, atLeastOnce()).sendMessage(any(Component.class));
             verify(leader).playSound(
                     any(net.kyori.adventure.sound.Sound.class),
@@ -296,7 +299,7 @@ class VcGroupCommandTest {
             );
             clearInvocations(leader);
 
-            command.onCommand(leader, mock(Command.class), "voicegroup", new String[]{"approve", "req-token"});
+            execute(command, leader, "voicegroup approve req-token");
         }
 
         verify(requesterBefore).setGroup(group);
@@ -319,7 +322,7 @@ class VcGroupCommandTest {
         VoicechatConnection requesterConnection = connection(null);
         when(api.getConnectionOf(requester.getUniqueId())).thenReturn(requesterConnection);
         RequestStore requests = mock(RequestStore.class);
-        VcGroupCommand command = new VcGroupCommand(
+        VoiceGroupCommand command = new VoiceGroupCommand(
                 plugin,
                 mock(InviteStore.class),
                 new GroupLeadershipRegistry(),
@@ -329,7 +332,7 @@ class VcGroupCommandTest {
                 new PluginSettings(5, 10, "block.anvil.land", 1.0F, 1.0F, 5, 30, "block.anvil.land", 1.0F, 1.0F)
         );
 
-        command.onCommand(requester, mock(Command.class), "voicegroup", new String[]{"request", "Open"});
+        execute(command, requester, "voicegroup request Open");
 
         verify(requests, never()).create(any(), any());
         verify(requester, times(1)).sendMessage(any(Component.class));
@@ -352,22 +355,22 @@ class VcGroupCommandTest {
         when(api.getConnectionOf(viewer.getUniqueId())).thenReturn(viewerConnection);
         when(api.getConnectionOf(groupmate.getUniqueId())).thenReturn(groupmateConnection);
         when(api.getConnectionOf(outsider.getUniqueId())).thenReturn(outsiderConnection);
-        VcGroupCommand command = command(plugin, mock(InviteStore.class), new GroupLeadershipRegistry());
+        VoiceGroupCommand command = command(plugin, mock(InviteStore.class), new GroupLeadershipRegistry());
 
         try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
             bukkit.when(Bukkit::getOnlinePlayers).thenReturn(List.of(viewer, groupmate, outsider));
 
             assertEquals(
                     List.of("Outsider"),
-                    command.onTabComplete(viewer, mock(Command.class), "voicegroup", new String[]{"invite", ""})
+                    suggest(command, viewer, "voicegroup invite ")
             );
             assertEquals(
                     List.of("Groupmate"),
-                    command.onTabComplete(viewer, mock(Command.class), "voicegroup", new String[]{"kick", ""})
+                    suggest(command, viewer, "voicegroup kick ")
             );
             assertEquals(
                     List.of("Groupmate"),
-                    command.onTabComplete(viewer, mock(Command.class), "voicegroup", new String[]{"transfer", ""})
+                    suggest(command, viewer, "voicegroup transfer ")
             );
         }
     }
@@ -379,7 +382,7 @@ class VcGroupCommandTest {
         Player hidden = player("Hidden");
         when(viewer.canSee(visible)).thenReturn(true);
         when(viewer.canSee(hidden)).thenReturn(false);
-        VcGroupCommand command = command(
+        VoiceGroupCommand command = command(
                 mock(BetterGroupsPlugin.class),
                 mock(InviteStore.class),
                 new GroupLeadershipRegistry()
@@ -388,24 +391,137 @@ class VcGroupCommandTest {
         List<String> completions;
         try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
             bukkit.when(Bukkit::getOnlinePlayers).thenReturn(List.of(visible, hidden));
-            completions = command.onTabComplete(
-                    viewer,
-                    mock(Command.class),
-                    "voicegroup",
-                    new String[]{"invite", ""}
-            );
+            completions = suggest(command, viewer, "voicegroup invite ");
         }
 
         assertEquals(List.of("Visible"), completions);
         verify(viewer, never()).sendMessage(any(Component.class));
     }
 
-    private static VcGroupCommand command(
+    @Test
+    void brigadierRejectsMissingExtraAndUnknownArgumentsBeforeExecution() {
+        BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
+        VoiceGroupCommand command = command(plugin, mock(InviteStore.class), new GroupLeadershipRegistry());
+        CommandDispatcher<CommandSourceStack> dispatcher = dispatcher(command);
+        CommandSourceStack source = source(player("Viewer"));
+        for (String subcommand : List.of("invite", "accept", "kick", "transfer", "approve")) {
+            assertThrows(CommandSyntaxException.class,
+                    () -> dispatcher.execute("voicegroup " + subcommand, source));
+            assertThrows(CommandSyntaxException.class,
+                    () -> dispatcher.execute("voicegroup " + subcommand + " Target extra", source));
+        }
+        assertThrows(CommandSyntaxException.class, () -> dispatcher.execute("voicegroup request", source));
+        assertThrows(CommandSyntaxException.class, () -> dispatcher.execute("voicegroup unknown Target", source));
+        assertThrows(CommandSyntaxException.class, () -> dispatcher.execute("vcgroup invite Target", source));
+        verify(plugin, never()).getVoicechatApi();
+    }
+
+    @Test
+    void permissionRequirementBlocksExecutionAndCompletion() {
+        BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
+        Player player = player("Viewer");
+        when(player.hasPermission("vanillagame.svc_better_groups.use")).thenReturn(false);
+        VoiceGroupCommand command = command(plugin, mock(InviteStore.class), new GroupLeadershipRegistry());
+        assertFalse(command.createCommand().canUse(source(player)));
+        assertThrows(CommandSyntaxException.class,
+                () -> dispatcher(command).execute("voicegroup invite Target", source(player)));
+        assertEquals(List.of(), suggest(command, player, "voicegroup invite "));
+        verify(plugin, never()).getVoicechatApi();
+    }
+
+    @Test
+    void consoleRemainsPlayerOnlyEvenWithAPlayerExecutor() {
+        BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
+        CommandSender console = mock(CommandSender.class);
+        when(console.hasPermission("vanillagame.svc_better_groups.use")).thenReturn(true);
+        CommandSourceStack source = source(console);
+        Player executor = player("Executor");
+        when(source.getExecutor()).thenReturn(executor);
+        VoiceGroupCommand command = command(plugin, mock(InviteStore.class), new GroupLeadershipRegistry());
+        assertEquals(0, assertDoesNotThrow(() -> dispatcher(command).execute("voicegroup invite Target", source)));
+        verify(console).sendMessage(Messages.component(Messages.COMMAND_PLAYERS_ONLY, NamedTextColor.RED));
+        verify(plugin, never()).getVoicechatApi();
+    }
+
+    @Test
+    void rootUsageAndUnavailableVoiceChatKeepLocalizedMessages() {
+        BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
+        Player player = player("Viewer");
+        VoiceGroupCommand command = command(plugin, mock(InviteStore.class), new GroupLeadershipRegistry());
+        execute(command, player, "voicegroup");
+        verify(player).sendMessage(Messages.component(Messages.COMMAND_USAGE, NamedTextColor.YELLOW));
+        assertEquals(0, execute(command, player, "voicegroup invite Target"));
+        verify(player).sendMessage(Messages.component(Messages.VOICECHAT_NOT_READY, NamedTextColor.RED));
+    }
+
+    @Test
+    void requestAcceptsGroupUuid() {
+        BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
+        VoicechatServerApi api = mock(VoicechatServerApi.class);
+        when(plugin.getVoicechatApi()).thenReturn(api);
+        Player player = player("Viewer");
+        Group group = group();
+        when(api.getGroup(group.getId())).thenReturn(group);
+        VoicechatConnection connection = connection(null);
+        when(api.getConnectionOf(player.getUniqueId())).thenReturn(connection);
+        VoiceGroupCommand command = command(plugin, mock(InviteStore.class), new GroupLeadershipRegistry());
+        execute(command, player, "voicegroup request " + group.getId());
+        verify(player).sendMessage(Messages.component(Messages.REQUEST_NOT_NEEDED, NamedTextColor.YELLOW));
+    }
+
+    @Test
+    void groupSuggestionsReplaceTheWholeMultiWordArgumentAndHidePrivateGroups() {
+        BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
+        VoicechatServerApi api = mock(VoicechatServerApi.class);
+        when(plugin.getVoicechatApi()).thenReturn(api);
+        Group visible = group();
+        when(visible.getName()).thenReturn("Secret Room");
+        when(visible.hasPassword()).thenReturn(true);
+        Group hidden = group();
+        when(hidden.isHidden()).thenReturn(true);
+        when(hidden.hasPassword()).thenReturn(true);
+        Group open = group();
+        when(api.getGroups()).thenReturn(List.of(visible, hidden, open));
+        VoiceGroupCommand command = command(plugin, mock(InviteStore.class), new GroupLeadershipRegistry());
+        Player player = player("Viewer");
+        assertEquals(List.of("Secret Room"), suggest(command, player, "voicegroup request "));
+        String input = "voicegroup request secret r";
+        CommandDispatcher<CommandSourceStack> dispatcher = dispatcher(command);
+        var suggestions = dispatcher.getCompletionSuggestions(dispatcher.parse(input, source(player))).join();
+        assertEquals(1, suggestions.getList().size());
+        assertEquals("voicegroup request Secret Room", suggestions.getList().getFirst().apply(input));
+        assertEquals(List.of(), suggest(command, player, "voicegroup accept "));
+        assertEquals(List.of(), suggest(command, player, "voicegroup approve "));
+    }
+
+    private static CommandSourceStack source(CommandSender sender) {
+        CommandSourceStack source = mock(CommandSourceStack.class);
+        when(source.getSender()).thenReturn(sender);
+        return source;
+    }
+
+    private static CommandDispatcher<CommandSourceStack> dispatcher(VoiceGroupCommand command) {
+        CommandDispatcher<CommandSourceStack> dispatcher = new CommandDispatcher<>();
+        dispatcher.getRoot().addChild(command.createCommand());
+        return dispatcher;
+    }
+
+    private static int execute(VoiceGroupCommand command, CommandSender sender, String input) {
+        return assertDoesNotThrow(() -> dispatcher(command).execute(input, source(sender)));
+    }
+
+    private static List<String> suggest(VoiceGroupCommand command, CommandSender sender, String input) {
+        CommandDispatcher<CommandSourceStack> dispatcher = dispatcher(command);
+        return dispatcher.getCompletionSuggestions(dispatcher.parse(input, source(sender))).join()
+                .getList().stream().map(Suggestion::getText).toList();
+    }
+
+    private static VoiceGroupCommand command(
             BetterGroupsPlugin plugin,
             InviteStore invites,
             GroupLeadershipRegistry leadership
     ) {
-        return new VcGroupCommand(
+        return new VoiceGroupCommand(
                 plugin,
                 invites,
                 leadership,
