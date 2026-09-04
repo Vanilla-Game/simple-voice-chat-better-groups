@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.10.0](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/compare/v0.9.2...v0.10.0) (2026-09-04)
+
+
+### ⚠ BREAKING CHANGES
+
+* add standalone invites and migrate voicegroup to Brigadier ([#70](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/issues/70))
+
+### Features
+
+* add standalone invites and migrate voicegroup to Brigadier ([#70](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/issues/70)) ([4e142f9](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/commit/4e142f98f3799e20093335eecb22df7174ffb12d))
+
+
+### Bug Fixes
+
+* **ci:** reconcile Modrinth environments ([#66](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/issues/66)) ([367655c](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/commit/367655caa2e06fbb555661685d90a27f74456f35))
+* **ci:** skip unsupported Paper environment ([#68](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/issues/68)) ([ca90d53](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/commit/ca90d5313a0a61f217c299026e74dcd77580d358))
+
 ## [0.9.2](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/compare/v0.9.1...v0.9.2) (2026-08-22)
 
 
