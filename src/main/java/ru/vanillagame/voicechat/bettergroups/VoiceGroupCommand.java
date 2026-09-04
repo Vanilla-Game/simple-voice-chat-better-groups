@@ -1,8 +1,18 @@
 package ru.vanillagame.voicechat.bettergroups;
 
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import com.mojang.brigadier.tree.LiteralCommandNode;
 import de.maxhenkel.voicechat.api.Group;
 import de.maxhenkel.voicechat.api.VoicechatConnection;
 import de.maxhenkel.voicechat.api.VoicechatServerApi;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
@@ -10,19 +20,14 @@ import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
-final class VcGroupCommand implements CommandExecutor, TabCompleter {
+final class VoiceGroupCommand {
 
     private static final String PERMISSION = "vanillagame.svc_better_groups.use";
 
@@ -34,7 +39,7 @@ final class VcGroupCommand implements CommandExecutor, TabCompleter {
     private final InviteCooldownStore requestCooldowns;
     private final PluginSettings settings;
 
-    VcGroupCommand(
+    VoiceGroupCommand(
             BetterGroupsPlugin plugin,
             InviteStore invites,
             GroupLeadershipRegistry leadership,
@@ -52,40 +57,75 @@ final class VcGroupCommand implements CommandExecutor, TabCompleter {
         this.settings = settings;
     }
 
-    @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    LiteralCommandNode<CommandSourceStack> createCommand() {
+        return Commands.literal("voicegroup")
+                .requires(source -> source.getSender().hasPermission(PERMISSION))
+                .executes(this::showUsage)
+                .then(subcommand("invite", "player", StringArgumentType.word(), this::invite,
+                        (context, builder) -> suggestPlayers(context, builder, true)))
+                .then(subcommand("accept", "token", StringArgumentType.word(), this::accept, null))
+                .then(subcommand("kick", "player", StringArgumentType.word(), this::kick,
+                        (context, builder) -> suggestPlayers(context, builder, false)))
+                .then(subcommand("transfer", "player", StringArgumentType.word(), this::transfer,
+                        (context, builder) -> suggestPlayers(context, builder, false)))
+                // Consume the full group name, including spaces, without requiring quotes.
+                .then(subcommand("request", "group", StringArgumentType.greedyString(), this::request,
+                        this::suggestGroups))
+                .then(subcommand("approve", "token", StringArgumentType.word(), this::approve, null))
+                .build();
+    }
+
+    private LiteralArgumentBuilder<CommandSourceStack> subcommand(
+            String name, String argumentName, StringArgumentType argumentType,
+            Action action, SuggestionProvider<CommandSourceStack> suggestions
+    ) {
+        RequiredArgumentBuilder<CommandSourceStack, String> argument = Commands.argument(argumentName, argumentType)
+                .executes(context -> execute(context, argumentName, action));
+        if (suggestions != null) {
+            argument.suggests(suggestions);
+        }
+        return Commands.literal(name).then(argument);
+    }
+
+    private Player senderPlayer(CommandSourceStack source) {
+        CommandSender sender = source.getSender();
         if (!sender.hasPermission(PERMISSION)) {
             sender.sendMessage(Messages.component(Messages.COMMAND_NO_PERMISSION, NamedTextColor.RED));
-            return true;
+            return null;
         }
         if (!(sender instanceof Player player)) {
             sender.sendMessage(Messages.component(Messages.COMMAND_PLAYERS_ONLY, NamedTextColor.RED));
-            return true;
+            return null;
         }
-        // "request" accepts multi-word group names; every other subcommand takes
-        // exactly one argument.
-        boolean isRequest = args.length >= 1 && args[0].equalsIgnoreCase("request");
-        if (args.length < 2 || (!isRequest && args.length != 2)) {
-            player.sendMessage(Messages.component(Messages.COMMAND_USAGE, NamedTextColor.YELLOW));
-            return true;
-        }
+        return player;
+    }
 
+    private int showUsage(CommandContext<CommandSourceStack> context) {
+        Player player = senderPlayer(context.getSource());
+        if (player == null) {
+            return 0;
+        }
+        player.sendMessage(Messages.component(Messages.COMMAND_USAGE, NamedTextColor.YELLOW));
+        return 1;
+    }
+
+    private int execute(CommandContext<CommandSourceStack> context, String argumentName, Action action) {
+        Player player = senderPlayer(context.getSource());
+        if (player == null) {
+            return 0;
+        }
         VoicechatServerApi api = plugin.getVoicechatApi();
         if (api == null) {
             player.sendMessage(Messages.component(Messages.VOICECHAT_NOT_READY, NamedTextColor.RED));
-            return true;
+            return 0;
         }
+        action.run(player, StringArgumentType.getString(context, argumentName), api);
+        return 1;
+    }
 
-        switch (args[0].toLowerCase(Locale.ROOT)) {
-            case "invite" -> invite(player, args[1], api);
-            case "accept" -> accept(player, args[1], api);
-            case "kick" -> kick(player, args[1], api);
-            case "transfer" -> transfer(player, args[1], api);
-            case "request" -> request(player, String.join(" ", Arrays.copyOfRange(args, 1, args.length)), api);
-            case "approve" -> approve(player, args[1], api);
-            default -> player.sendMessage(Messages.component(Messages.COMMAND_USAGE, NamedTextColor.YELLOW));
-        }
-        return true;
+    @FunctionalInterface
+    private interface Action {
+        void run(Player player, String argument, VoicechatServerApi api);
     }
 
     private void invite(Player inviter, String targetName, VoicechatServerApi api) {
@@ -538,53 +578,57 @@ final class VcGroupCommand implements CommandExecutor, TabCompleter {
         return match == null ? GroupResolution.NOT_FOUND : new GroupResolution(match, false);
     }
 
-    @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        if (args.length == 1) {
-            return filter(List.of("invite", "accept", "kick", "transfer", "request"), args[0]);
+    private CompletableFuture<Suggestions> suggestGroups(
+            CommandContext<CommandSourceStack> context, SuggestionsBuilder builder
+    ) {
+        if (!canSuggest(context.getSource())) {
+            return builder.buildFuture();
         }
-        if (args.length == 2 && args[0].equalsIgnoreCase("request")) {
-            VoicechatServerApi api = plugin.getVoicechatApi();
-            if (api == null) {
-                return List.of();
-            }
-            List<String> names = new ArrayList<>();
+        VoicechatServerApi api = plugin.getVoicechatApi();
+        if (api != null) {
             for (Group group : api.getGroups()) {
                 if (!group.isHidden() && group.hasPassword()) {
-                    names.add(group.getName());
+                    suggestMatching(builder, group.getName());
                 }
             }
-            return filter(names, args[1]);
         }
-        boolean inviteCompletion = args.length == 2 && args[0].equalsIgnoreCase("invite");
-        boolean memberCompletion = args.length == 2
-                && (args[0].equalsIgnoreCase("kick") || args[0].equalsIgnoreCase("transfer"));
-        if (inviteCompletion || memberCompletion) {
-            Player viewer = sender instanceof Player player ? player : null;
-            UUID viewerGroupId = groupIdOf(viewer);
-            List<String> names = new ArrayList<>();
-            for (Player candidate : Bukkit.getOnlinePlayers()) {
-                if (viewer != null && !viewer.canSee(candidate)) {
-                    continue;
-                }
-                if (viewer != null && candidate.getUniqueId().equals(viewer.getUniqueId())) {
-                    continue;
-                }
-                // invite: hide own-group members (the only rejected targets);
-                // kick/transfer: offer own-group members only.
-                if (viewerGroupId != null) {
-                    boolean sameGroup = viewerGroupId.equals(groupIdOf(candidate));
-                    if (inviteCompletion == sameGroup) {
-                        continue;
-                    }
-                } else if (memberCompletion) {
-                    continue;
-                }
-                names.add(candidate.getName());
+        return builder.buildFuture();
+    }
+
+    private CompletableFuture<Suggestions> suggestPlayers(
+            CommandContext<CommandSourceStack> context, SuggestionsBuilder builder, boolean invite
+    ) {
+        if (!canSuggest(context.getSource())) {
+            return builder.buildFuture();
+        }
+        Player viewer = (Player) context.getSource().getSender();
+        UUID viewerGroupId = groupIdOf(viewer);
+        for (Player candidate : Bukkit.getOnlinePlayers()) {
+            if (!viewer.canSee(candidate) || candidate.getUniqueId().equals(viewer.getUniqueId())) {
+                continue;
             }
-            return filter(names, args[1]);
+            // Invites exclude own-group members; kick/transfer only suggest those members.
+            if (viewerGroupId != null) {
+                boolean sameGroup = viewerGroupId.equals(groupIdOf(candidate));
+                if (invite == sameGroup) {
+                    continue;
+                }
+            } else if (!invite) {
+                continue;
+            }
+            suggestMatching(builder, candidate.getName());
         }
-        return List.of();
+        return builder.buildFuture();
+    }
+
+    private static boolean canSuggest(CommandSourceStack source) {
+        return source.getSender() instanceof Player && source.getSender().hasPermission(PERMISSION);
+    }
+
+    private static void suggestMatching(SuggestionsBuilder builder, String value) {
+        if (value.toLowerCase(Locale.ROOT).startsWith(builder.getRemainingLowerCase())) {
+            builder.suggest(value);
+        }
     }
 
     private UUID groupIdOf(Player player) {
@@ -597,10 +641,4 @@ final class VcGroupCommand implements CommandExecutor, TabCompleter {
         return group == null ? null : group.getId();
     }
 
-    private static List<String> filter(List<String> values, String prefix) {
-        String normalizedPrefix = prefix.toLowerCase(Locale.ROOT);
-        return values.stream()
-                .filter(value -> value.toLowerCase(Locale.ROOT).startsWith(normalizedPrefix))
-                .toList();
-    }
 }

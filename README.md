@@ -57,9 +57,11 @@ Place the server artifact in the server's `plugins` directory and restart the se
 
 The client mod is optional but recommended: the server plugin works without it, while the mod makes group management much easier.
 
+Without the Better Groups server plugin, the client mod still provides the **+** invite button and player picker, using Simple Voice Chat's `/voicechat invite <player>` command. With the plugin available, it uses Better Groups invites automatically.
+
 ## 🎮 Usage
 
-All commands are player-only. `/vcgroup` is a permanent alias for `/voicegroup`.
+All commands are player-only and use `/voicegroup`.
 
 - `/voicegroup invite <player>` — send a clickable invite to an online player who is not in a group.
 - `/voicegroup accept <token>` — accept an invite issued to you. The chat button fills this command automatically.

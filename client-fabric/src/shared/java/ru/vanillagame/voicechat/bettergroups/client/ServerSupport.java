@@ -5,7 +5,7 @@ import net.minecraft.client.multiplayer.ClientPacketListener;
 
 public final class ServerSupport {
 
-    private static final String COMMAND = "vcgroup";
+    private static final String COMMAND = "voicegroup";
     private static boolean available;
 
     private ServerSupport() {
@@ -25,8 +25,9 @@ public final class ServerSupport {
 
     public static void invite(String playerName) {
         ClientPacketListener connection = Minecraft.getInstance().getConnection();
-        if (connection != null && isAvailable()) {
-            connection.sendCommand(COMMAND + " invite " + playerName);
+        if (connection != null) {
+            String command = isAvailable() ? COMMAND : "voicechat";
+            connection.sendCommand(command + " invite " + playerName);
         }
     }
 
