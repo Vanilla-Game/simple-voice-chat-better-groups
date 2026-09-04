@@ -79,8 +79,8 @@ use different formats:
 | Artifact names | `svc-better-groups`, `svc-better-groups-fabric-1.21.11`, `svc-better-groups-fabric-26.1`, `svc-better-groups-fabric-26.2` |
 | Protocol and resource namespaces | `svc_better_groups[_client]` |
 
-`/voicegroup` is the primary command. `/vcgroup` is a permanent compatibility
-alias used by released clients and must not be removed.
+`/voicegroup` is the command used by both chat and the client mod. The legacy
+`/vcgroup` alias has been removed; older clients that use it need to be updated.
 
 ## Leadership
 

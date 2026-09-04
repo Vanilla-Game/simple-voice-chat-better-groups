@@ -10,7 +10,6 @@ commands:
   voicegroup:
     description: Manage Simple Voice Chat group invites and members.
     usage: "/voicegroup <invite <player>|accept <token>|kick <player>|transfer <player>|request <group>>"
-    aliases: [vcgroup]
 
 permissions:
   vanillagame.svc_better_groups.use:

@@ -74,9 +74,9 @@ class VcGroupCommandTest {
             bukkit.when(() -> Bukkit.getPlayerExact("Target")).thenReturn(target);
             bukkit.when(() -> Bukkit.getPlayerExact("Other")).thenReturn(other);
 
-            command.onCommand(inviter, mock(Command.class), "vcgroup", new String[]{"invite", "Target"});
-            command.onCommand(inviter, mock(Command.class), "vcgroup", new String[]{"invite", "Target"});
-            command.onCommand(inviter, mock(Command.class), "vcgroup", new String[]{"invite", "Other"});
+            command.onCommand(inviter, mock(Command.class), "voicegroup", new String[]{"invite", "Target"});
+            command.onCommand(inviter, mock(Command.class), "voicegroup", new String[]{"invite", "Target"});
+            command.onCommand(inviter, mock(Command.class), "voicegroup", new String[]{"invite", "Other"});
         }
 
         verify(invites, times(1)).create(eq(targetId), eq(groupIdValue), any(), any());
@@ -113,7 +113,7 @@ class VcGroupCommandTest {
         command.onCommand(
                 player,
                 mock(Command.class),
-                "vcgroup",
+                "voicegroup",
                 new String[]{"accept", "one-time-token"}
         );
 
@@ -149,8 +149,8 @@ class VcGroupCommandTest {
             bukkit.when(() -> Bukkit.getPlayerExact("Busy")).thenReturn(busy);
             bukkit.when(() -> Bukkit.getPlayerExact("Member")).thenReturn(member);
 
-            command.onCommand(inviter, mock(Command.class), "vcgroup", new String[]{"invite", "Busy"});
-            command.onCommand(inviter, mock(Command.class), "vcgroup", new String[]{"invite", "Member"});
+            command.onCommand(inviter, mock(Command.class), "voicegroup", new String[]{"invite", "Busy"});
+            command.onCommand(inviter, mock(Command.class), "voicegroup", new String[]{"invite", "Member"});
         }
 
         verify(invites, times(1)).create(eq(busyId), eq(ownGroupId), any(), any());
@@ -181,7 +181,7 @@ class VcGroupCommandTest {
         invites.create(playerId, newGroupId, UUID.randomUUID(), "Inviter");
         VcGroupCommand command = command(plugin, invites, new GroupLeadershipRegistry());
 
-        command.onCommand(player, mock(Command.class), "vcgroup", new String[]{"accept", "switch-token"});
+        command.onCommand(player, mock(Command.class), "voicegroup", new String[]{"accept", "switch-token"});
 
         verify(beforeSwitch).setGroup(newGroup);
         assertEquals(InviteStore.LookupStatus.NOT_FOUND, invites.lookup("switch-token", playerId).status());
@@ -206,7 +206,7 @@ class VcGroupCommandTest {
 
         try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
             bukkit.when(() -> Bukkit.getPlayerExact("Target")).thenReturn(target);
-            command.onCommand(leader, mock(Command.class), "vcgroup", new String[]{"kick", "Target"});
+            command.onCommand(leader, mock(Command.class), "voicegroup", new String[]{"kick", "Target"});
         }
 
         verify(targetBeforeKick).setGroup(null);
@@ -233,7 +233,7 @@ class VcGroupCommandTest {
 
         try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
             bukkit.when(() -> Bukkit.getPlayerExact("Target")).thenReturn(target);
-            command.onCommand(leader, mock(Command.class), "vcgroup", new String[]{"transfer", "Target"});
+            command.onCommand(leader, mock(Command.class), "voicegroup", new String[]{"transfer", "Target"});
         }
 
         assertEquals(
@@ -288,7 +288,7 @@ class VcGroupCommandTest {
             when(leader.isOnline()).thenReturn(true);
             when(requester.isOnline()).thenReturn(true);
 
-            command.onCommand(requester, mock(Command.class), "vcgroup", new String[]{"request", "Secret"});
+            command.onCommand(requester, mock(Command.class), "voicegroup", new String[]{"request", "Secret"});
             verify(leader, atLeastOnce()).sendMessage(any(Component.class));
             verify(leader).playSound(
                     any(net.kyori.adventure.sound.Sound.class),
@@ -296,7 +296,7 @@ class VcGroupCommandTest {
             );
             clearInvocations(leader);
 
-            command.onCommand(leader, mock(Command.class), "vcgroup", new String[]{"approve", "req-token"});
+            command.onCommand(leader, mock(Command.class), "voicegroup", new String[]{"approve", "req-token"});
         }
 
         verify(requesterBefore).setGroup(group);
@@ -329,7 +329,7 @@ class VcGroupCommandTest {
                 new PluginSettings(5, 10, "block.anvil.land", 1.0F, 1.0F, 5, 30, "block.anvil.land", 1.0F, 1.0F)
         );
 
-        command.onCommand(requester, mock(Command.class), "vcgroup", new String[]{"request", "Open"});
+        command.onCommand(requester, mock(Command.class), "voicegroup", new String[]{"request", "Open"});
 
         verify(requests, never()).create(any(), any());
         verify(requester, times(1)).sendMessage(any(Component.class));
@@ -359,15 +359,15 @@ class VcGroupCommandTest {
 
             assertEquals(
                     List.of("Outsider"),
-                    command.onTabComplete(viewer, mock(Command.class), "vcgroup", new String[]{"invite", ""})
+                    command.onTabComplete(viewer, mock(Command.class), "voicegroup", new String[]{"invite", ""})
             );
             assertEquals(
                     List.of("Groupmate"),
-                    command.onTabComplete(viewer, mock(Command.class), "vcgroup", new String[]{"kick", ""})
+                    command.onTabComplete(viewer, mock(Command.class), "voicegroup", new String[]{"kick", ""})
             );
             assertEquals(
                     List.of("Groupmate"),
-                    command.onTabComplete(viewer, mock(Command.class), "vcgroup", new String[]{"transfer", ""})
+                    command.onTabComplete(viewer, mock(Command.class), "voicegroup", new String[]{"transfer", ""})
             );
         }
     }
@@ -391,7 +391,7 @@ class VcGroupCommandTest {
             completions = command.onTabComplete(
                     viewer,
                     mock(Command.class),
-                    "vcgroup",
+                    "voicegroup",
                     new String[]{"invite", ""}
             );
         }

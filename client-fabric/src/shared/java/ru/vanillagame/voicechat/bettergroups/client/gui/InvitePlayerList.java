@@ -30,7 +30,7 @@ public class InvitePlayerList extends ListScreenListBase<InvitePlayerEntry> {
     // excludes the local player) and members of our own group. Players in
     // other groups can be invited over — accepting moves them — and a dropped
     // voice connection is transient, so both stay listed. The server
-    // re-validates everything on /vcgroup invite anyway.
+    // re-validates the invite through Better Groups or Simple Voice Chat.
     public void updateEntryList() {
         entries.clear();
         java.util.UUID ownGroupId = ClientManager.getPlayerStateManager().getGroupID();
