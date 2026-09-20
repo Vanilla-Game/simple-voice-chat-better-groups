@@ -17,7 +17,9 @@
           "bukkit-2.6.18",
           "bukkit-2.6.19",
           "bukkit-2.6.20",
-          "bukkit-2.6.21"
+          "bukkit-2.6.21",
+          "bukkit-2.6.23",
+          "bukkit-2.6.24"
         ]
       },
       {
@@ -27,7 +29,9 @@
         "voicechatArtifacts": [
           "bukkit-2.6.19",
           "bukkit-2.6.20",
-          "bukkit-2.6.21"
+          "bukkit-2.6.21",
+          "bukkit-2.6.23",
+          "bukkit-2.6.24"
         ]
       }
     ]
@@ -49,7 +53,7 @@
           "voicechatArtifact": "fabric-1.21.11-2.6.6"
         },
         "minecraftDependency": "1.21.11",
-        "voicechatRange": ">=1.21.11-2.6.6 <1.21.11-2.6.23",
+        "voicechatRange": ">=1.21.11-2.6.6 <1.21.11-2.6.25",
         "releaseMinecraftVersions": [
           "1.21.11"
         ],
@@ -70,7 +74,9 @@
           { "minecraft": "1.21.11", "voicechatArtifact": "fabric-1.21.11-2.6.19" },
           { "minecraft": "1.21.11", "voicechatArtifact": "fabric-1.21.11-2.6.20" },
           { "minecraft": "1.21.11", "voicechatArtifact": "fabric-1.21.11-2.6.21" },
-          { "minecraft": "1.21.11", "voicechatArtifact": "fabric-1.21.11-2.6.22" }
+          { "minecraft": "1.21.11", "voicechatArtifact": "fabric-1.21.11-2.6.22" },
+          { "minecraft": "1.21.11", "voicechatArtifact": "fabric-1.21.11-2.6.23" },
+          { "minecraft": "1.21.11", "voicechatArtifact": "fabric-1.21.11-2.6.24" }
         ]
       },
       {
@@ -88,7 +94,7 @@
           "voicechatArtifact": "fabric-2.6.14+26.1.1"
         },
         "minecraftDependency": "26.1.x",
-        "voicechatRange": ">=2.6.14 <2.6.23",
+        "voicechatRange": ">=2.6.14 <2.6.25",
         "releaseMinecraftVersions": [
           "26.1",
           "26.1.1",
@@ -121,7 +127,13 @@
           { "minecraft": "26.1.2", "voicechatArtifact": "fabric-2.6.21+26.1.2" },
           { "minecraft": "26.1", "voicechatArtifact": "fabric-2.6.22+26.1.2" },
           { "minecraft": "26.1.1", "voicechatArtifact": "fabric-2.6.22+26.1.2" },
-          { "minecraft": "26.1.2", "voicechatArtifact": "fabric-2.6.22+26.1.2" }
+          { "minecraft": "26.1.2", "voicechatArtifact": "fabric-2.6.22+26.1.2" },
+          { "minecraft": "26.1", "voicechatArtifact": "fabric-2.6.23+26.1.2" },
+          { "minecraft": "26.1.1", "voicechatArtifact": "fabric-2.6.23+26.1.2" },
+          { "minecraft": "26.1.2", "voicechatArtifact": "fabric-2.6.23+26.1.2" },
+          { "minecraft": "26.1", "voicechatArtifact": "fabric-2.6.24+26.1.2" },
+          { "minecraft": "26.1.1", "voicechatArtifact": "fabric-2.6.24+26.1.2" },
+          { "minecraft": "26.1.2", "voicechatArtifact": "fabric-2.6.24+26.1.2" }
         ]
       },
       {
@@ -139,7 +151,7 @@
           "voicechatArtifact": "fabric-2.6.18+26.2"
         },
         "minecraftDependency": "26.2.x",
-        "voicechatRange": ">=2.6.18 <2.6.23",
+        "voicechatRange": ">=2.6.18 <2.6.25",
         "releaseMinecraftVersions": [
           "26.2"
         ],
@@ -148,7 +160,9 @@
           { "minecraft": "26.2", "voicechatArtifact": "fabric-2.6.19+26.2" },
           { "minecraft": "26.2", "voicechatArtifact": "fabric-2.6.20+26.2" },
           { "minecraft": "26.2", "voicechatArtifact": "fabric-2.6.21+26.2" },
-          { "minecraft": "26.2", "voicechatArtifact": "fabric-2.6.22+26.2" }
+          { "minecraft": "26.2", "voicechatArtifact": "fabric-2.6.22+26.2" },
+          { "minecraft": "26.2", "voicechatArtifact": "fabric-2.6.23+26.2" },
+          { "minecraft": "26.2", "voicechatArtifact": "fabric-2.6.24+26.2" }
         ]
       }
     ]
