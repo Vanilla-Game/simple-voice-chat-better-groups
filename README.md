@@ -64,6 +64,8 @@ Without the Better Groups server plugin, the client mod still provides the **+**
 
 Use **Pause group** in the group screen, or assign **Pause / return to group** under **Controls → Key Binds → Better Groups** (unbound by default). This requires the updated Better Groups plugin on the server and works with every SVC group type. Press the same key again, or use **Return to group** on the group selection screen, to rejoin without entering the password. The return permission stays on the server; no password is stored by the client mod.
 
+Pause and return use the Minecraft connection and remain available even when voice UDP is disconnected; actual proximity audio still requires a working SVC connection. The last operation status is also shown in the pause/return button tooltip.
+
 Pausing performs a real SVC group leave. You disappear from the member list and use normal proximity voice, including SVC's usual distance, whisper, spectator, permission, and group-type rules. An OPEN group member nearby can still hear and be heard locally; an ISOLATED group retains SVC's isolation. Individual player volumes remain unchanged. Leaving as leader transfers leadership normally; returning does not reclaim it. If everyone pauses, the first player to rejoin the empty group becomes its leader.
 
 A crossed-out group icon beside the normal voice chat status icon indicates that a group is paused and available for return, even when the group member list is hidden. HUD position, scale, and visibility settings still apply. There are no additional badges on other players' avatars.

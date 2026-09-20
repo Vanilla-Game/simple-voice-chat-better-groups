@@ -224,11 +224,13 @@ class GroupMuteServiceTest {
         assertState(GroupMuteProtocol.REJECTED, groupId);
     }
 
-    @Test void requiresHandshakeAndConnectedVoiceChat() {
-        connected = false; request(true);
-        assertEquals(0, leaves);
-        assertState(GroupMuteProtocol.REJECTED, null);
-        connected = true; service.forget(id); request(true);
+    @Test void leavesAndReturnsWithoutVoiceUdpConnection() {
+        connected = false;
+        leavesAndReturnsToPasswordProtectedGroupUsingServerGrant();
+    }
+
+    @Test void requiresHandshake() {
+        service.forget(id); request(true);
         assertEquals(0, leaves);
     }
 

@@ -38,6 +38,7 @@ public final class VoiceChatCompatibilityGameTest implements FabricClientGameTes
             verifyMuteProtocolCodecs();
             verifyReturnButton(context);
             verifyPauseChannelLoss(context);
+            verifyGroupWithoutVoiceConnection(context);
             System.out.println("[svc_better_groups_client_test] compatibility game test passed");
         } catch (Throwable failure) {
             throw new AssertionError("Simple Voice Chat compatibility check failed", failure);
@@ -84,6 +85,34 @@ public final class VoiceChatCompatibilityGameTest implements FabricClientGameTes
             }
         });
         context.setScreen(net.minecraft.client.gui.screens.TitleScreen::new);
+    }
+
+    private static void verifyGroupWithoutVoiceConnection(ClientGameTestContext context) throws Exception {
+        Class<?> client = Class.forName("ru.vanillagame.voicechat.bettergroups.client.GroupMuteClient");
+        var currentGroup = client.getDeclaredMethod("currentGroup");
+        currentGroup.setAccessible(true);
+        context.runOnClient(mc -> {
+            var manager = de.maxhenkel.voicechat.voice.client.ClientManager.getPlayerStateManager();
+            var groupField = manager.getClass().getDeclaredField("group");
+            var disconnectedField = manager.getClass().getDeclaredField("disconnected");
+            groupField.setAccessible(true);
+            disconnectedField.setAccessible(true);
+            Object previousGroup = groupField.get(manager);
+            boolean previousDisconnected = disconnectedField.getBoolean(manager);
+            UUID group = UUID.randomUUID();
+            try {
+                disconnectedField.setBoolean(manager, true);
+                groupField.set(manager, group);
+                if (!group.equals(currentGroup.invoke(null)))
+                    throw new AssertionError("Existing group disappeared while voice UDP was disconnected");
+                groupField.set(manager, null);
+                if (currentGroup.invoke(null) != null)
+                    throw new AssertionError("Absent group must remain absent");
+            } finally {
+                groupField.set(manager, previousGroup);
+                disconnectedField.setBoolean(manager, previousDisconnected);
+            }
+        });
     }
 
     private static void verifyPauseChannelLoss(ClientGameTestContext context) throws Exception {

@@ -54,6 +54,9 @@ public abstract class GroupScreenMixin extends VoiceChatScreenBase {
     @Unique
     private void svcBetterGroups$updateMuteButton() {
         boolean muted = GroupMuteClient.isMuted();
+        svcBetterGroups$groupMute.setTooltip(Tooltip.create(GroupMuteClient.feedback() == null
+                ? Component.translatable("gui.svc_better_groups.group_mute_tooltip")
+                : GroupMuteClient.feedback()));
         svcBetterGroups$groupMute.setMessage(Component.translatable(GroupMuteClient.isPending()
                 ? "gui.svc_better_groups.retry_group" : muted
                 ? "gui.svc_better_groups.unmute_group" : "gui.svc_better_groups.mute_group")

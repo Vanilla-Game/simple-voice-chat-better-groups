@@ -53,7 +53,7 @@ final class GroupMuteService implements PluginMessageListener {
         if (!clients.contains(id)) return;
         var api = plugin.getVoicechatApi();
         var connection = api == null ? null : api.getConnectionOf(id);
-        boolean accepted = connection != null && connection.isConnected()
+        boolean accepted = connection != null
                 && (request.muted() ? pause(id, connection, request.group()) : resume(player, connection, request.group()));
         // setGroup() can be cancelled by another plugin. Only acknowledge the actual result.
         sendState(player, request.id(), accepted ? GroupMuteProtocol.OK : GroupMuteProtocol.REJECTED);
