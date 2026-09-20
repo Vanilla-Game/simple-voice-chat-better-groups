@@ -16,5 +16,6 @@
   "message.svc_better_groups.mute_pending": "Переключение… Микрофон временно приостановлен",
   "message.svc_better_groups.mute_rejected": "Не удалось переключить группу. Проверьте подключение голосового чата и доступность группы.",
   "message.svc_better_groups.mute_timeout": "Нет подтверждения — микрофон приостановлен. Нажмите клавишу группы для повтора.",
-  "gui.svc_better_groups.retry_group": "Повторить"
+  "gui.svc_better_groups.retry_group": "Повторить",
+  "message.svc_better_groups.mute_interrupted": "Переключение прервано: серверный модуль недоступен. Микрофон разблокирован; проверьте, остались ли вы в группе."
 }

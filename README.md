@@ -70,7 +70,7 @@ A crossed-out group icon beside the normal voice chat status icon indicates that
 
 The server prevents removal of a group while any connected player has it paused, so the last participant can pause and return too. This hold also prevents explicit API removal until all return permissions are released. Manual group joining/creation, voice or server disconnection, and plugin shutdown release the player's return permission; unused nonpersistent groups are then eligible for deletion. Persistent groups remain intact. Group pause does not survive a server/plugin restart.
 
-Microphone transmission pauses until the server acknowledges a transition. If confirmation is lost, it stays paused and displays a message; pressing the key again or clicking **Retry** retries the same operation. Repeated requests cannot accidentally toggle the state twice. The pause protocol uses its own channels, preserving the existing version-2 leadership/invite protocol. New controls have English and Russian text; other locales currently use English for these controls.
+Microphone transmission pauses until the server acknowledges a transition. If confirmation is lost, it stays paused and displays a message; pressing the key again or clicking **Retry** retries the same operation. Repeated requests cannot accidentally toggle the state twice. If the server unregisters the pause channel, the pending operation is cleared and the microphone is unblocked, with a message to check the actual SVC group membership. The pause protocol uses its own channels, preserving the existing version-2 leadership/invite protocol. New controls have English and Russian text; other locales currently use English for these controls.
 
 ## 🎮 Usage
 

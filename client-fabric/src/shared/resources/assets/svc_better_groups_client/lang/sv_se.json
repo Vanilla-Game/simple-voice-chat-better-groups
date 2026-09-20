@@ -16,5 +16,6 @@
   "message.svc_better_groups.mute_pending": "Switching… Microphone temporarily paused",
   "message.svc_better_groups.mute_rejected": "Could not switch groups. Check your voice connection and whether the group is available.",
   "message.svc_better_groups.mute_timeout": "No confirmation — microphone paused. Press the group key to retry.",
-  "gui.svc_better_groups.retry_group": "Retry"
+  "gui.svc_better_groups.retry_group": "Retry",
+  "message.svc_better_groups.mute_interrupted": "Switch interrupted: server support is unavailable. Microphone unblocked; check whether you are still in the group."
 }

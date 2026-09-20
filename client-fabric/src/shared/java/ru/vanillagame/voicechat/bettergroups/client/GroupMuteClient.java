@@ -45,16 +45,17 @@ public final class GroupMuteClient {
         waitingTicks = 0;
         if (!ClientNetworking.sendMuteRequest(request, requestedGroup, REQUESTS.targetMuted())) {
             unavailable();
-            message("mute_unsupported");
         } else message("mute_pending");
     }
 
     public static void receive(MuteStatePayload payload) {
-        supported = true;
         if (payload.requestId() == 0) {
+            supported = true;
             REQUESTS.clear();
             requestedGroup = null;
             pausedGroup = payload.group();
+        } else if (!supported) {
+            return; // Ignore acknowledgements from a channel that has disappeared.
         } else if (REQUESTS.acknowledge(payload.requestId())) {
             pausedGroup = payload.group();
             requestedGroup = null;
@@ -71,9 +72,12 @@ public final class GroupMuteClient {
     public static boolean isPending() { return REQUESTS.isPending(); }
 
     public static void unavailable() {
+        boolean interrupted = REQUESTS.isPending();
         supported = false;
-        pausedGroup = null;
-        if (REQUESTS.isPending()) REQUESTS.pause();
+        // There can be no acknowledgement while the channel is unavailable.
+        // Resume normal SVC transmission according to the actual group membership.
+        clearLocal();
+        if (interrupted) message("mute_interrupted");
     }
 
     public static void reset() {

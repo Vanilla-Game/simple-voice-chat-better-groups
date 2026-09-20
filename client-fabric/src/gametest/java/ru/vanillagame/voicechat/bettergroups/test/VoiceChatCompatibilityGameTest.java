@@ -37,6 +37,7 @@ public final class VoiceChatCompatibilityGameTest implements FabricClientGameTes
             Class.forName("ru.vanillagame.voicechat.bettergroups.client.gui.InvitePlayerEntry", false, loader);
             verifyMuteProtocolCodecs();
             verifyReturnButton(context);
+            verifyPauseChannelLoss(context);
             System.out.println("[svc_better_groups_client_test] compatibility game test passed");
         } catch (Throwable failure) {
             throw new AssertionError("Simple Voice Chat compatibility check failed", failure);
@@ -83,6 +84,53 @@ public final class VoiceChatCompatibilityGameTest implements FabricClientGameTes
             }
         });
         context.setScreen(net.minecraft.client.gui.screens.TitleScreen::new);
+    }
+
+    private static void verifyPauseChannelLoss(ClientGameTestContext context) throws Exception {
+        Class<?> client = Class.forName("ru.vanillagame.voicechat.bettergroups.client.GroupMuteClient");
+        Class<?> payload = Class.forName("ru.vanillagame.voicechat.bettergroups.client.network.MuteStatePayload");
+        context.runOnClient(mc -> {
+            var requestsField = client.getDeclaredField("REQUESTS");
+            requestsField.setAccessible(true);
+            Object requests = requestsField.get(null);
+            var destination = client.getDeclaredField("requestedGroup");
+            destination.setAccessible(true);
+            var ticks = client.getDeclaredField("waitingTicks");
+            ticks.setAccessible(true);
+            var supported = client.getDeclaredField("supported");
+            supported.setAccessible(true);
+            UUID group = UUID.randomUUID();
+            for (boolean returning : new boolean[]{false, true}) {
+                client.getMethod("reset").invoke(null);
+                Object hello = payload.getConstructor(int.class, int.class, UUID.class)
+                        .newInstance(0, 0, returning ? group : null);
+                client.getMethod("receive", payload).invoke(null, hello);
+                int request = (int) requests.getClass().getMethod("begin", boolean.class).invoke(requests, returning);
+                destination.set(null, group);
+                ticks.setInt(null, 50);
+                if (!(boolean) client.getMethod("isTransmissionBlocked").invoke(null))
+                    throw new AssertionError("Pending transition must initially block transmission");
+                client.getMethod("unavailable").invoke(null);
+                if ((boolean) client.getMethod("isTransmissionBlocked").invoke(null))
+                    throw new AssertionError("Channel loss left the microphone blocked");
+                if ((boolean) client.getMethod("isPending").invoke(null)
+                        || (boolean) client.getMethod("isMuted").invoke(null)
+                        || destination.get(null) != null || ticks.getInt(null) != 0)
+                    throw new AssertionError("Channel loss retained stale pause state");
+                client.getMethod("toggle").invoke(null);
+                Object stale = payload.getConstructor(int.class, int.class, UUID.class)
+                        .newInstance(request, 0, group);
+                client.getMethod("receive", payload).invoke(null, stale);
+                if (supported.getBoolean(null) || (boolean) client.getMethod("isTransmissionBlocked").invoke(null)
+                        || (boolean) client.getMethod("isMuted").invoke(null))
+                    throw new AssertionError("Unsupported toggle or stale acknowledgement restored the old transition");
+                // Re-registering the channel negotiates a fresh authoritative snapshot.
+                client.getMethod("receive", payload).invoke(null, hello);
+                if (!supported.getBoolean(null) || (boolean) client.getMethod("isMuted").invoke(null) != returning)
+                    throw new AssertionError("Fresh handshake did not restore server support");
+            }
+            client.getMethod("reset").invoke(null);
+        });
     }
 
     @SuppressWarnings("unchecked")
