@@ -24,7 +24,8 @@ import static org.mockito.Mockito.*;
 class GroupMuteServiceTest {
     private final BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
     private final VoicechatServerApi api = mock(VoicechatServerApi.class);
-    private final GroupMuteService service = new GroupMuteService(plugin);
+    private final GroupLeadershipRegistry leadership = new GroupLeadershipRegistry();
+    private final GroupMuteService service = new GroupMuteService(plugin, leadership);
     private final UUID id = UUID.randomUUID();
     private final UUID groupId = UUID.randomUUID();
     private final Group group = mock(Group.class);
@@ -66,6 +67,8 @@ class GroupMuteServiceTest {
                 }
                 service.membershipChanged(id);
                 membership.set(next);
+                if (next == null) leadership.leave(groupId, id);
+                else leadership.join(next.getId(), id);
                 // SVC tries cleanup immediately after leave, before returning from setGroup.
                 if (next == null && removeEmptyGroup) when(api.getGroup(groupId)).thenReturn(null);
                 return null;
@@ -133,6 +136,41 @@ class GroupMuteServiceTest {
         assertFalse(service.holdsGroup(groupId));
         request(false);
         assertState(GroupMuteProtocol.REJECTED, null);
+        assertEquals(0, joins);
+    }
+
+    @Test void returningLeaderReclaimsLeadershipOnlyAfterSuccessfulJoin() {
+        UUID other = UUID.randomUUID();
+        leadership.createGroup(groupId, id);
+        leadership.join(groupId, other);
+        request(true);
+        assertEquals(other, leadership.leaderOf(groupId));
+        cancelJoin = true;
+        request(false);
+        assertEquals(other, leadership.leaderOf(groupId));
+        cancelJoin = false;
+        request(false);
+        assertEquals(id, leadership.leaderOf(groupId));
+        request(false);
+        assertEquals(id, leadership.leaderOf(groupId));
+    }
+
+    @Test void returningMemberDoesNotTakeLeadership() {
+        UUID other = UUID.randomUUID();
+        leadership.createGroup(groupId, other);
+        leadership.join(groupId, id);
+        request(true); request(false);
+        assertEquals(other, leadership.leaderOf(groupId));
+    }
+
+    @Test void manualGroupChangeRevokesSavedLeaderRole() {
+        UUID other = UUID.randomUUID();
+        leadership.createGroup(groupId, id);
+        leadership.join(groupId, other);
+        request(true);
+        service.membershipChanged(id);
+        request(false);
+        assertEquals(other, leadership.leaderOf(groupId));
         assertEquals(0, joins);
     }
 

@@ -38,7 +38,7 @@ public final class BetterGroupsPlugin extends JavaPlugin implements Listener {
         requestCooldowns = new InviteCooldownStore(clock, settings.requestCooldown());
         leadership = new GroupLeadershipRegistry();
         groupSync = new GroupSyncService(this, leadership);
-        groupMute = new GroupMuteService(this);
+        groupMute = new GroupMuteService(this, leadership);
         joinNotifier = new JoinNotifier(this, leadership);
 
         BukkitVoicechatService service = getServer().getServicesManager().load(BukkitVoicechatService.class);
