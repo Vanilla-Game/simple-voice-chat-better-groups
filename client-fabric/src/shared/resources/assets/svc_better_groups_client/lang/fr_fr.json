@@ -17,5 +17,7 @@
   "message.svc_better_groups.mute_rejected": "Could not switch groups. Check your voice connection and whether the group is available.",
   "message.svc_better_groups.mute_timeout": "No confirmation — microphone paused. Press the group key to retry.",
   "gui.svc_better_groups.retry_group": "Retry",
-  "message.svc_better_groups.mute_interrupted": "Switch interrupted: server support is unavailable. Microphone unblocked; check whether you are still in the group."
+  "message.svc_better_groups.mute_interrupted": "Switch interrupted: server support is unavailable. Microphone unblocked; check whether you are still in the group.",
+  "message.svc_better_groups.group_dissolved": "You left the group. The empty group was disbanded.",
+  "message.svc_better_groups.group_return_unavailable": "Returning to the group is no longer available."
 }

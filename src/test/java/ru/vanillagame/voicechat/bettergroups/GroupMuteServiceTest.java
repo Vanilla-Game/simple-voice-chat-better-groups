@@ -32,6 +32,7 @@ class GroupMuteServiceTest {
     private final AtomicReference<Group> membership = new AtomicReference<>();
     private final List<Runnable> scheduled = new ArrayList<>();
     private boolean connected = true;
+    private boolean removeEmptyGroup;
     private boolean cancelLeave;
     private boolean cancelJoin;
     private int leaves;
@@ -66,7 +67,7 @@ class GroupMuteServiceTest {
                 service.membershipChanged(id);
                 membership.set(next);
                 // SVC tries cleanup immediately after leave, before returning from setGroup.
-                if (next == null) assertTrue(service.holdsGroup(groupId));
+                if (next == null && removeEmptyGroup) when(api.getGroup(groupId)).thenReturn(null);
                 return null;
             }).when(snapshot).setGroup(any());
             return snapshot;
@@ -110,6 +111,29 @@ class GroupMuteServiceTest {
         assertState(GroupMuteProtocol.OK, null);
         assertEquals(1, leaves);
         assertEquals(1, joins);
+    }
+
+    @Test void lastParticipantLeavesWithoutReturnGrantAndRetryDoesNotRecreateGroup() {
+        removeEmptyGroup = true;
+        request(true);
+        assertNull(membership.get());
+        assertFalse(service.holdsGroup(groupId));
+        assertState(GroupMuteProtocol.OK, null);
+        request(true);
+        assertState(GroupMuteProtocol.OK, null);
+        request(false);
+        assertState(GroupMuteProtocol.REJECTED, null);
+        assertEquals(1, leaves);
+        assertEquals(0, joins);
+    }
+
+    @Test void removalRevokesPreviouslyPausedPlayersReturnGrants() {
+        request(true);
+        service.groupRemoved(groupId);
+        assertFalse(service.holdsGroup(groupId));
+        request(false);
+        assertState(GroupMuteProtocol.REJECTED, null);
+        assertEquals(0, joins);
     }
 
     @Test void supportsEveryGroupTypeThroughNativeLeave() {

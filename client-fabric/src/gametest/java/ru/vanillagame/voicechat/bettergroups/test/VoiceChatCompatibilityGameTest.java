@@ -39,6 +39,7 @@ public final class VoiceChatCompatibilityGameTest implements FabricClientGameTes
             verifyReturnButton(context);
             verifyPauseChannelLoss(context);
             verifyGroupWithoutVoiceConnection(context);
+            verifyLastMemberPause(context);
             System.out.println("[svc_better_groups_client_test] compatibility game test passed");
         } catch (Throwable failure) {
             throw new AssertionError("Simple Voice Chat compatibility check failed", failure);
@@ -85,6 +86,31 @@ public final class VoiceChatCompatibilityGameTest implements FabricClientGameTes
             }
         });
         context.setScreen(net.minecraft.client.gui.screens.TitleScreen::new);
+    }
+
+    private static void verifyLastMemberPause(ClientGameTestContext context) throws Exception {
+        Class<?> client = Class.forName("ru.vanillagame.voicechat.bettergroups.client.GroupMuteClient");
+        Class<?> payload = Class.forName("ru.vanillagame.voicechat.bettergroups.client.network.MuteStatePayload");
+        context.runOnClient(mc -> {
+            client.getMethod("reset").invoke(null);
+            client.getMethod("receive", payload).invoke(null,
+                    payload.getConstructor(int.class, int.class, UUID.class).newInstance(0, 0, null));
+            var field = client.getDeclaredField("REQUESTS");
+            field.setAccessible(true);
+            Object requests = field.get(null);
+            int id = (int) requests.getClass().getMethod("begin", boolean.class).invoke(requests, false);
+            client.getMethod("receive", payload).invoke(null,
+                    payload.getConstructor(int.class, int.class, UUID.class).newInstance(id, 0, null));
+            if ((boolean) client.getMethod("isMuted").invoke(null)
+                    || (boolean) client.getMethod("isPending").invoke(null)
+                    || (boolean) client.getMethod("isTransmissionBlocked").invoke(null))
+                throw new AssertionError("Disbanded group retained pause state or blocked microphone");
+            var feedback = (net.minecraft.network.chat.Component) client.getMethod("feedback").invoke(null);
+            if (!feedback.getString().equals(net.minecraft.network.chat.Component.translatable(
+                    "message.svc_better_groups.group_dissolved").getString()))
+                throw new AssertionError("Final leave must report disbanding, not return to group");
+            client.getMethod("reset").invoke(null);
+        });
     }
 
     private static void verifyGroupWithoutVoiceConnection(ClientGameTestContext context) throws Exception {

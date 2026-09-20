@@ -60,9 +60,11 @@ public final class GroupMuteClient {
         } else if (REQUESTS.acknowledge(payload.requestId())) {
             pausedGroup = payload.group();
             requestedGroup = null;
-            message(payload.result() != 0 ? "mute_rejected" : isMuted() ? "group_muted" : "group_unmuted");
+            message(payload.result() != 0 ? "mute_rejected" : isMuted() ? "group_muted" : REQUESTS.targetMuted() ? "group_dissolved" : "group_unmuted");
         } else if (payload.requestId() == -1 && !REQUESTS.isPending()) {
+            boolean lostReturn = pausedGroup != null && payload.group() == null;
             pausedGroup = payload.group();
+            if (lostReturn) message("group_return_unavailable");
         }
         // Native group membership packets may arrive before or after this snapshot.
         // In particular, a null native group is the expected paused state.

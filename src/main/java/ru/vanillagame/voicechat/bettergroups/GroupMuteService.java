@@ -60,16 +60,21 @@ final class GroupMuteService implements PluginMessageListener {
     }
 
     private boolean pause(UUID player, VoicechatConnection connection, UUID groupId) {
-        if (connection.getGroup() == null) return groupId.equals(paused.get(player)); // retry
+        if (connection.getGroup() == null) { // Retry also acknowledges a completed final leave.
+            return groupId.equals(paused.get(player)) || plugin.getVoicechatApi().getGroup(groupId) == null;
+        }
         if (!groupId.equals(connection.getGroup().getId())) return false;
         UUID previous = paused.put(player, groupId);
         if (previous != null && !previous.equals(groupId)) cleanupGroup(previous);
         switching.add(player);
         try {
-            // Register the grant before leaving: SVC immediately tries to remove an empty group.
+            // A return grant survives only while the native group still exists.
             connection.setGroup(null);
             var updated = plugin.getVoicechatApi().getConnectionOf(player);
-            if (updated != null && updated.getGroup() == null) return true;
+            if (updated != null && updated.getGroup() == null) {
+                if (plugin.getVoicechatApi().getGroup(groupId) == null) groupRemoved(groupId);
+                return true;
+            }
             paused.remove(player, groupId);
             cleanupGroup(groupId);
             return false;
@@ -104,6 +109,12 @@ final class GroupMuteService implements PluginMessageListener {
         } finally {
             switching.remove(id);
         }
+    }
+
+    void groupRemoved(UUID group) {
+        paused.forEach((player, destination) -> {
+            if (group.equals(destination) && paused.remove(player, group)) publish(player);
+        });
     }
 
     boolean holdsGroup(UUID group) {

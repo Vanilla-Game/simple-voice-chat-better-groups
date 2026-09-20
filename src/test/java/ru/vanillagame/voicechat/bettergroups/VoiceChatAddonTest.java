@@ -49,11 +49,16 @@ class VoiceChatAddonTest {
 
     @Test
     @SuppressWarnings({"unchecked", "rawtypes"})
-    void removalIsCancelledBeforeLeadershipAndInvitesAreInvalidated() {
+    void removalIsNotPreventedByPausedMembers() {
         BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
         GroupMuteService pause = mock(GroupMuteService.class);
         org.mockito.Mockito.when(plugin.groupMute()).thenReturn(pause);
         org.mockito.Mockito.when(plugin.isEnabled()).thenReturn(true);
+        var server = mock(org.bukkit.Server.class);
+        var scheduler = mock(org.bukkit.scheduler.BukkitScheduler.class);
+        org.mockito.Mockito.when(plugin.getServer()).thenReturn(server);
+        org.mockito.Mockito.when(server.getScheduler()).thenReturn(scheduler);
+
         GroupLeadershipRegistry leadership = new GroupLeadershipRegistry();
         InviteStore invites = mock(InviteStore.class);
         RequestStore requests = mock(RequestStore.class);
@@ -73,11 +78,7 @@ class VoiceChatAddonTest {
         org.mockito.Mockito.when(event.getGroup()).thenReturn(group);
         org.mockito.Mockito.when(pause.holdsGroup(groupId)).thenReturn(true);
         handler.getValue().accept(event);
-        verify(event).cancel();
-        org.mockito.Mockito.verifyNoInteractions(invites, requests);
-        org.junit.jupiter.api.Assertions.assertEquals(leader, leadership.leaderOf(groupId));
-        org.mockito.Mockito.when(pause.holdsGroup(groupId)).thenReturn(false);
-        handler.getValue().accept(event);
+        verify(event, org.mockito.Mockito.never()).cancel();
         verify(invites).invalidateGroup(groupId);
         verify(requests).invalidateGroup(groupId);
         org.junit.jupiter.api.Assertions.assertNull(leadership.leaderOf(groupId));
