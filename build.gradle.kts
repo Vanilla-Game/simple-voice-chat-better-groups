@@ -103,13 +103,13 @@ val validateCompatibilityCatalog = tasks.register("validateCompatibilityCatalog"
             return parts
         }
 
-        fun checkContiguousPatches(artifacts: List<String>, loader: String, label: String): List<Int> {
+        fun checkPatches(artifacts: List<String>, loader: String, label: String, contiguous: Boolean = true): List<Int> {
             check(artifacts.distinct().size == artifacts.size) { "$label contains duplicate SVC artifacts" }
             val cores = artifacts.map { svcCore(it, loader) }
             val minor = cores.first().take(2)
             check(cores.all { it.take(2) == minor }) { "$label crosses an SVC minor-version boundary" }
             val patches = cores.map { it[2] }.distinct().sorted()
-            check(patches == (patches.first()..patches.last()).toList()) {
+            check(!contiguous || patches == (patches.first()..patches.last()).toList()) {
                 "$label contains a gap in its SVC patch range: $patches"
             }
             return listOf(minor[0], minor[1], patches.first(), patches.last())
@@ -130,7 +130,9 @@ val validateCompatibilityCatalog = tasks.register("validateCompatibilityCatalog"
             check(artifacts.isNotEmpty()) {
                 "Server target ${target["minecraft"]} has no SVC artifacts"
             }
-            checkContiguousPatches(artifacts, "bukkit", "Server ${target["minecraft"]}")
+            // Bukkit releases can skip patches (2.6.22 was never published).
+            // The server matrix enumerates exact artifacts rather than a dependency range.
+            checkPatches(artifacts, "bukkit", "Server ${target["minecraft"]}", contiguous = false)
             check((target.getValue("paperBuild") as Number).toInt() > 0)
             check((target.getValue("leafBuild") as Number).toInt() > 0)
         }
@@ -177,7 +179,7 @@ val validateCompatibilityCatalog = tasks.register("validateCompatibilityCatalog"
             check(rows.all { it.getValue("minecraft") in releaseMinecraftVersions }) {
                 "Fabric $id contains a runtime outside releaseMinecraftVersions"
             }
-            val bounds = checkContiguousPatches(
+            val bounds = checkPatches(
                 rows.map { it.getValue("voicechatArtifact") }.distinct(),
                 "fabric",
                 "Fabric $id"

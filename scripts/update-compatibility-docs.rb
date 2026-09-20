@@ -16,7 +16,13 @@ def artifact_range(artifacts)
   end
   raise "Artifact list must not be empty" if versions.empty?
 
-  "#{versions.first}–#{versions.last}"
+  versions.chunk_while do |previous, current|
+    before = previous.split(".").map(&:to_i)
+    after = current.split(".").map(&:to_i)
+    before.first(2) == after.first(2) && after.last == before.last + 1
+  end.map do |group|
+    group.length == 1 ? group.first : "#{group.first}–#{group.last}"
+  end.join(", ")
 end
 
 def declared_range(range)
@@ -82,7 +88,7 @@ server_rows = catalog.fetch("server").fetch("targets").map do |target|
     "`#{target.fetch('minecraft')}`",
     software.join("; "),
     "`#{catalog.fetch('java')}`+",
-    "Bukkit `#{artifact_range(target.fetch('voicechatArtifacts')).sub('–', '`–`')}`"
+    "Bukkit `#{artifact_range(target.fetch('voicechatArtifacts')).gsub('–', '`–`').gsub(', ', '`, `')}`"
   ]
 end
 server_table = markdown_table(
