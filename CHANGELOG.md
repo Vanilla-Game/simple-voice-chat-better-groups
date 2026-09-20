@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.11.0](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/compare/v0.10.0...v0.11.0) (2026-09-20)
+
+
+### Features
+
+* add group pause with password-free return ([#73](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/issues/73)) ([37f5d2a](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/commit/37f5d2af45a51f36d08480d0c19124704701de8d))
+
+
+### Bug Fixes
+
+* support Simple Voice Chat 2.6.23 and 2.6.24 ([#71](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/issues/71)) ([480fc97](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/commit/480fc97dd5a4b203382bf2f95633041fedbc8c22))
+
 ## [0.10.0](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/compare/v0.9.2...v0.10.0) (2026-09-04)
 
 
