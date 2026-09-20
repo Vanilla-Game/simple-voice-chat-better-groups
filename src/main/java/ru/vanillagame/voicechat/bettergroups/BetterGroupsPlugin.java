@@ -24,6 +24,7 @@ public final class BetterGroupsPlugin extends JavaPlugin implements Listener {
     private InviteCooldownStore requestCooldowns;
     private GroupLeadershipRegistry leadership;
     private GroupSyncService groupSync;
+    private GroupMuteService groupMute;
     private JoinNotifier joinNotifier;
     private PluginTranslations translations;
 
@@ -37,6 +38,7 @@ public final class BetterGroupsPlugin extends JavaPlugin implements Listener {
         requestCooldowns = new InviteCooldownStore(clock, settings.requestCooldown());
         leadership = new GroupLeadershipRegistry();
         groupSync = new GroupSyncService(this, leadership);
+        groupMute = new GroupMuteService(this);
         joinNotifier = new JoinNotifier(this, leadership);
 
         BukkitVoicechatService service = getServer().getServicesManager().load(BukkitVoicechatService.class);
@@ -71,6 +73,7 @@ public final class BetterGroupsPlugin extends JavaPlugin implements Listener {
                         "Manage Simple Voice Chat group invites and members."));
 
         groupSync.register();
+        groupMute.register();
         getServer().getPluginManager().registerEvents(this, this);
         getServer().getScheduler().runTaskTimer(this, this::cleanupExpiredState, 20L * 60L, 20L * 60L);
         new Metrics(this, BSTATS_PLUGIN_ID);
@@ -86,11 +89,13 @@ public final class BetterGroupsPlugin extends JavaPlugin implements Listener {
         if (groupSync != null) {
             groupSync.unregister();
         }
+        if (groupMute != null) groupMute.unregister();
     }
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         UUID playerId = event.getPlayer().getUniqueId();
+        if (groupMute != null) groupMute.forget(playerId);
         if (leadership != null) {
             publishLeadership(leadership.disconnect(playerId));
         }
@@ -115,11 +120,16 @@ public final class BetterGroupsPlugin extends JavaPlugin implements Listener {
         return voicechatApi;
     }
 
+    GroupMuteService groupMute() {
+        return groupMute;
+    }
+
     void setVoicechatApi(VoicechatServerApi voicechatApi) {
         this.voicechatApi = voicechatApi;
     }
 
     void clearVoicechatState() {
+        if (groupMute != null) groupMute.clear();
         voicechatApi = null;
         if (invites != null) {
             invites.clear();

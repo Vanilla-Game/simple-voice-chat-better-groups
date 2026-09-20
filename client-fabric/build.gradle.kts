@@ -110,6 +110,9 @@ fun Project.configureReleaseClient(target: Map<String, Any?>) {
         }
         add("productionRuntimeMods", fabricApiDependency)
         add("productionRuntimeMods", voicechatDependency)
+        add("testImplementation", platform("org.junit:junit-bom:5.13.4"))
+        add("testImplementation", "org.junit.jupiter:junit-jupiter")
+        add("testRuntimeOnly", "org.junit.platform:junit-platform-launcher")
     }
 
     extensions.configure<SourceSetContainer> {
@@ -121,6 +124,12 @@ fun Project.configureReleaseClient(target: Map<String, Any?>) {
             ).distinct())
             resources.setSrcDirs(listOf(rootProject.file("client-fabric/src/shared/resources")))
         }
+        named("test") {
+            java.setSrcDirs(listOf(rootProject.file("client-fabric/src/test/java")))
+        }
+    }
+    tasks.withType<Test>().configureEach {
+        useJUnitPlatform()
     }
     configureJava(javaVersion)
 

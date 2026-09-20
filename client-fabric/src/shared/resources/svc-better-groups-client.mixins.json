@@ -4,9 +4,12 @@
   "package": "ru.vanillagame.voicechat.bettergroups.client.mixin",
   "compatibilityLevel": "JAVA_${java_version}",
   "client": [
+    "MicThreadMixin",
     "EnterPasswordScreenMixin",
+    "RenderEventsMixin",
     "GroupEntryMixin",
-    "GroupScreenMixin"
+    "GroupScreenMixin",
+    "JoinGroupScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -3,5 +3,18 @@
   "gui.svc_better_groups.kick": "Fjern %s fra talegruppen (bare leder)",
   "gui.svc_better_groups.request": "Kjenner du ikke passordet? Be gruppelederen om å slippe deg inn.",
   "gui.svc_better_groups.invite_screen_title": "Inviter en spiller",
-  "gui.svc_better_groups.invite_screen_empty": "Det er ingen å invitere akkurat nå."
+  "gui.svc_better_groups.invite_screen_empty": "Det er ingen å invitere akkurat nå.",
+  "gui.svc_better_groups.mute_group": "Pause group",
+  "gui.svc_better_groups.unmute_group": "Return to group",
+  "gui.svc_better_groups.group_mute_tooltip": "Temporarily leave the group for local voice chat. Press again to return without entering the password.",
+  "key.svc_better_groups.toggle_group_mute": "Pause / return to group",
+  "key.category.svc_better_groups_client.group": "Better Groups",
+  "message.svc_better_groups.group_muted": "Group paused — local voice chat",
+  "message.svc_better_groups.group_unmuted": "Returned to the group",
+  "message.svc_better_groups.no_group": "You are not in a voice chat group.",
+  "message.svc_better_groups.mute_unsupported": "Group pause requires the updated Better Groups server plugin",
+  "message.svc_better_groups.mute_pending": "Switching… Microphone temporarily paused",
+  "message.svc_better_groups.mute_rejected": "Could not switch groups. Check your voice connection and whether the group is available.",
+  "message.svc_better_groups.mute_timeout": "No confirmation — microphone paused. Press the group key to retry.",
+  "gui.svc_better_groups.retry_group": "Retry"
 }

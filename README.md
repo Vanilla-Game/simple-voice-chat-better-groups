@@ -9,7 +9,7 @@
 
 Better group controls for [Simple Voice Chat](https://modrepo.de/minecraft/voicechat/): password-free invites, join requests, group leaders, member removal, and leadership transfer.
 
-The Paper plugin contains all gameplay logic. Players can use every feature through chat; the optional Fabric mod adds buttons and a leader crown to the existing Simple Voice Chat screens.
+The Paper plugin handles group management through chat commands. The optional Fabric mod adds buttons, a leader crown, and a group pause with password-free return.
 
 ## ✨ Features
 
@@ -19,6 +19,7 @@ The Paper plugin contains all gameplay logic. Players can use every feature thro
 - Automatic succession to the longest-standing member when the leader leaves.
 - Group chat announcements when a player joins, including who invited them.
 - In-chat notifications in 15 languages, selected based on each player’s Minecraft locale.
+- Group pause: temporarily leave for local voice chat and return with one key, without entering the password again.
 
 ## 📦 Installation
 
@@ -60,6 +61,16 @@ Simple Voice Chat's Fabric builds 2.6.23 and 2.6.24 are published as beta versio
 The client mod is optional but recommended: the server plugin works without it, while the mod makes group management much easier.
 
 Without the Better Groups server plugin, the client mod still provides the **+** invite button and player picker, using Simple Voice Chat's `/voicechat invite <player>` command. With the plugin available, it uses Better Groups invites automatically.
+
+Use **Pause group** in the group screen, or assign **Pause / return to group** under **Controls → Key Binds → Better Groups** (unbound by default). This requires the updated Better Groups plugin on the server and works with every SVC group type. Press the same key again, or use **Return to group** on the group selection screen, to rejoin without entering the password. The return permission stays on the server; no password is stored by the client mod.
+
+Pausing performs a real SVC group leave. You disappear from the member list and use normal proximity voice, including SVC's usual distance, whisper, spectator, permission, and group-type rules. An OPEN group member nearby can still hear and be heard locally; an ISOLATED group retains SVC's isolation. Individual player volumes remain unchanged. Leaving as leader transfers leadership normally; returning does not reclaim it. If everyone pauses, the first player to rejoin the empty group becomes its leader.
+
+A crossed-out group icon beside the normal voice chat status icon indicates that a group is paused and available for return, even when the group member list is hidden. HUD position, scale, and visibility settings still apply. There are no additional badges on other players' avatars.
+
+The server prevents removal of a group while any connected player has it paused, so the last participant can pause and return too. This hold also prevents explicit API removal until all return permissions are released. Manual group joining/creation, voice or server disconnection, and plugin shutdown release the player's return permission; unused nonpersistent groups are then eligible for deletion. Persistent groups remain intact. Group pause does not survive a server/plugin restart.
+
+Microphone transmission pauses until the server acknowledges a transition. If confirmation is lost, it stays paused and displays a message; pressing the key again or clicking **Retry** retries the same operation. Repeated requests cannot accidentally toggle the state twice. The pause protocol uses its own channels, preserving the existing version-2 leadership/invite protocol. New controls have English and Russian text; other locales currently use English for these controls.
 
 ## 🎮 Usage
 

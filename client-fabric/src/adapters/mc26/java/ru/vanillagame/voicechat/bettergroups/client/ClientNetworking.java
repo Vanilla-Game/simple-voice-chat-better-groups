@@ -5,6 +5,8 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.networking.v1.ServerboundPlayChannelEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import ru.vanillagame.voicechat.bettergroups.client.network.ClientHelloPayload;
+import ru.vanillagame.voicechat.bettergroups.client.network.MuteRequestPayload;
+import ru.vanillagame.voicechat.bettergroups.client.network.MuteStatePayload;
 import ru.vanillagame.voicechat.bettergroups.client.network.GroupStatePayload;
 import ru.vanillagame.voicechat.bettergroups.client.network.ServerHelloPayload;
 
@@ -18,6 +20,24 @@ public final class ClientNetworking {
     }
 
     public static void initialize() {
+        PayloadTypeRegistry.serverboundPlay().register(MuteRequestPayload.TYPE, MuteRequestPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(MuteStatePayload.TYPE, MuteStatePayload.CODEC);
+        ClientPlayNetworking.registerGlobalReceiver(MuteStatePayload.TYPE, (payload, context) ->
+                context.client().execute(() -> GroupMuteClient.receive(payload)));
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
+            GroupMuteClient.reset();
+            sendMuteHello();
+        });
+        ServerboundPlayChannelEvents.REGISTER.register((handler, sender, client, channels) -> {
+            if (channels.contains(MuteRequestPayload.TYPE.id())) {
+                GroupMuteClient.unavailable();
+                sendMuteHello();
+            }
+        });
+        ServerboundPlayChannelEvents.UNREGISTER.register((handler, sender, client, channels) -> {
+            if (channels.contains(MuteRequestPayload.TYPE.id())) GroupMuteClient.unavailable();
+        });
+
         PayloadTypeRegistry.serverboundPlay().register(ClientHelloPayload.TYPE, ClientHelloPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(ServerHelloPayload.TYPE, ServerHelloPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(GroupStatePayload.TYPE, GroupStatePayload.CODEC);
@@ -81,6 +101,18 @@ public final class ClientNetworking {
                     clientHelloSent = false;
                 })
         );
+    }
+
+    private static void sendMuteHello() {
+        if (ClientPlayNetworking.canSend(MuteRequestPayload.TYPE)) {
+            ClientPlayNetworking.send(new MuteRequestPayload(0, null, false));
+        }
+    }
+
+    public static boolean sendMuteRequest(int request, java.util.UUID group, boolean muted) {
+        if (!ClientPlayNetworking.canSend(MuteRequestPayload.TYPE)) return false;
+        ClientPlayNetworking.send(new MuteRequestPayload(request, group, muted));
+        return true;
     }
 
     private static void sendClientHelloIfPossible() {

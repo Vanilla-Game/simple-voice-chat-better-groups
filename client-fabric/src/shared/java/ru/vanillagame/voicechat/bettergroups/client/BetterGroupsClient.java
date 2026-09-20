@@ -8,7 +8,8 @@ public final class BetterGroupsClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        // Mixins provide the UI integration. Server-side commands remain authoritative.
+        // Group management uses server commands; group mute only changes local playback.
         ClientNetworking.initialize();
+        GroupMuteClient.initialize();
     }
 }

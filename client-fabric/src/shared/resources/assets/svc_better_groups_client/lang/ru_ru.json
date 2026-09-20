@@ -3,5 +3,18 @@
   "gui.svc_better_groups.kick": "Исключить %s из голосовой группы (только лидер)",
   "gui.svc_better_groups.request": "Не знаете пароль? Попроситесь к лидеру группы.",
   "gui.svc_better_groups.invite_screen_title": "Пригласить игрока",
-  "gui.svc_better_groups.invite_screen_empty": "Сейчас некого пригласить."
+  "gui.svc_better_groups.invite_screen_empty": "Сейчас некого пригласить.",
+  "gui.svc_better_groups.mute_group": "Пауза группы",
+  "gui.svc_better_groups.unmute_group": "Вернуться",
+  "gui.svc_better_groups.group_mute_tooltip": "Временно выйти из группы для локального разговора. Повторное нажатие вернёт в группу без ввода пароля.",
+  "key.svc_better_groups.toggle_group_mute": "Пауза / возврат в группу",
+  "key.category.svc_better_groups_client.group": "Better Groups",
+  "message.svc_better_groups.group_muted": "Группа на паузе — локальный голосовой чат",
+  "message.svc_better_groups.group_unmuted": "Вы вернулись в группу",
+  "message.svc_better_groups.no_group": "Вы не состоите в голосовой группе.",
+  "message.svc_better_groups.mute_unsupported": "Для паузы группы нужен обновлённый Better Groups на сервере",
+  "message.svc_better_groups.mute_pending": "Переключение… Микрофон временно приостановлен",
+  "message.svc_better_groups.mute_rejected": "Не удалось переключить группу. Проверьте подключение голосового чата и доступность группы.",
+  "message.svc_better_groups.mute_timeout": "Нет подтверждения — микрофон приостановлен. Нажмите клавишу группы для повтора.",
+  "gui.svc_better_groups.retry_group": "Повторить"
 }
