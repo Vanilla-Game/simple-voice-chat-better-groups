@@ -9,6 +9,7 @@ import de.maxhenkel.voicechat.api.events.EventRegistration;
 import de.maxhenkel.voicechat.api.events.JoinGroupEvent;
 import de.maxhenkel.voicechat.api.events.LeaveGroupEvent;
 import de.maxhenkel.voicechat.api.events.RemoveGroupEvent;
+import de.maxhenkel.voicechat.api.events.PlayerDisconnectedEvent;
 import de.maxhenkel.voicechat.api.events.VoicechatServerStartedEvent;
 import de.maxhenkel.voicechat.api.events.VoicechatServerStoppedEvent;
 
@@ -55,6 +56,10 @@ final class VoiceChatAddon implements VoicechatPlugin {
         registration.registerEvent(JoinGroupEvent.class, this::onGroupJoined, -1000);
         registration.registerEvent(LeaveGroupEvent.class, this::onGroupLeft, -1000);
         registration.registerEvent(RemoveGroupEvent.class, this::onGroupRemoved, -1000);
+        registration.registerEvent(PlayerDisconnectedEvent.class, event -> {
+            if (plugin.isEnabled()) plugin.getServer().getScheduler().runTask(plugin,
+                    () -> plugin.groupMute().clearPlayer(event.getPlayerUuid()));
+        });
     }
 
     private void onServerStarted(VoicechatServerStartedEvent event) {
@@ -78,6 +83,7 @@ final class VoiceChatAddon implements VoicechatPlugin {
         if (connection == null || connection.getPlayer() == null) {
             return;
         }
+        if (plugin.groupMute() != null) plugin.groupMute().membershipChanged(connection.getPlayer().getUuid());
         plugin.publishLeadership(leadership.createGroup(
                 event.getGroup().getId(),
                 connection.getPlayer().getUuid()
@@ -95,7 +101,13 @@ final class VoiceChatAddon implements VoicechatPlugin {
     }
 
     void handleGroupJoin(UUID groupId, UUID playerId) {
-        GroupLeadershipRegistry.Transition transition = leadership.join(groupId, playerId);
+        boolean returningToEmptyGroup = plugin.groupMute() != null
+                && plugin.groupMute().holdsGroup(groupId) && leadership.membersOf(groupId).isEmpty();
+        if (plugin.groupMute() != null) {
+            plugin.groupMute().membershipChanged(playerId);
+        }
+        GroupLeadershipRegistry.Transition transition = returningToEmptyGroup
+                ? leadership.createGroup(groupId, playerId) : leadership.join(groupId, playerId);
         plugin.publishLeadership(transition);
         if (transition.changed()) {
             plugin.notifyGroupJoin(groupId, playerId);
@@ -111,6 +123,7 @@ final class VoiceChatAddon implements VoicechatPlugin {
                 event.getGroup().getId(),
                 event.getConnection().getPlayer().getUuid()
         ));
+        plugin.groupMute().membershipChanged(event.getConnection().getPlayer().getUuid());
     }
 
     private void onGroupRemoved(RemoveGroupEvent event) {
@@ -118,6 +131,10 @@ final class VoiceChatAddon implements VoicechatPlugin {
             return;
         }
 
+        if (plugin.groupMute().holdsGroup(event.getGroup().getId())) {
+            event.cancel();
+            return;
+        }
         plugin.publishLeadership(leadership.removeGroup(event.getGroup().getId()));
         invites.invalidateGroup(event.getGroup().getId());
         requests.invalidateGroup(event.getGroup().getId());

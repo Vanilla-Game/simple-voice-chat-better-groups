@@ -30,4 +30,56 @@ class VoiceChatAddonTest {
 
         verify(plugin, times(1)).notifyGroupJoin(groupId, joinerId);
     }
+
+    @Test
+    void firstReturnToAnEmptyHeldGroupBecomesLeader() {
+        BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
+        GroupMuteService pause = mock(GroupMuteService.class);
+        org.mockito.Mockito.when(plugin.groupMute()).thenReturn(pause);
+        GroupLeadershipRegistry leadership = new GroupLeadershipRegistry();
+        UUID group = UUID.randomUUID();
+        UUID first = UUID.randomUUID();
+        UUID second = UUID.randomUUID();
+        org.mockito.Mockito.when(pause.holdsGroup(group)).thenReturn(true);
+        VoiceChatAddon addon = new VoiceChatAddon(plugin, leadership, mock(InviteStore.class), mock(RequestStore.class));
+        addon.handleGroupJoin(group, first);
+        addon.handleGroupJoin(group, second);
+        org.junit.jupiter.api.Assertions.assertEquals(first, leadership.leaderOf(group));
+    }
+
+    @Test
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    void removalIsCancelledBeforeLeadershipAndInvitesAreInvalidated() {
+        BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
+        GroupMuteService pause = mock(GroupMuteService.class);
+        org.mockito.Mockito.when(plugin.groupMute()).thenReturn(pause);
+        org.mockito.Mockito.when(plugin.isEnabled()).thenReturn(true);
+        GroupLeadershipRegistry leadership = new GroupLeadershipRegistry();
+        InviteStore invites = mock(InviteStore.class);
+        RequestStore requests = mock(RequestStore.class);
+        VoiceChatAddon addon = new VoiceChatAddon(plugin, leadership, invites, requests);
+        var registration = mock(de.maxhenkel.voicechat.api.events.EventRegistration.class);
+        addon.registerEvents(registration);
+        org.mockito.ArgumentCaptor<java.util.function.Consumer<de.maxhenkel.voicechat.api.events.RemoveGroupEvent>> handler =
+                org.mockito.ArgumentCaptor.forClass((Class) java.util.function.Consumer.class);
+        verify(registration).registerEvent(org.mockito.ArgumentMatchers.eq(de.maxhenkel.voicechat.api.events.RemoveGroupEvent.class),
+                handler.capture(), org.mockito.ArgumentMatchers.eq(-1000));
+        UUID groupId = UUID.randomUUID();
+        UUID leader = UUID.randomUUID();
+        leadership.createGroup(groupId, leader);
+        var group = mock(de.maxhenkel.voicechat.api.Group.class);
+        org.mockito.Mockito.when(group.getId()).thenReturn(groupId);
+        var event = mock(de.maxhenkel.voicechat.api.events.RemoveGroupEvent.class);
+        org.mockito.Mockito.when(event.getGroup()).thenReturn(group);
+        org.mockito.Mockito.when(pause.holdsGroup(groupId)).thenReturn(true);
+        handler.getValue().accept(event);
+        verify(event).cancel();
+        org.mockito.Mockito.verifyNoInteractions(invites, requests);
+        org.junit.jupiter.api.Assertions.assertEquals(leader, leadership.leaderOf(groupId));
+        org.mockito.Mockito.when(pause.holdsGroup(groupId)).thenReturn(false);
+        handler.getValue().accept(event);
+        verify(invites).invalidateGroup(groupId);
+        verify(requests).invalidateGroup(groupId);
+        org.junit.jupiter.api.Assertions.assertNull(leadership.leaderOf(groupId));
+    }
 }
