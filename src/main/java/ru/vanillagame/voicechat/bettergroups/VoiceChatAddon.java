@@ -136,10 +136,12 @@ final class VoiceChatAddon implements VoicechatPlugin {
         UUID removedId = event.getGroup().getId();
         plugin.getServer().getScheduler().runTask(plugin, () -> {
             var api = plugin.getVoicechatApi();
-            if (api != null && api.getGroup(removedId) == null) plugin.groupMute().groupRemoved(removedId);
+            if (api != null && api.getGroup(removedId) == null) {
+                plugin.groupMute().groupRemoved(removedId);
+                plugin.publishLeadership(leadership.removeGroup(removedId));
+                invites.invalidateGroup(removedId);
+                requests.invalidateGroup(removedId);
+            }
         });
-        plugin.publishLeadership(leadership.removeGroup(event.getGroup().getId()));
-        invites.invalidateGroup(event.getGroup().getId());
-        requests.invalidateGroup(event.getGroup().getId());
     }
 }
