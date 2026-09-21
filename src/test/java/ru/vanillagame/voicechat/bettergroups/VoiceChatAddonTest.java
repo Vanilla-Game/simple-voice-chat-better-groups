@@ -1,6 +1,8 @@
 package ru.vanillagame.voicechat.bettergroups;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.UUID;
 
@@ -47,13 +49,19 @@ class VoiceChatAddonTest {
         org.junit.jupiter.api.Assertions.assertEquals(first, leadership.leaderOf(group));
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
     @SuppressWarnings({"unchecked", "rawtypes"})
-    void removalIsCancelledBeforeLeadershipAndInvitesAreInvalidated() {
+    void cleanupWaitsForConfirmedNativeRemoval(boolean removed) {
         BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
         GroupMuteService pause = mock(GroupMuteService.class);
         org.mockito.Mockito.when(plugin.groupMute()).thenReturn(pause);
         org.mockito.Mockito.when(plugin.isEnabled()).thenReturn(true);
+        var server = mock(org.bukkit.Server.class);
+        var scheduler = mock(org.bukkit.scheduler.BukkitScheduler.class);
+        org.mockito.Mockito.when(plugin.getServer()).thenReturn(server);
+        org.mockito.Mockito.when(server.getScheduler()).thenReturn(scheduler);
+
         GroupLeadershipRegistry leadership = new GroupLeadershipRegistry();
         InviteStore invites = mock(InviteStore.class);
         RequestStore requests = mock(RequestStore.class);
@@ -72,14 +80,31 @@ class VoiceChatAddonTest {
         var event = mock(de.maxhenkel.voicechat.api.events.RemoveGroupEvent.class);
         org.mockito.Mockito.when(event.getGroup()).thenReturn(group);
         org.mockito.Mockito.when(pause.holdsGroup(groupId)).thenReturn(true);
+        var api = mock(de.maxhenkel.voicechat.api.VoicechatServerApi.class);
+        org.mockito.Mockito.when(plugin.getVoicechatApi()).thenReturn(api);
         handler.getValue().accept(event);
-        verify(event).cancel();
-        org.mockito.Mockito.verifyNoInteractions(invites, requests);
+        verify(event, org.mockito.Mockito.never()).cancel();
         org.junit.jupiter.api.Assertions.assertEquals(leader, leadership.leaderOf(groupId));
-        org.mockito.Mockito.when(pause.holdsGroup(groupId)).thenReturn(false);
-        handler.getValue().accept(event);
-        verify(invites).invalidateGroup(groupId);
-        verify(requests).invalidateGroup(groupId);
-        org.junit.jupiter.api.Assertions.assertNull(leadership.leaderOf(groupId));
+        org.junit.jupiter.api.Assertions.assertEquals(java.util.List.of(leader), leadership.membersOf(groupId));
+        org.mockito.Mockito.verifyNoInteractions(invites, requests);
+        verify(pause, org.mockito.Mockito.never()).groupRemoved(groupId);
+
+        // A later listener can cancel removal; only the next tick sees its final result.
+        org.mockito.Mockito.when(api.getGroup(groupId)).thenReturn(removed ? null : group);
+        var task = org.mockito.ArgumentCaptor.forClass(Runnable.class);
+        verify(scheduler).runTask(org.mockito.ArgumentMatchers.eq(plugin), task.capture());
+        task.getValue().run();
+        if (removed) {
+            verify(pause).groupRemoved(groupId);
+            verify(invites).invalidateGroup(groupId);
+            verify(requests).invalidateGroup(groupId);
+            org.junit.jupiter.api.Assertions.assertNull(leadership.leaderOf(groupId));
+            org.junit.jupiter.api.Assertions.assertTrue(leadership.membersOf(groupId).isEmpty());
+        } else {
+            verify(pause, org.mockito.Mockito.never()).groupRemoved(groupId);
+            org.mockito.Mockito.verifyNoInteractions(invites, requests);
+            org.junit.jupiter.api.Assertions.assertEquals(leader, leadership.leaderOf(groupId));
+            org.junit.jupiter.api.Assertions.assertEquals(java.util.List.of(leader), leadership.membersOf(groupId));
+        }
     }
 }

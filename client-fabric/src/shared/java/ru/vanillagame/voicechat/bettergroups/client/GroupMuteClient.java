@@ -19,6 +19,7 @@ public final class GroupMuteClient {
     private static UUID requestedGroup;
     private static final MuteRequestTracker REQUESTS = new MuteRequestTracker();
     private static int waitingTicks;
+    private static Component feedback;
 
     private GroupMuteClient() {}
 
@@ -59,9 +60,11 @@ public final class GroupMuteClient {
         } else if (REQUESTS.acknowledge(payload.requestId())) {
             pausedGroup = payload.group();
             requestedGroup = null;
-            message(payload.result() != 0 ? "mute_rejected" : isMuted() ? "group_muted" : "group_unmuted");
+            message(payload.result() != 0 ? "mute_rejected" : isMuted() ? "group_muted" : REQUESTS.targetMuted() ? "group_dissolved" : "group_unmuted");
         } else if (payload.requestId() == -1 && !REQUESTS.isPending()) {
+            boolean lostReturn = pausedGroup != null && payload.group() == null;
             pausedGroup = payload.group();
+            if (lostReturn) message("group_return_unavailable");
         }
         // Native group membership packets may arrive before or after this snapshot.
         // In particular, a null native group is the expected paused state.
@@ -85,7 +88,10 @@ public final class GroupMuteClient {
         clearLocal();
     }
 
+    public static Component feedback() { return feedback; }
+
     private static void clearLocal() {
+        feedback = null;
         pausedGroup = null;
         requestedGroup = null;
         REQUESTS.clear();
@@ -93,14 +99,16 @@ public final class GroupMuteClient {
     }
 
     private static void message(String key) {
+        feedback = Component.translatable("message.svc_better_groups." + key);
         if (Minecraft.getInstance().player != null) {
             ScreenNavigation.showActionBar(Minecraft.getInstance(),
-                    Component.translatable("message.svc_better_groups." + key));
+                    feedback);
         }
     }
 
     private static UUID currentGroup() {
         var manager = ClientManager.getPlayerStateManager();
-        return Minecraft.getInstance().player == null || manager.isDisconnected() ? null : manager.getGroupID();
+        // Group membership is synchronized over Minecraft, independently of voice UDP.
+        return manager.getGroupID();
     }
 }

@@ -24,7 +24,8 @@ import static org.mockito.Mockito.*;
 class GroupMuteServiceTest {
     private final BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
     private final VoicechatServerApi api = mock(VoicechatServerApi.class);
-    private final GroupMuteService service = new GroupMuteService(plugin);
+    private final GroupLeadershipRegistry leadership = new GroupLeadershipRegistry();
+    private final GroupMuteService service = new GroupMuteService(plugin, leadership);
     private final UUID id = UUID.randomUUID();
     private final UUID groupId = UUID.randomUUID();
     private final Group group = mock(Group.class);
@@ -32,6 +33,7 @@ class GroupMuteServiceTest {
     private final AtomicReference<Group> membership = new AtomicReference<>();
     private final List<Runnable> scheduled = new ArrayList<>();
     private boolean connected = true;
+    private boolean removeEmptyGroup;
     private boolean cancelLeave;
     private boolean cancelJoin;
     private int leaves;
@@ -65,8 +67,10 @@ class GroupMuteServiceTest {
                 }
                 service.membershipChanged(id);
                 membership.set(next);
+                if (next == null) leadership.leave(groupId, id);
+                else leadership.join(next.getId(), id);
                 // SVC tries cleanup immediately after leave, before returning from setGroup.
-                if (next == null) assertTrue(service.holdsGroup(groupId));
+                if (next == null && removeEmptyGroup) when(api.getGroup(groupId)).thenReturn(null);
                 return null;
             }).when(snapshot).setGroup(any());
             return snapshot;
@@ -110,6 +114,64 @@ class GroupMuteServiceTest {
         assertState(GroupMuteProtocol.OK, null);
         assertEquals(1, leaves);
         assertEquals(1, joins);
+    }
+
+    @Test void lastParticipantLeavesWithoutReturnGrantAndRetryDoesNotRecreateGroup() {
+        removeEmptyGroup = true;
+        request(true);
+        assertNull(membership.get());
+        assertFalse(service.holdsGroup(groupId));
+        assertState(GroupMuteProtocol.OK, null);
+        request(true);
+        assertState(GroupMuteProtocol.OK, null);
+        request(false);
+        assertState(GroupMuteProtocol.REJECTED, null);
+        assertEquals(1, leaves);
+        assertEquals(0, joins);
+    }
+
+    @Test void removalRevokesPreviouslyPausedPlayersReturnGrants() {
+        request(true);
+        service.groupRemoved(groupId);
+        assertFalse(service.holdsGroup(groupId));
+        request(false);
+        assertState(GroupMuteProtocol.REJECTED, null);
+        assertEquals(0, joins);
+    }
+
+    @Test void returningLeaderReclaimsLeadershipOnlyAfterSuccessfulJoin() {
+        UUID other = UUID.randomUUID();
+        leadership.createGroup(groupId, id);
+        leadership.join(groupId, other);
+        request(true);
+        assertEquals(other, leadership.leaderOf(groupId));
+        cancelJoin = true;
+        request(false);
+        assertEquals(other, leadership.leaderOf(groupId));
+        cancelJoin = false;
+        request(false);
+        assertEquals(id, leadership.leaderOf(groupId));
+        request(false);
+        assertEquals(id, leadership.leaderOf(groupId));
+    }
+
+    @Test void returningMemberDoesNotTakeLeadership() {
+        UUID other = UUID.randomUUID();
+        leadership.createGroup(groupId, other);
+        leadership.join(groupId, id);
+        request(true); request(false);
+        assertEquals(other, leadership.leaderOf(groupId));
+    }
+
+    @Test void manualGroupChangeRevokesSavedLeaderRole() {
+        UUID other = UUID.randomUUID();
+        leadership.createGroup(groupId, id);
+        leadership.join(groupId, other);
+        request(true);
+        service.membershipChanged(id);
+        request(false);
+        assertEquals(other, leadership.leaderOf(groupId));
+        assertEquals(0, joins);
     }
 
     @Test void supportsEveryGroupTypeThroughNativeLeave() {
@@ -224,11 +286,13 @@ class GroupMuteServiceTest {
         assertState(GroupMuteProtocol.REJECTED, groupId);
     }
 
-    @Test void requiresHandshakeAndConnectedVoiceChat() {
-        connected = false; request(true);
-        assertEquals(0, leaves);
-        assertState(GroupMuteProtocol.REJECTED, null);
-        connected = true; service.forget(id); request(true);
+    @Test void leavesAndReturnsWithoutVoiceUdpConnection() {
+        connected = false;
+        leavesAndReturnsToPasswordProtectedGroupUsingServerGrant();
+    }
+
+    @Test void requiresHandshake() {
+        service.forget(id); request(true);
         assertEquals(0, leaves);
     }
 

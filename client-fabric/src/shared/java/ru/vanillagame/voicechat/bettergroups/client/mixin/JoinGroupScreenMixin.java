@@ -3,6 +3,7 @@ package ru.vanillagame.voicechat.bettergroups.client.mixin;
 import de.maxhenkel.voicechat.gui.VoiceChatScreenBase;
 import de.maxhenkel.voicechat.gui.group.JoinGroupScreen;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.network.chat.Component;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -39,6 +40,8 @@ public abstract class JoinGroupScreenMixin extends VoiceChatScreenBase {
     @Unique
     private void svcBetterGroups$updateReturn() {
         if (svcBetterGroups$return == null) return;
+        svcBetterGroups$return.setTooltip(GroupMuteClient.feedback() == null
+                ? null : Tooltip.create(GroupMuteClient.feedback()));
         boolean paused = GroupMuteClient.isMuted() || GroupMuteClient.isPending();
         svcBetterGroups$return.setMessage(Component.translatable(GroupMuteClient.isPending()
                 ? "gui.svc_better_groups.retry_group" : "gui.svc_better_groups.unmute_group"));

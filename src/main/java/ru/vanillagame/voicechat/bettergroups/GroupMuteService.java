@@ -14,13 +14,18 @@ import java.util.concurrent.ConcurrentHashMap;
 /** Temporary group leave. Audio routing remains entirely owned by Simple Voice Chat. */
 final class GroupMuteService implements PluginMessageListener {
     private final BetterGroupsPlugin plugin;
+    private final GroupLeadershipRegistry leadership;
+    private record ReturnGrant(UUID group, boolean leader) {}
     private final Set<UUID> clients = ConcurrentHashMap.newKeySet();
     // A server-side return grant, never a password supplied by the client.
-    private final ConcurrentHashMap<UUID, UUID> paused = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, ReturnGrant> paused = new ConcurrentHashMap<>();
     private final Set<UUID> switching = ConcurrentHashMap.newKeySet();
     private boolean registered;
 
-    GroupMuteService(BetterGroupsPlugin plugin) { this.plugin = plugin; }
+    GroupMuteService(BetterGroupsPlugin plugin, GroupLeadershipRegistry leadership) {
+        this.plugin = plugin;
+        this.leadership = leadership;
+    }
 
     void register() {
         var messenger = plugin.getServer().getMessenger();
@@ -53,24 +58,30 @@ final class GroupMuteService implements PluginMessageListener {
         if (!clients.contains(id)) return;
         var api = plugin.getVoicechatApi();
         var connection = api == null ? null : api.getConnectionOf(id);
-        boolean accepted = connection != null && connection.isConnected()
+        boolean accepted = connection != null
                 && (request.muted() ? pause(id, connection, request.group()) : resume(player, connection, request.group()));
         // setGroup() can be cancelled by another plugin. Only acknowledge the actual result.
         sendState(player, request.id(), accepted ? GroupMuteProtocol.OK : GroupMuteProtocol.REJECTED);
     }
 
     private boolean pause(UUID player, VoicechatConnection connection, UUID groupId) {
-        if (connection.getGroup() == null) return groupId.equals(paused.get(player)); // retry
+        if (connection.getGroup() == null) { // Retry also acknowledges a completed final leave.
+            return groupId.equals(pausedGroup(player)) || plugin.getVoicechatApi().getGroup(groupId) == null;
+        }
         if (!groupId.equals(connection.getGroup().getId())) return false;
-        UUID previous = paused.put(player, groupId);
-        if (previous != null && !previous.equals(groupId)) cleanupGroup(previous);
+        ReturnGrant grant = new ReturnGrant(groupId, player.equals(leadership.leaderOf(groupId)));
+        ReturnGrant previous = paused.put(player, grant);
+        if (previous != null && !previous.group().equals(groupId)) cleanupGroup(previous.group());
         switching.add(player);
         try {
-            // Register the grant before leaving: SVC immediately tries to remove an empty group.
+            // A return grant survives only while the native group still exists.
             connection.setGroup(null);
             var updated = plugin.getVoicechatApi().getConnectionOf(player);
-            if (updated != null && updated.getGroup() == null) return true;
-            paused.remove(player, groupId);
+            if (updated != null && updated.getGroup() == null) {
+                if (plugin.getVoicechatApi().getGroup(groupId) == null) groupRemoved(groupId);
+                return true;
+            }
+            paused.remove(player, grant);
             cleanupGroup(groupId);
             return false;
         } finally {
@@ -84,11 +95,12 @@ final class GroupMuteService implements PluginMessageListener {
             // A repeated successful return must not move the player out of another group.
             return groupId.equals(connection.getGroup().getId()) && !paused.containsKey(id);
         }
-        if (!groupId.equals(paused.get(id))) return false;
+        ReturnGrant grant = paused.get(id);
+        if (grant == null || !groupId.equals(grant.group())) return false;
         var api = plugin.getVoicechatApi();
         Group group = api.getGroup(groupId);
         if (group == null) {
-            paused.remove(id, groupId);
+            paused.remove(id, grant);
             return false;
         }
         if (!player.hasPermission("voicechat.groups") || !api.getServerConfig().getBoolean("enable_groups", true)) return false;
@@ -98,7 +110,13 @@ final class GroupMuteService implements PluginMessageListener {
             connection.setGroup(group);
             var updated = api.getConnectionOf(id); // VoicechatConnection is a snapshot.
             if (updated == null || updated.getGroup() == null || !groupId.equals(updated.getGroup().getId())) return false;
-            paused.remove(id, groupId);
+            if (grant.leader()) {
+                UUID currentLeader = leadership.leaderOf(groupId);
+                if (currentLeader != null) {
+                    plugin.publishLeadership(leadership.transferLeadership(groupId, currentLeader, id).transition());
+                }
+            }
+            paused.remove(id, grant);
             cleanupGroup(groupId);
             return true;
         } finally {
@@ -106,15 +124,22 @@ final class GroupMuteService implements PluginMessageListener {
         }
     }
 
+    void groupRemoved(UUID group) {
+        paused.forEach((player, destination) -> {
+            if (group.equals(destination.group()) && paused.remove(player, destination)) publish(player);
+        });
+    }
+
     boolean holdsGroup(UUID group) {
-        return paused.containsValue(group);
+        return paused.values().stream().anyMatch(grant -> group.equals(grant.group()));
     }
 
     void membershipChanged(UUID player) {
         // Our own leave/join fires the same events as manual group changes.
         if (switching.contains(player)) return;
-        UUID group = paused.remove(player);
-        if (group == null) return;
+        ReturnGrant grant = paused.remove(player);
+        if (grant == null) return;
+        UUID group = grant.group();
         // Events run before the native join commits. Removing an empty group here
         // could delete the very destination that the player is joining manually.
         plugin.getServer().getScheduler().runTask(plugin, () -> {
@@ -129,15 +154,17 @@ final class GroupMuteService implements PluginMessageListener {
     }
 
     void clearPlayer(UUID player) {
-        UUID group = paused.remove(player);
-        if (group == null) return;
+        ReturnGrant grant = paused.remove(player);
+        if (grant == null) return;
+        UUID group = grant.group();
         cleanupGroup(group);
         publish(player);
     }
 
     void clear() {
         Set<UUID> players = Set.copyOf(paused.keySet());
-        Set<UUID> groups = new HashSet<>(paused.values());
+        Set<UUID> groups = new HashSet<>();
+        paused.values().forEach(grant -> groups.add(grant.group()));
         paused.clear();
         groups.forEach(this::cleanupGroup);
         players.forEach(this::publish);
@@ -157,8 +184,13 @@ final class GroupMuteService implements PluginMessageListener {
         if (player != null && player.isOnline()) sendState(player, -1, GroupMuteProtocol.OK);
     }
 
+    private UUID pausedGroup(UUID player) {
+        ReturnGrant grant = paused.get(player);
+        return grant == null ? null : grant.group();
+    }
+
     private void sendState(Player player, int request, int result) {
         player.sendPluginMessage(plugin, GroupMuteProtocol.STATE,
-                GroupMuteProtocol.encode(request, result, paused.get(player.getUniqueId())));
+                GroupMuteProtocol.encode(request, result, pausedGroup(player.getUniqueId())));
     }
 }
