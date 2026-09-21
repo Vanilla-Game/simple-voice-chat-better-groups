@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.1](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/compare/v0.11.0...v0.11.1) (2026-09-21)
+
+
+### Bug Fixes
+
+* correct group pause lifecycle and restore leader on return ([#74](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/issues/74)) ([b86b310](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/commit/b86b310b7221368a3cf861b5a2917e0ebc8b0011))
+
 ## [0.11.0](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/compare/v0.10.0...v0.11.0) (2026-09-20)
 
 
