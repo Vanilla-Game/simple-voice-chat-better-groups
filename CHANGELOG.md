@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.0](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/compare/v0.11.1...v0.12.0) (2026-09-26)
+
+
+### Features
+
+* support Folia alongside Paper ([#76](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/issues/76)) ([4ff8a04](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/commit/4ff8a045146f71fddcbbb8422457b5d747549c6d))
+
 ## [0.11.1](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/compare/v0.11.0...v0.11.1) (2026-09-21)
 
 
