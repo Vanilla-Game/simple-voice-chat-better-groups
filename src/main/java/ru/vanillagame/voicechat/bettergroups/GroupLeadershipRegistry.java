@@ -40,6 +40,15 @@ final class GroupLeadershipRegistry {
         return transition.build();
     }
 
+    synchronized Transition join(UUID groupId, UUID playerId, boolean electLeaderIfEmpty) {
+        // Different Folia regions can return to the same empty persistent group
+        // simultaneously. Electing its first leader and joining must be atomic.
+        if (electLeaderIfEmpty && membersOf(groupId).isEmpty()) {
+            return createGroup(groupId, playerId);
+        }
+        return join(groupId, playerId);
+    }
+
     synchronized Transition join(UUID groupId, UUID playerId) {
         Objects.requireNonNull(groupId, "groupId");
         Objects.requireNonNull(playerId, "playerId");

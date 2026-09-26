@@ -142,10 +142,13 @@ final class GroupMuteService implements PluginMessageListener {
         UUID group = grant.group();
         // Events run before the native join commits. Removing an empty group here
         // could delete the very destination that the player is joining manually.
-        plugin.getServer().getScheduler().runTask(plugin, () -> {
-            cleanupGroup(group);
-            publish(player);
-        });
+        Player onlinePlayer = plugin.getServer().getPlayer(player);
+        if (onlinePlayer != null) {
+            PlayerTasks.later(plugin, onlinePlayer, () -> {
+                cleanupGroup(group);
+                publish(player);
+            });
+        }
     }
 
     void forget(UUID player) {
@@ -181,7 +184,9 @@ final class GroupMuteService implements PluginMessageListener {
     private void publish(UUID playerId) {
         if (!plugin.isEnabled() || !clients.contains(playerId)) return;
         Player player = Bukkit.getPlayer(playerId);
-        if (player != null && player.isOnline()) sendState(player, -1, GroupMuteProtocol.OK);
+        if (player != null) PlayerTasks.run(plugin, player, () -> {
+            if (clients.contains(playerId)) sendState(player, -1, GroupMuteProtocol.OK);
+        });
     }
 
     private UUID pausedGroup(UUID player) {

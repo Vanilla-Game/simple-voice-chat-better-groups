@@ -57,8 +57,14 @@ final class VoiceChatAddon implements VoicechatPlugin {
         registration.registerEvent(LeaveGroupEvent.class, this::onGroupLeft, -1000);
         registration.registerEvent(RemoveGroupEvent.class, this::onGroupRemoved, -1000);
         registration.registerEvent(PlayerDisconnectedEvent.class, event -> {
-            if (plugin.isEnabled()) plugin.getServer().getScheduler().runTask(plugin,
-                    () -> plugin.groupMute().clearPlayer(event.getPlayerUuid()));
+            if (!plugin.isEnabled()) return;
+            UUID playerId = event.getPlayerUuid();
+            var player = plugin.getServer().getPlayer(playerId);
+            if (player != null) {
+                PlayerTasks.run(plugin, player, () -> plugin.groupMute().clearPlayer(playerId));
+            } else {
+                plugin.groupMute().clearPlayer(playerId);
+            }
         });
     }
 
@@ -101,13 +107,12 @@ final class VoiceChatAddon implements VoicechatPlugin {
     }
 
     void handleGroupJoin(UUID groupId, UUID playerId) {
-        boolean returningToEmptyGroup = plugin.groupMute() != null
-                && plugin.groupMute().holdsGroup(groupId) && leadership.membersOf(groupId).isEmpty();
+        boolean returningToHeldGroup = plugin.groupMute() != null
+                && plugin.groupMute().holdsGroup(groupId);
         if (plugin.groupMute() != null) {
             plugin.groupMute().membershipChanged(playerId);
         }
-        GroupLeadershipRegistry.Transition transition = returningToEmptyGroup
-                ? leadership.createGroup(groupId, playerId) : leadership.join(groupId, playerId);
+        GroupLeadershipRegistry.Transition transition = leadership.join(groupId, playerId, returningToHeldGroup);
         plugin.publishLeadership(transition);
         if (transition.changed()) {
             plugin.notifyGroupJoin(groupId, playerId);
@@ -134,14 +139,19 @@ final class VoiceChatAddon implements VoicechatPlugin {
         // Pausing the last participant must not keep an ordinary empty group alive.
         // Check after removal commits in case another listener cancels the event.
         UUID removedId = event.getGroup().getId();
-        plugin.getServer().getScheduler().runTask(plugin, () -> {
+        // The global region can tick before the originating player region finishes
+        // dispatching this event. Keep checking until removal commits or is cancelled.
+        plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(plugin, task -> {
             var api = plugin.getVoicechatApi();
-            if (api != null && api.getGroup(removedId) == null) {
+            if (!plugin.isEnabled() || api == null || event.isCancelled()) {
+                task.cancel();
+            } else if (api.getGroup(removedId) == null) {
+                task.cancel();
                 plugin.groupMute().groupRemoved(removedId);
                 plugin.publishLeadership(leadership.removeGroup(removedId));
                 invites.invalidateGroup(removedId);
                 requests.invalidateGroup(removedId);
             }
-        });
+        }, 1L, 1L);
     }
 }

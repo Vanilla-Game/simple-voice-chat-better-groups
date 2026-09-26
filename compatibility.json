@@ -11,6 +11,7 @@
         "minecraft": "26.1.2",
         "paperBuild": 74,
         "leafBuild": 3,
+        "foliaBuild": 8,
         "voicechatArtifacts": [
           "bukkit-2.6.16",
           "bukkit-2.6.17",
@@ -26,6 +27,7 @@
         "minecraft": "26.2",
         "paperBuild": 111,
         "leafBuild": 37,
+        "foliaBuild": 7,
         "voicechatArtifacts": [
           "bukkit-2.6.19",
           "bukkit-2.6.20",

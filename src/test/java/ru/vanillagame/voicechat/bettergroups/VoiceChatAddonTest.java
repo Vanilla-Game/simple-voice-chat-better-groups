@@ -2,7 +2,7 @@ package ru.vanillagame.voicechat.bettergroups;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.util.UUID;
 
@@ -50,17 +50,17 @@ class VoiceChatAddonTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
+    @CsvSource({"false,false", "true,false", "false,true"})
     @SuppressWarnings({"unchecked", "rawtypes"})
-    void cleanupWaitsForConfirmedNativeRemoval(boolean removed) {
+    void cleanupWaitsForConfirmedNativeRemoval(boolean removed, boolean cancelled) {
         BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
         GroupMuteService pause = mock(GroupMuteService.class);
         org.mockito.Mockito.when(plugin.groupMute()).thenReturn(pause);
         org.mockito.Mockito.when(plugin.isEnabled()).thenReturn(true);
         var server = mock(org.bukkit.Server.class);
-        var scheduler = mock(org.bukkit.scheduler.BukkitScheduler.class);
+        var scheduler = mock(io.papermc.paper.threadedregions.scheduler.GlobalRegionScheduler.class);
         org.mockito.Mockito.when(plugin.getServer()).thenReturn(server);
-        org.mockito.Mockito.when(server.getScheduler()).thenReturn(scheduler);
+        org.mockito.Mockito.when(server.getGlobalRegionScheduler()).thenReturn(scheduler);
 
         GroupLeadershipRegistry leadership = new GroupLeadershipRegistry();
         InviteStore invites = mock(InviteStore.class);
@@ -91,9 +91,13 @@ class VoiceChatAddonTest {
 
         // A later listener can cancel removal; only the next tick sees its final result.
         org.mockito.Mockito.when(api.getGroup(groupId)).thenReturn(removed ? null : group);
-        var task = org.mockito.ArgumentCaptor.forClass(Runnable.class);
-        verify(scheduler).runTask(org.mockito.ArgumentMatchers.eq(plugin), task.capture());
-        task.getValue().run();
+        org.mockito.ArgumentCaptor<java.util.function.Consumer<io.papermc.paper.threadedregions.scheduler.ScheduledTask>> task =
+                org.mockito.ArgumentCaptor.forClass((Class) java.util.function.Consumer.class);
+        verify(scheduler).runAtFixedRate(org.mockito.ArgumentMatchers.eq(plugin), task.capture(),
+                org.mockito.ArgumentMatchers.eq(1L), org.mockito.ArgumentMatchers.eq(1L));
+        var scheduledTask = mock(io.papermc.paper.threadedregions.scheduler.ScheduledTask.class);
+        org.mockito.Mockito.when(event.isCancelled()).thenReturn(cancelled);
+        task.getValue().accept(scheduledTask);
         if (removed) {
             verify(pause).groupRemoved(groupId);
             verify(invites).invalidateGroup(groupId);
@@ -105,6 +109,15 @@ class VoiceChatAddonTest {
             org.mockito.Mockito.verifyNoInteractions(invites, requests);
             org.junit.jupiter.api.Assertions.assertEquals(leader, leadership.leaderOf(groupId));
             org.junit.jupiter.api.Assertions.assertEquals(java.util.List.of(leader), leadership.membersOf(groupId));
+            if (cancelled) {
+                verify(scheduledTask).cancel();
+            } else {
+                verify(scheduledTask, org.mockito.Mockito.never()).cancel();
+                org.mockito.Mockito.when(api.getGroup(groupId)).thenReturn(null);
+                task.getValue().accept(scheduledTask);
+                verify(pause).groupRemoved(groupId);
+                verify(scheduledTask).cancel();
+            }
         }
     }
 }

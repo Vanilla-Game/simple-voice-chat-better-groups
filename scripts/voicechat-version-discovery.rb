@@ -98,13 +98,20 @@ module VoicechatVersionDiscovery
           }
         end
       end,
-      "server-matrix" => server_candidates.map do |candidate|
-        {
-          "platform" => "paper",
-          "minecraft" => candidate.fetch("minecraft"),
-          "build" => candidate.fetch("build"),
-          "voicechatArtifact" => candidate.fetch("artifact")
-        }
+      "server-matrix" => server_candidates.flat_map do |candidate|
+        target = catalog.fetch("server").fetch("targets").find do |entry|
+          entry.fetch("minecraft") == candidate.fetch("minecraft")
+        end
+        platforms = ["paper"]
+        platforms << "folia" if target.key?("foliaBuild")
+        platforms.map do |platform|
+          {
+            "platform" => platform,
+            "minecraft" => candidate.fetch("minecraft"),
+            "build" => target.fetch("#{platform}Build"),
+            "voicechatArtifact" => candidate.fetch("artifact")
+          }
+        end
       end,
       "has-fabric" => !fabric_candidates.empty?,
       "has-server" => !server_candidates.empty?,

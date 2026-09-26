@@ -32,6 +32,31 @@ class WorkflowScriptsTest < Minitest::Test
     assert_equal fixture("discovery-expected.json"), result
   end
 
+  def test_folia_discovery_and_update_require_both_server_platforms
+    catalog = fixture("discovery-catalog.json")
+    catalog.fetch("server").fetch("targets").each { |target| target["foliaBuild"] = 8 }
+    discovery = VoicechatVersionDiscovery.build(catalog, fixture("modrinth-versions.json"))
+    paper = discovery.fetch("server-matrix").select { |entry| entry.fetch("platform") == "paper" }
+    folia = discovery.fetch("server-matrix").select { |entry| entry.fetch("platform") == "folia" }
+    assert_equal paper.size, folia.size
+    refute_empty folia
+    assert folia.all? { |entry| entry.fetch("build") == 8 }
+
+    Dir.mktmpdir do |directory|
+      candidate = discovery.fetch("server-candidates").first
+      name = [candidate.fetch("minecraft"), candidate.fetch("artifact")].join("__")
+      File.write(File.join(directory, "server__paper__#{name}"), "ok\n")
+      result = VoicechatCompatibilityUpdate.apply(catalog, [], [candidate], directory)
+      refute result.fetch("updated"), "Paper alone must not widen Folia support"
+      File.write(File.join(directory, "server__folia__#{name}"), "fail\n")
+      result = VoicechatCompatibilityUpdate.apply(catalog, [], [candidate], directory)
+      refute result.fetch("updated"), "A failed Folia check must block widening"
+      File.write(File.join(directory, "server__folia__#{name}"), "ok\n")
+      result = VoicechatCompatibilityUpdate.apply(catalog, [], [candidate], directory)
+      assert result.fetch("updated")
+    end
+  end
+
   def test_discovery_rejects_artifacts_without_a_three_part_version
     error = assert_raises(ArgumentError) { VoicechatVersionDiscovery.core("fabric-latest") }
 

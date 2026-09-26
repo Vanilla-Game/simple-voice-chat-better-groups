@@ -6,15 +6,15 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.messaging.Messenger;
 import org.bukkit.plugin.messaging.PluginMessageListener;
 
-import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 final class GroupSyncService implements PluginMessageListener {
 
     private final BetterGroupsPlugin plugin;
     private final GroupLeadershipRegistry leadership;
-    private final Set<UUID> compatibleClients = new HashSet<>();
+    private final Set<UUID> compatibleClients = ConcurrentHashMap.newKeySet();
     private boolean registered;
 
     GroupSyncService(BetterGroupsPlugin plugin, GroupLeadershipRegistry leadership) {
@@ -61,15 +61,13 @@ final class GroupSyncService implements PluginMessageListener {
         if (!transition.changed()) {
             return;
         }
-        runOnMainThread(() -> {
-            transition.affectedPlayerIds().forEach(playerId -> {
-                Player player = Bukkit.getPlayer(playerId);
-                if (player != null && player.isOnline()) {
-                    sendCurrentGroupState(player);
-                }
-            });
-            notifyPromotedLeaders(transition);
+        transition.affectedPlayerIds().forEach(playerId -> {
+            Player player = Bukkit.getPlayer(playerId);
+            if (player != null) {
+                PlayerTasks.run(plugin, player, () -> sendCurrentGroupState(player));
+            }
         });
+        notifyPromotedLeaders(transition);
     }
 
     void forget(UUID playerId) {
@@ -102,17 +100,13 @@ final class GroupSyncService implements PluginMessageListener {
                 return;
             }
             Player newLeader = Bukkit.getPlayer(change.newLeaderId());
-            if (newLeader != null && newLeader.isOnline()) {
-                newLeader.sendMessage(Messages.component(Messages.LEADER_PROMOTED, NamedTextColor.GREEN));
+            if (newLeader != null) {
+                PlayerTasks.run(plugin, newLeader, () -> {
+                    if (change.newLeaderId().equals(leadership.leaderOf(change.groupId()))) {
+                        newLeader.sendMessage(Messages.component(Messages.LEADER_PROMOTED, NamedTextColor.GREEN));
+                    }
+                });
             }
         });
-    }
-
-    private void runOnMainThread(Runnable task) {
-        if (Bukkit.isPrimaryThread()) {
-            task.run();
-            return;
-        }
-        plugin.getServer().getScheduler().runTask(plugin, task);
     }
 }
