@@ -22,6 +22,7 @@ class JoinNotifierTest {
     void notifiesExistingMembersOnceAndConsumesInviteAttribution() {
         GroupLeadershipRegistry leadership = new GroupLeadershipRegistry();
         BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
+        when(plugin.isEnabled()).thenReturn(true);
         JoinNotifier notifier = new JoinNotifier(plugin, leadership);
         UUID groupId = UUID.randomUUID();
         Player creator = player("Creator");
@@ -31,7 +32,7 @@ class JoinNotifierTest {
         leadership.join(groupId, joiner.getUniqueId());
 
         try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
-            bukkit.when(Bukkit::isPrimaryThread).thenReturn(true);
+            bukkit.when(() -> Bukkit.isOwnedByCurrentRegion(any(Player.class))).thenReturn(true);
             bukkit.when(() -> Bukkit.getPlayer(creator.getUniqueId())).thenReturn(creator);
             bukkit.when(() -> Bukkit.getPlayer(joiner.getUniqueId())).thenReturn(joiner);
 
@@ -49,6 +50,7 @@ class JoinNotifierTest {
     void doesNotNotifyMembersWhoCannotSeeJoiner() {
         GroupLeadershipRegistry leadership = new GroupLeadershipRegistry();
         BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
+        when(plugin.isEnabled()).thenReturn(true);
         JoinNotifier notifier = new JoinNotifier(plugin, leadership);
         UUID groupId = UUID.randomUUID();
         Player hiddenFromMember = player("Member");
@@ -58,7 +60,7 @@ class JoinNotifierTest {
 
         when(hiddenFromMember.canSee(joiner)).thenReturn(false);
         try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
-            bukkit.when(Bukkit::isPrimaryThread).thenReturn(true);
+            bukkit.when(() -> Bukkit.isOwnedByCurrentRegion(any(Player.class))).thenReturn(true);
             bukkit.when(() -> Bukkit.getPlayer(hiddenFromMember.getUniqueId())).thenReturn(hiddenFromMember);
             bukkit.when(() -> Bukkit.getPlayer(joiner.getUniqueId())).thenReturn(joiner);
 

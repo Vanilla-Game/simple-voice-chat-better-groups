@@ -122,8 +122,8 @@ jobs:
           curl -fsSL "$voicechat_url" -o server/plugins/voicechat.jar
           printf '%s  %s\n' "$voicechat_sha512" server/plugins/voicechat.jar | sha512sum --check --strict
 
-          if [ "$PLATFORM" = paper ]; then
-            metadata_url="https://fill.papermc.io/v3/projects/paper/versions/$MINECRAFT/builds/$SERVER_BUILD"
+          if [ "$PLATFORM" = paper ] || [ "$PLATFORM" = folia ]; then
+            metadata_url="https://fill.papermc.io/v3/projects/$PLATFORM/versions/$MINECRAFT/builds/$SERVER_BUILD"
             curl -fsSL "$metadata_url" -o server-metadata.json
             server_url=$(jq -er '.downloads["server:default"].url' server-metadata.json)
             server_sha256=$(jq -er '.downloads["server:default"].checksums.sha256' server-metadata.json)
@@ -174,7 +174,7 @@ jobs:
           ready=false
           for _ in $(seq 1 120); do
             if grep -Fq 'Simple Voice Chat Group Management enabled.' server.log 2>/dev/null \
-              && grep -Eqi 'Voice chat server (started (at|on)|hosted on) port|Started voice chat server' server.log 2>/dev/null \
+              && grep -Eqi 'Voice chat server (started|hosted)|Started voice chat server' server.log 2>/dev/null \
               && grep -Eq 'Done \([0-9.]+s\)!|Done \([0-9.]+s\)! For help' server.log 2>/dev/null; then
               ready=true
               break
@@ -190,16 +190,28 @@ jobs:
             exit 1
           fi
 
-          if grep -Eqi '(NoClassDefFoundError|ClassNotFoundException|NoSuchMethodError|AbstractMethodError|UnsupportedClassVersionError|Could not load .*SVCBetterGroups|Error occurred while enabling SVCBetterGroups|disabling Simple Voice Chat Group Management)' server.log; then
-            echo 'A compatibility failure was found in the server log.' >&2
-            grep -Ein '(NoClassDefFoundError|ClassNotFoundException|NoSuchMethodError|AbstractMethodError|UnsupportedClassVersionError|SVCBetterGroups|Simple Voice Chat Group Management)' server.log >&2 || true
+          # Exercise the plugin's minute-based cleanup, including Folia's global scheduler.
+          sleep 65
+          if ! kill -0 "$server_pid" 2>/dev/null; then
+            echo 'Server exited during the scheduled-task check.' >&2
             exit 1
           fi
+
+          assert_compatible_log() {
+            failures='UnsupportedOperationException|Thread failed main thread check|Cannot read world asynchronously|NoClassDefFoundError|ClassNotFoundException|NoSuchMethodError|AbstractMethodError|UnsupportedClassVersionError|Could not load .*SVCBetterGroups|Error occurred while (enabling|disabling) SVCBetterGroups|disabling Simple Voice Chat Group Management|Task .*SVCBetterGroups.*exception'
+            if grep -Eqi "$failures" server.log; then
+              echo 'A compatibility failure was found in the server log.' >&2
+              grep -Ein "$failures" server.log >&2 || true
+              exit 1
+            fi
+          }
+          assert_compatible_log
 
           printf 'stop\n' >&"$server_stdin"
           exec {server_stdin}>&-
           trap - EXIT
           wait "$server_pid"
+          assert_compatible_log
 
       - name: Confirm packaged server plugin was not modified
         if: ${{ always() && steps.plugin.outcome == 'success' }}

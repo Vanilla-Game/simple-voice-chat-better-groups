@@ -25,6 +25,7 @@ class GroupSyncServiceTest {
     @Test
     void compatibleHelloNegotiatesWithoutSendingEmptyGroupState() {
         BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
+        when(plugin.isEnabled()).thenReturn(true);
         GroupSyncService service = new GroupSyncService(plugin, new GroupLeadershipRegistry());
         Player player = mock(Player.class);
         when(player.getUniqueId()).thenReturn(UUID.randomUUID());
@@ -50,6 +51,7 @@ class GroupSyncServiceTest {
     @Test
     void compatibleHelloSendsCurrentGroupStateWhenPlayerIsInAGroup() {
         BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
+        when(plugin.isEnabled()).thenReturn(true);
         GroupLeadershipRegistry leadership = new GroupLeadershipRegistry();
         GroupSyncService service = new GroupSyncService(plugin, leadership);
         Player player = mock(Player.class);
@@ -80,6 +82,7 @@ class GroupSyncServiceTest {
     @Test
     void incompatibleHelloDoesNotEnableSync() {
         BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
+        when(plugin.isEnabled()).thenReturn(true);
         GroupSyncService service = new GroupSyncService(plugin, new GroupLeadershipRegistry());
         Player player = mock(Player.class);
 
@@ -104,6 +107,7 @@ class GroupSyncServiceTest {
     @Test
     void membershipChangeSendsGroupStateToAffectedCompatiblePlayer() {
         BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
+        when(plugin.isEnabled()).thenReturn(true);
         GroupLeadershipRegistry leadership = new GroupLeadershipRegistry();
         GroupSyncService service = new GroupSyncService(plugin, leadership);
         Player member = mock(Player.class);
@@ -135,6 +139,7 @@ class GroupSyncServiceTest {
     @Test
     void leavingGroupSendsEmptyGroupStateToClearClientCache() {
         BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
+        when(plugin.isEnabled()).thenReturn(true);
         GroupLeadershipRegistry leadership = new GroupLeadershipRegistry();
         GroupSyncService service = new GroupSyncService(plugin, leadership);
         Player member = mock(Player.class);
@@ -172,7 +177,7 @@ class GroupSyncServiceTest {
             Player player
     ) {
         try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
-            bukkit.when(Bukkit::isPrimaryThread).thenReturn(true);
+            bukkit.when(() -> Bukkit.isOwnedByCurrentRegion(any(Player.class))).thenReturn(true);
             bukkit.when(() -> Bukkit.getPlayer(playerId)).thenReturn(player);
             service.publish(transition);
         }

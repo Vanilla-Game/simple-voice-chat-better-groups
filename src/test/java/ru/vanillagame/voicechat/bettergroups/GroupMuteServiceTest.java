@@ -5,8 +5,11 @@ import de.maxhenkel.voicechat.api.VoicechatConnection;
 import de.maxhenkel.voicechat.api.VoicechatServerApi;
 import de.maxhenkel.voicechat.api.config.ConfigAccessor;
 import org.bukkit.Server;
+import org.bukkit.Bukkit;
+import org.junit.jupiter.api.AfterEach;
+import org.mockito.MockedStatic;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitScheduler;
+import io.papermc.paper.threadedregions.scheduler.EntityScheduler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -40,8 +43,17 @@ class GroupMuteServiceTest {
     private int joins;
     private final ConfigAccessor config = mock(ConfigAccessor.class);
 
+    private MockedStatic<Bukkit> bukkit;
+
+    @AfterEach void closeBukkit() { bukkit.close(); }
+
     @BeforeEach void setup() {
+        bukkit = mockStatic(Bukkit.class);
+        bukkit.when(() -> Bukkit.getPlayer(id)).thenReturn(player);
+        bukkit.when(() -> Bukkit.isOwnedByCurrentRegion(player)).thenReturn(true);
         when(plugin.getVoicechatApi()).thenReturn(api);
+        when(plugin.isEnabled()).thenReturn(true);
+        when(player.isOnline()).thenReturn(true);
         when(player.getUniqueId()).thenReturn(id);
         when(player.hasPermission("voicechat.groups")).thenReturn(true);
         when(group.getId()).thenReturn(groupId);
@@ -76,11 +88,12 @@ class GroupMuteServiceTest {
             return snapshot;
         });
         var server = mock(Server.class);
-        var scheduler = mock(BukkitScheduler.class);
+        var scheduler = mock(EntityScheduler.class);
         when(plugin.getServer()).thenReturn(server);
-        when(server.getScheduler()).thenReturn(scheduler);
-        doAnswer(call -> { scheduled.add(call.getArgument(1)); return null; })
-                .when(scheduler).runTask(eq(plugin), any(Runnable.class));
+        when(server.getPlayer(id)).thenReturn(player);
+        when(player.getScheduler()).thenReturn(scheduler);
+        doAnswer(call -> { scheduled.add(call.getArgument(1)); return true; })
+                .when(scheduler).execute(eq(plugin), any(Runnable.class), isNull(), eq(1L));
         hello();
     }
 

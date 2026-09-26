@@ -191,6 +191,7 @@ jobs:
           version-type: release
           loaders: |
             paper
+            folia
             purpur
           game-versions: ${{ steps.modrinth.outputs.paper_games }}
           dependencies: simple-voice-chat(required)

@@ -2,7 +2,7 @@
 
 This repository builds four release artifacts:
 
-- one Paper-compatible plugin that owns group state and authorizes every action;
+- one Paper/Folia-compatible plugin that owns group state and authorizes every action;
 - an optional Fabric 1.21.11 mod built with Mojang mappings, remapped to intermediary names, and targeting Java 21;
 - an optional Fabric 26.1.x mod that adds controls to the Simple Voice Chat UI;
 - an optional Fabric 26.2.x mod built from the same client sources.
@@ -13,7 +13,7 @@ without the client mod retain the complete command workflow.
 ## Compatibility boundary
 
 The server jar targets the lowest stable baseline, Paper 26.1.2 and Java 25,
-and is tested unchanged on Paper 26.1.2 and 26.2. Leaf uses the Paper API but
+and is tested unchanged on Paper and Folia 26.1.2 and 26.2. Leaf uses the Paper API but
 is treated as experimental: minimum and maximum supported SVC releases receive
 blocking smoke tests on both Minecraft versions. Server versions 26.1 and
 26.1.1 are outside the contract.
@@ -121,3 +121,32 @@ after the request is sent.
 
 Hidden groups are excluded from join-request lookup. This prevents name or UUID
 probing from revealing their existence.
+
+## Paper and Folia scheduling
+
+The same server JAR uses Paper's entity and global region scheduler APIs on both
+platforms. Player messages, sounds, client state broadcasts, and cross-player
+membership changes run on the recipient's entity scheduler, which follows the
+player across regions and skips disconnected players. Commands affecting their
+own player can run immediately on the owning thread. Kick and request approval
+recheck current authority and membership after reaching the target's region;
+approval also rechecks the token before using it.
+
+Shared invite, request, cooldown, and leadership stores synchronize their
+operations. Client handshake sets and invite attribution use concurrent
+collections. Deferred broadcasts read current state in the recipient's region
+so queued transitions cannot restore stale membership on the client.
+
+Expired tokens are cleaned up by the global region scheduler. Native group
+removal is reconciled until SVC confirms deletion or another listener cancels
+it: the global region can tick before the originating event finishes. Cleanup
+after a player's manual group change waits for that player's next tick.
+Shutdown cancels global tasks and bStats; queued player callbacks check whether
+the plugin is still enabled. bStats 3.2.1 handles Folia internally.
+
+CI checks the identical packaged JAR on both Paper and Folia. Full runs cover
+every catalogued SVC artifact, and smoke runs cover the oldest and newest for
+each Minecraft version. Startup checks keep servers running long enough to
+exercise the periodic cleanup, then stop them normally. Unit tests separately
+exercise deferred cross-region operations; startup smoke tests do not replace
+multiplayer voice and client UI testing.

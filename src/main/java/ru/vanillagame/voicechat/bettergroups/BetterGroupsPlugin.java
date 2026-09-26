@@ -27,6 +27,7 @@ public final class BetterGroupsPlugin extends JavaPlugin implements Listener {
     private GroupMuteService groupMute;
     private JoinNotifier joinNotifier;
     private PluginTranslations translations;
+    private Metrics metrics;
 
     @Override
     public void onEnable() {
@@ -75,13 +76,16 @@ public final class BetterGroupsPlugin extends JavaPlugin implements Listener {
         groupSync.register();
         groupMute.register();
         getServer().getPluginManager().registerEvents(this, this);
-        getServer().getScheduler().runTaskTimer(this, this::cleanupExpiredState, 20L * 60L, 20L * 60L);
-        new Metrics(this, BSTATS_PLUGIN_ID);
+        getServer().getGlobalRegionScheduler().runAtFixedRate(this,
+                task -> cleanupExpiredState(), 20L * 60L, 20L * 60L);
+        metrics = new Metrics(this, BSTATS_PLUGIN_ID);
         getLogger().info("Simple Voice Chat Group Management enabled.");
     }
 
     @Override
     public void onDisable() {
+        getServer().getGlobalRegionScheduler().cancelTasks(this);
+        if (metrics != null) metrics.shutdown();
         if (translations != null) {
             translations.unregister();
         }

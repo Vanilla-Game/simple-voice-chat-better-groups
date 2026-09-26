@@ -43,16 +43,20 @@ module VoicechatCompatibilityUpdate
     end
 
     grouped(server_candidates, "minecraft").each do |minecraft, candidates|
-      green, failed = green_prefix(candidates) do |candidate|
-        result_ok?(results_directory, ["server", "paper", minecraft, candidate.fetch("artifact")])
-      end
-      messages << "Stopping Bukkit #{minecraft} at #{failed.fetch('artifact')}: compatibility check failed." if failed
-      next if green.empty?
-
       target = catalog.fetch("server").fetch("targets").find do |entry|
         entry.fetch("minecraft") == minecraft
       end
       raise KeyError, "unknown server target #{minecraft.inspect}" unless target
+
+      green, failed = green_prefix(candidates) do |candidate|
+        platforms = ["paper"]
+        platforms << "folia" if target.key?("foliaBuild")
+        platforms.all? do |platform|
+          result_ok?(results_directory, ["server", platform, minecraft, candidate.fetch("artifact")])
+        end
+      end
+      messages << "Stopping Bukkit #{minecraft} at #{failed.fetch('artifact')}: compatibility check failed." if failed
+      next if green.empty?
 
       green.each do |candidate|
         target.fetch("voicechatArtifacts") << candidate.fetch("artifact")

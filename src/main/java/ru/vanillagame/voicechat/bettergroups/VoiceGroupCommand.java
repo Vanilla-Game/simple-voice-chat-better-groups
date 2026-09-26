@@ -206,9 +206,12 @@ final class VoiceGroupCommand {
                     .append(Component.space())
                     .append(Messages.component(Messages.INVITE_SWITCH_WARNING, NamedTextColor.GOLD));
         }
-        target.sendMessage(inviteMessage);
-        playNotificationSound(target, settings.inviteSound(),
-                settings.inviteSoundVolume(), settings.inviteSoundPitch());
+        Component notification = inviteMessage;
+        PlayerTasks.run(plugin, target, () -> {
+            target.sendMessage(notification);
+            playNotificationSound(target, settings.inviteSound(),
+                    settings.inviteSoundVolume(), settings.inviteSoundPitch());
+        });
         inviter.sendMessage(Messages.component(
                 Messages.INVITE_SENT,
                 NamedTextColor.GREEN,
@@ -319,31 +322,44 @@ final class VoiceGroupCommand {
             return;
         }
 
-        VoicechatConnection targetConnection = api.getConnectionOf(target.getUniqueId());
-        Group targetGroup = targetConnection == null ? null : targetConnection.getGroup();
-        if (targetGroup == null || !targetGroup.getId().equals(leaderGroup.getId())) {
-            leader.sendMessage(Messages.component(
-                    Messages.KICK_TARGET_NOT_MEMBER,
-                    NamedTextColor.RED,
+        // The leader and target can be in different Folia regions. Recheck authority
+        // and membership when the target task executes, using fresh SVC snapshots.
+        PlayerTasks.run(plugin, target, () -> {
+            if (plugin.getVoicechatApi() != api) return;
+            VoicechatConnection currentLeader = api.getConnectionOf(leader.getUniqueId());
+            if (!leader.isOnline() || currentLeader == null || currentLeader.getGroup() == null
+                    || !leaderGroup.getId().equals(currentLeader.getGroup().getId())
+                    || leadership.authorize(leaderGroup.getId(), leader.getUniqueId())
+                        != GroupLeadershipRegistry.Authorization.LEADER) {
+                sendMessage(leader, Messages.component(Messages.KICK_NOT_LEADER, NamedTextColor.RED));
+                return;
+            }
+            VoicechatConnection targetConnection = api.getConnectionOf(target.getUniqueId());
+            Group targetGroup = targetConnection == null ? null : targetConnection.getGroup();
+            if (targetGroup == null || !targetGroup.getId().equals(leaderGroup.getId())) {
+                sendMessage(leader, Messages.component(
+                        Messages.KICK_TARGET_NOT_MEMBER,
+                        NamedTextColor.RED,
+                        Component.text(target.getName())
+                ));
+                return;
+            }
+
+            targetConnection.setGroup(null);
+            // VoicechatConnection is a snapshot. Re-fetch it after a mutation to observe the new state.
+            VoicechatConnection updatedTargetConnection = api.getConnectionOf(target.getUniqueId());
+            if (updatedTargetConnection == null || updatedTargetConnection.getGroup() != null) {
+                sendMessage(leader, Messages.component(Messages.KICK_FAILED, NamedTextColor.RED));
+                return;
+            }
+
+            sendMessage(leader, Messages.component(
+                    Messages.KICK_SUCCESS,
+                    NamedTextColor.GREEN,
                     Component.text(target.getName())
             ));
-            return;
-        }
-
-        targetConnection.setGroup(null);
-        // VoicechatConnection is a snapshot. Re-fetch it after a mutation to observe the new state.
-        VoicechatConnection updatedTargetConnection = api.getConnectionOf(target.getUniqueId());
-        if (updatedTargetConnection == null || updatedTargetConnection.getGroup() != null) {
-            leader.sendMessage(Messages.component(Messages.KICK_FAILED, NamedTextColor.RED));
-            return;
-        }
-
-        leader.sendMessage(Messages.component(
-                Messages.KICK_SUCCESS,
-                NamedTextColor.GREEN,
-                Component.text(target.getName())
-        ));
-        target.sendMessage(Messages.component(Messages.KICK_TARGET_NOTIFICATION, NamedTextColor.YELLOW));
+            target.sendMessage(Messages.component(Messages.KICK_TARGET_NOTIFICATION, NamedTextColor.YELLOW));
+        });
     }
 
     private void transfer(Player leader, String targetName, VoicechatServerApi api) {
@@ -461,7 +477,7 @@ final class VoiceGroupCommand {
                 .decorate(TextDecoration.BOLD)
                 .clickEvent(ClickEvent.runCommand("/voicegroup approve " + token))
                 .hoverEvent(Messages.component(Messages.REQUEST_ACCEPT_HOVER, NamedTextColor.GRAY));
-        leader.sendMessage(
+        Component notification =
                 Messages.component(
                                 Messages.REQUEST_RECEIVED,
                                 NamedTextColor.YELLOW,
@@ -474,10 +490,12 @@ final class VoiceGroupCommand {
                                 Messages.REQUEST_EXPIRES,
                                 NamedTextColor.GRAY,
                                 Component.text(settings.requestExpirationMinutes())
-                        ))
-        );
-        playNotificationSound(leader, settings.requestSound(),
-                settings.requestSoundVolume(), settings.requestSoundPitch());
+                        ));
+        PlayerTasks.run(plugin, leader, () -> {
+            leader.sendMessage(notification);
+            playNotificationSound(leader, settings.requestSound(),
+                    settings.requestSoundVolume(), settings.requestSoundPitch());
+        });
         requester.sendMessage(Messages.component(Messages.REQUEST_SENT, NamedTextColor.GREEN));
     }
 
@@ -520,33 +538,58 @@ final class VoiceGroupCommand {
             approver.sendMessage(Messages.component(Messages.APPROVE_REQUESTER_OFFLINE, NamedTextColor.RED));
             return;
         }
-        VoicechatConnection requesterConnection = api.getConnectionOf(requester.getUniqueId());
-        if (requesterConnection == null) {
-            approver.sendMessage(Messages.component(Messages.CONNECTION_TARGET_UNAVAILABLE, NamedTextColor.RED));
-            return;
-        }
-        if (requesterConnection.getGroup() != null) {
+        PlayerTasks.run(plugin, requester, () -> {
+            if (plugin.getVoicechatApi() != api) return;
+            // The token may expire or be consumed, and leadership may change while queued.
+            RequestStore.Lookup current = requests.lookup(token);
+            if (current.status() != RequestStore.LookupStatus.VALID
+                    || !request.equals(current.request())) {
+                sendMessage(approver, Messages.component(Messages.REQUEST_NOT_FOUND, NamedTextColor.RED));
+                return;
+            }
+            if (!approver.isOnline() || leadership.authorize(request.groupId(), approver.getUniqueId())
+                    != GroupLeadershipRegistry.Authorization.LEADER) {
+                sendMessage(approver, Messages.component(Messages.APPROVE_NOT_LEADER, NamedTextColor.RED));
+                return;
+            }
+            Group currentGroup = api.getGroup(request.groupId());
+            if (currentGroup == null) {
+                requests.invalidateGroup(request.groupId());
+                sendMessage(approver, Messages.component(Messages.GROUP_NO_LONGER_EXISTS, NamedTextColor.RED));
+                return;
+            }
+            VoicechatConnection requesterConnection = api.getConnectionOf(requester.getUniqueId());
+            if (requesterConnection == null) {
+                sendMessage(approver, Messages.component(Messages.CONNECTION_TARGET_UNAVAILABLE, NamedTextColor.RED));
+                return;
+            }
+            if (requesterConnection.getGroup() != null) {
+                requests.consume(token, request);
+                sendMessage(approver, Messages.component(
+                        Messages.APPROVE_REQUESTER_IN_GROUP,
+                        NamedTextColor.RED,
+                        Component.text(requester.getName())
+                ));
+                return;
+            }
+
+            requesterConnection.setGroup(currentGroup);
+            // VoicechatConnection is a snapshot. Re-fetch it after a mutation to observe the new state.
+            VoicechatConnection updatedConnection = api.getConnectionOf(requester.getUniqueId());
+            Group joinedGroup = updatedConnection == null ? null : updatedConnection.getGroup();
+            if (joinedGroup == null || !joinedGroup.getId().equals(request.groupId())) {
+                sendMessage(approver, Messages.component(Messages.APPROVE_FAILED, NamedTextColor.RED));
+                return;
+            }
+
             requests.consume(token, request);
-            approver.sendMessage(Messages.component(
-                    Messages.APPROVE_REQUESTER_IN_GROUP,
-                    NamedTextColor.RED,
-                    Component.text(requester.getName())
-            ));
-            return;
-        }
+            requests.invalidateRequester(requester.getUniqueId());
+            requester.sendMessage(Messages.component(Messages.APPROVE_JOINED, NamedTextColor.GREEN));
+        });
+    }
 
-        requesterConnection.setGroup(group);
-        // VoicechatConnection is a snapshot. Re-fetch it after a mutation to observe the new state.
-        VoicechatConnection updatedConnection = api.getConnectionOf(requester.getUniqueId());
-        Group joinedGroup = updatedConnection == null ? null : updatedConnection.getGroup();
-        if (joinedGroup == null || !joinedGroup.getId().equals(request.groupId())) {
-            approver.sendMessage(Messages.component(Messages.APPROVE_FAILED, NamedTextColor.RED));
-            return;
-        }
-
-        requests.consume(token, request);
-        requests.invalidateRequester(requester.getUniqueId());
-        requester.sendMessage(Messages.component(Messages.APPROVE_JOINED, NamedTextColor.GREEN));
+    private void sendMessage(Player player, Component message) {
+        PlayerTasks.run(plugin, player, () -> player.sendMessage(message));
     }
 
     private record GroupResolution(Group group, boolean ambiguous) {

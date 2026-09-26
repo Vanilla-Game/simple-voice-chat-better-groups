@@ -44,6 +44,7 @@ class VoiceGroupCommandTest {
     @Test
     void inviteCooldownThrottlesRepeatInvitesToSameTargetOnly() {
         BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
+        when(plugin.isEnabled()).thenReturn(true);
         InviteStore invites = mock(InviteStore.class);
         GroupLeadershipRegistry leadership = new GroupLeadershipRegistry();
         InviteCooldownStore cooldowns = new InviteCooldownStore(
@@ -79,6 +80,7 @@ class VoiceGroupCommandTest {
         );
 
         try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
+            bukkit.when(() -> Bukkit.isOwnedByCurrentRegion(any(Player.class))).thenReturn(true);
             bukkit.when(() -> Bukkit.getPlayerExact("Target")).thenReturn(target);
             bukkit.when(() -> Bukkit.getPlayerExact("Other")).thenReturn(other);
 
@@ -100,6 +102,7 @@ class VoiceGroupCommandTest {
     @Test
     void acceptMutatesThenRechecksSnapshotAndConsumesInvite() {
         BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
+        when(plugin.isEnabled()).thenReturn(true);
         UUID playerId = UUID.randomUUID();
         UUID groupId = UUID.randomUUID();
         Player player = player("Target", playerId);
@@ -127,6 +130,7 @@ class VoiceGroupCommandTest {
     @Test
     void inviteReachesTargetsInOtherGroupsButNotOwnGroupMembers() {
         BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
+        when(plugin.isEnabled()).thenReturn(true);
         InviteStore invites = mock(InviteStore.class);
         Player inviter = player("Inviter");
         Player busy = player("Busy");
@@ -149,6 +153,7 @@ class VoiceGroupCommandTest {
         VoiceGroupCommand command = command(plugin, invites, new GroupLeadershipRegistry());
 
         try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
+            bukkit.when(() -> Bukkit.isOwnedByCurrentRegion(any(Player.class))).thenReturn(true);
             bukkit.when(() -> Bukkit.getPlayerExact("Busy")).thenReturn(busy);
             bukkit.when(() -> Bukkit.getPlayerExact("Member")).thenReturn(member);
 
@@ -165,6 +170,7 @@ class VoiceGroupCommandTest {
     @Test
     void acceptSwitchesGroupsWhenAlreadyInAnotherOne() {
         BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
+        when(plugin.isEnabled()).thenReturn(true);
         UUID playerId = UUID.randomUUID();
         UUID newGroupId = UUID.randomUUID();
         Player player = player("Switcher", playerId);
@@ -193,6 +199,7 @@ class VoiceGroupCommandTest {
     @Test
     void leaderKickMutatesThenRechecksSnapshot() {
         BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
+        when(plugin.isEnabled()).thenReturn(true);
         Player leader = player("Leader");
         Player target = player("Target");
         Group group = group();
@@ -208,6 +215,7 @@ class VoiceGroupCommandTest {
         VoiceGroupCommand command = command(plugin, mock(InviteStore.class), leadership);
 
         try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
+            bukkit.when(() -> Bukkit.isOwnedByCurrentRegion(any(Player.class))).thenReturn(true);
             bukkit.when(() -> Bukkit.getPlayerExact("Target")).thenReturn(target);
             execute(command, leader, "voicegroup kick Target");
         }
@@ -220,6 +228,7 @@ class VoiceGroupCommandTest {
     @Test
     void transferCommandPromotesGroupMember() {
         BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
+        when(plugin.isEnabled()).thenReturn(true);
         Player leader = player("Leader");
         Player target = player("Target");
         Group group = group();
@@ -235,6 +244,7 @@ class VoiceGroupCommandTest {
         VoiceGroupCommand command = command(plugin, mock(InviteStore.class), leadership);
 
         try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
+            bukkit.when(() -> Bukkit.isOwnedByCurrentRegion(any(Player.class))).thenReturn(true);
             bukkit.when(() -> Bukkit.getPlayerExact("Target")).thenReturn(target);
             execute(command, leader, "voicegroup transfer Target");
         }
@@ -254,6 +264,7 @@ class VoiceGroupCommandTest {
     @Test
     void requestThenLeaderApproveJoinsTheRequester() {
         BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
+        when(plugin.isEnabled()).thenReturn(true);
         Player leader = player("Leader");
         Player requester = player("Requester");
         Group group = group();
@@ -286,6 +297,7 @@ class VoiceGroupCommandTest {
         );
 
         try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
+            bukkit.when(() -> Bukkit.isOwnedByCurrentRegion(any(Player.class))).thenReturn(true);
             bukkit.when(() -> Bukkit.getPlayer(leader.getUniqueId())).thenReturn(leader);
             bukkit.when(() -> Bukkit.getPlayer(requester.getUniqueId())).thenReturn(requester);
             when(leader.isOnline()).thenReturn(true);
@@ -311,6 +323,7 @@ class VoiceGroupCommandTest {
     @Test
     void requestIsRejectedForGroupsWithoutPassword() {
         BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
+        when(plugin.isEnabled()).thenReturn(true);
         Player requester = player("Requester");
         Group group = group();
         when(group.getName()).thenReturn("Open");
@@ -341,6 +354,7 @@ class VoiceGroupCommandTest {
     @Test
     void tabCompletionIsGroupAware() {
         BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
+        when(plugin.isEnabled()).thenReturn(true);
         Player viewer = player("Viewer");
         Player groupmate = player("Groupmate");
         Player outsider = player("Outsider");
@@ -358,6 +372,7 @@ class VoiceGroupCommandTest {
         VoiceGroupCommand command = command(plugin, mock(InviteStore.class), new GroupLeadershipRegistry());
 
         try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
+            bukkit.when(() -> Bukkit.isOwnedByCurrentRegion(any(Player.class))).thenReturn(true);
             bukkit.when(Bukkit::getOnlinePlayers).thenReturn(List.of(viewer, groupmate, outsider));
 
             assertEquals(
@@ -390,6 +405,7 @@ class VoiceGroupCommandTest {
 
         List<String> completions;
         try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
+            bukkit.when(() -> Bukkit.isOwnedByCurrentRegion(any(Player.class))).thenReturn(true);
             bukkit.when(Bukkit::getOnlinePlayers).thenReturn(List.of(visible, hidden));
             completions = suggest(command, viewer, "voicegroup invite ");
         }
@@ -401,6 +417,7 @@ class VoiceGroupCommandTest {
     @Test
     void brigadierRejectsMissingExtraAndUnknownArgumentsBeforeExecution() {
         BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
+        when(plugin.isEnabled()).thenReturn(true);
         VoiceGroupCommand command = command(plugin, mock(InviteStore.class), new GroupLeadershipRegistry());
         CommandDispatcher<CommandSourceStack> dispatcher = dispatcher(command);
         CommandSourceStack source = source(player("Viewer"));
@@ -419,6 +436,7 @@ class VoiceGroupCommandTest {
     @Test
     void permissionRequirementBlocksExecutionAndCompletion() {
         BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
+        when(plugin.isEnabled()).thenReturn(true);
         Player player = player("Viewer");
         when(player.hasPermission("vanillagame.svc_better_groups.use")).thenReturn(false);
         VoiceGroupCommand command = command(plugin, mock(InviteStore.class), new GroupLeadershipRegistry());
@@ -432,6 +450,7 @@ class VoiceGroupCommandTest {
     @Test
     void consoleRemainsPlayerOnlyEvenWithAPlayerExecutor() {
         BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
+        when(plugin.isEnabled()).thenReturn(true);
         CommandSender console = mock(CommandSender.class);
         when(console.hasPermission("vanillagame.svc_better_groups.use")).thenReturn(true);
         CommandSourceStack source = source(console);
@@ -446,6 +465,7 @@ class VoiceGroupCommandTest {
     @Test
     void rootUsageAndUnavailableVoiceChatKeepLocalizedMessages() {
         BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
+        when(plugin.isEnabled()).thenReturn(true);
         Player player = player("Viewer");
         VoiceGroupCommand command = command(plugin, mock(InviteStore.class), new GroupLeadershipRegistry());
         execute(command, player, "voicegroup");
@@ -457,6 +477,7 @@ class VoiceGroupCommandTest {
     @Test
     void requestAcceptsGroupUuid() {
         BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
+        when(plugin.isEnabled()).thenReturn(true);
         VoicechatServerApi api = mock(VoicechatServerApi.class);
         when(plugin.getVoicechatApi()).thenReturn(api);
         Player player = player("Viewer");
@@ -472,6 +493,7 @@ class VoiceGroupCommandTest {
     @Test
     void groupSuggestionsReplaceTheWholeMultiWordArgumentAndHidePrivateGroups() {
         BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
+        when(plugin.isEnabled()).thenReturn(true);
         VoicechatServerApi api = mock(VoicechatServerApi.class);
         when(plugin.getVoicechatApi()).thenReturn(api);
         Group visible = group();
@@ -539,6 +561,7 @@ class VoiceGroupCommandTest {
     private static Player player(String name, UUID playerId) {
         Player player = mock(Player.class);
         when(player.getName()).thenReturn(name);
+        when(player.isOnline()).thenReturn(true);
         when(player.getUniqueId()).thenReturn(playerId);
         when(player.hasPermission("vanillagame.svc_better_groups.use")).thenReturn(true);
         return player;

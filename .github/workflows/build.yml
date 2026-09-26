@@ -151,6 +151,12 @@ jobs:
               build: $target.paperBuild,
               voicechatArtifact: .
             }]' compatibility.json)
+            folia=$(jq -c '[.server.targets[] as $target | $target.voicechatArtifacts[] | {
+              platform: "folia",
+              minecraft: $target.minecraft,
+              build: $target.foliaBuild,
+              voicechatArtifact: .
+            }]' compatibility.json)
             leaf=$(jq -c '[.server.targets[] as $target
               | [$target.voicechatArtifacts[0], $target.voicechatArtifacts[-1]][]
               | {
@@ -163,7 +169,8 @@ jobs:
             test "$(jq 'length' <<< "$fabric")" -ge 49
             test "$(jq 'length' <<< "$paper")" -ge 9
             test "$(jq 'length' <<< "$leaf")" -eq 4
-            server=$(jq -cn --argjson paper "$paper" --argjson leaf "$leaf" '$paper + $leaf')
+            test "$(jq 'length' <<< "$folia")" -eq "$(jq 'length' <<< "$paper")"
+            server=$(jq -cn --argjson paper "$paper" --argjson folia "$folia" --argjson leaf "$leaf" '$paper + $folia + $leaf')
           elif [ "$MODE" = smoke ]; then
             fabric=$(jq -c '[.fabric.targets[] as $target
               | [$target.compatibility[0], $target.compatibility[-1]][]
@@ -174,16 +181,17 @@ jobs:
                 }
             ]' compatibility.json)
             server=$(jq -c '[.server.targets[] as $target
-              | [$target.voicechatArtifacts[0], $target.voicechatArtifacts[-1]][]
+              | [$target.voicechatArtifacts[0], $target.voicechatArtifacts[-1]][] as $voicechat
+              | ["paper", "folia"][] as $platform
               | {
-                  platform: "paper",
+                  platform: $platform,
                   minecraft: $target.minecraft,
-                  build: $target.paperBuild,
-                  voicechatArtifact: .
+                  build: $target[($platform + "Build")],
+                  voicechatArtifact: $voicechat
                 }
             ]' compatibility.json)
             test "$(jq 'length' <<< "$fabric")" -eq 6
-            test "$(jq 'length' <<< "$server")" -eq 4
+            test "$(jq 'length' <<< "$server")" -eq 8
           else
             echo "Unsupported compatibility mode: $MODE" >&2
             exit 1

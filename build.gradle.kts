@@ -135,6 +135,7 @@ val validateCompatibilityCatalog = tasks.register("validateCompatibilityCatalog"
             checkPatches(artifacts, "bukkit", "Server ${target["minecraft"]}", contiguous = false)
             check((target.getValue("paperBuild") as Number).toInt() > 0)
             check((target.getValue("leafBuild") as Number).toInt() > 0)
+            check((target.getValue("foliaBuild") as Number).toInt() > 0)
         }
 
         val fabric = compatibilityCatalog.getValue("fabric") as Map<String, Any?>
@@ -242,6 +243,7 @@ val stageReleaseArtifacts = tasks.register<Sync>("stageReleaseArtifacts") {
 
         val serverMetadata = zipText(staged.single { it.name.startsWith("svc-better-groups-$pluginVersion") }, "plugin.yml")
         check("api-version: \"26.1.2\"" in serverMetadata) { "Server plugin.yml has the wrong api-version" }
+        check("folia-supported: true" in serverMetadata) { "Server plugin must declare Folia support" }
         ZipFile(staged.single { it.name.startsWith("svc-better-groups-$pluginVersion") }).use { zip ->
             val entries = zip.entries().asSequence().map { it.name }.toList()
             check(entries.any { it.startsWith("ru/vanillagame/voicechat/bettergroups/lib/bstats/") }) {

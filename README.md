@@ -9,7 +9,7 @@
 
 Better group controls for [Simple Voice Chat](https://modrepo.de/minecraft/voicechat/): password-free invites, join requests, group leaders, member removal, and leadership transfer.
 
-The Paper plugin handles group management through chat commands. The optional Fabric mod adds buttons, a leader crown, and a group pause with password-free return.
+The Paper/Folia plugin handles group management through chat commands. The optional Fabric mod adds buttons, a leader crown, and a group pause with password-free return.
 
 ## ✨ Features
 
@@ -29,16 +29,16 @@ The Paper plugin handles group management through chat commands. The optional Fa
 
 <!-- generated:server-downloads:start -->
 
-| Artifact                                                                                                                                                 | Minecraft | Server software            | Java  | Simple Voice Chat                           |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- | -------------------------- | ----- | ------------------------------------------- |
-| [`svc-better-groups-0.11.1.jar`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.11.1/svc-better-groups-0.11.1.jar) | `26.1.2`  | Paper; Leaf (experimental) | `25`+ | Bukkit `2.6.16`–`2.6.21`, `2.6.23`–`2.6.24` |
-| [`svc-better-groups-0.11.1.jar`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.11.1/svc-better-groups-0.11.1.jar) | `26.2`    | Paper; Leaf (experimental) | `25`+ | Bukkit `2.6.19`–`2.6.21`, `2.6.23`–`2.6.24` |
+| Artifact                                                                                                                                                 | Minecraft | Server software                   | Java  | Simple Voice Chat                           |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- | --------------------------------- | ----- | ------------------------------------------- |
+| [`svc-better-groups-0.11.1.jar`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.11.1/svc-better-groups-0.11.1.jar) | `26.1.2`  | Paper; Folia; Leaf (experimental) | `25`+ | Bukkit `2.6.16`–`2.6.21`, `2.6.23`–`2.6.24` |
+| [`svc-better-groups-0.11.1.jar`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.11.1/svc-better-groups-0.11.1.jar) | `26.2`    | Paper; Folia; Leaf (experimental) | `25`+ | Bukkit `2.6.19`–`2.6.21`, `2.6.23`–`2.6.24` |
 
 <!-- generated:server-downloads:end -->
 
 <!-- modrinth:exclude:end -->
 
-Place the server artifact in the server's `plugins` directory and restart the server. Simple Voice Chat is a required dependency.
+Place the server artifact in the server's `plugins` directory and restart the server. Simple Voice Chat is a required dependency. The same server JAR runs on Paper and Folia; no extra scheduler library or configuration is needed.
 
 ### Client (optional)
 
@@ -105,4 +105,4 @@ The `vanillagame.svc_better_groups.use` permission allows `/voicegroup` and is g
 
 ## Development
 
-Run `./gradlew build` to execute the tests and build the Paper plugin and all three Fabric variants. Release artifacts are staged in `build/release/`.
+Run `./gradlew build` to execute the tests and build the Paper/Folia plugin and all three Fabric variants. Release artifacts are staged in `build/release/`.

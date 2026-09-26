@@ -3,6 +3,10 @@ package ru.vanillagame.voicechat.bettergroups;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
+import java.util.Set;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -10,6 +14,32 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class GroupLeadershipRegistryTest {
+
+    @Test
+    void simultaneousReturnsElectOneLeaderAndTrackBothMembers() throws Exception {
+        GroupLeadershipRegistry registry = new GroupLeadershipRegistry();
+        UUID group = UUID.randomUUID();
+        UUID first = UUID.randomUUID();
+        UUID second = UUID.randomUUID();
+        var barrier = new CyclicBarrier(2);
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            var a = executor.submit(() -> {
+                barrier.await(5, TimeUnit.SECONDS);
+                return registry.join(group, first, true);
+            });
+            var b = executor.submit(() -> {
+                barrier.await(5, TimeUnit.SECONDS);
+                return registry.join(group, second, true);
+            });
+            var firstTransition = a.get(5, TimeUnit.SECONDS);
+            var secondTransition = b.get(5, TimeUnit.SECONDS);
+            assertEquals(1, firstTransition.leadershipChanges().size() + secondTransition.leadershipChanges().size());
+        }
+        assertEquals(Set.of(first, second), Set.copyOf(registry.membersOf(group)));
+        assertTrue(Set.of(first, second).contains(registry.leaderOf(group)));
+        assertEquals(group, registry.stateFor(first).groupId());
+        assertEquals(group, registry.stateFor(second).groupId());
+    }
 
     @Test
     void creatorIsInitialLeaderAndOtherMembersAreNotAuthorized() {
