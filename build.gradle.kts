@@ -140,10 +140,10 @@ val validateCompatibilityCatalog = tasks.register("validateCompatibilityCatalog"
 
         val fabric = compatibilityCatalog.getValue("fabric") as Map<String, Any?>
         val fabricTargets = fabric.getValue("targets") as List<Map<String, Any?>>
-        check(fabricTargets.map { it.getValue("id") } == listOf("1.21.11", "26.1", "26.2")) {
-            "Fabric targets must be exactly 1.21.11, 26.1, and 26.2"
+        check(fabricTargets.map { it.getValue("id") } == listOf("1.21.11", "26.1", "26.2", "26.3")) {
+            "Fabric targets must be exactly 1.21.11, 26.1, 26.2, and 26.3"
         }
-        val expectedRows = mapOf("1.21.11" to 17, "26.1" to 27, "26.2" to 5)
+        val expectedRows = mapOf("1.21.11" to 17, "26.1" to 27, "26.2" to 5, "26.3" to 2)
         fabricTargets.forEach { target ->
             val id = target.getValue("id") as String
             val rows = target.getValue("compatibility") as List<Map<String, String>>

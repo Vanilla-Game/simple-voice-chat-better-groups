@@ -117,7 +117,7 @@ jobs:
         if: ${{ steps.release_context.outputs.active == 'true' }}
         run: ./gradlew --no-daemon clean build stageReleaseArtifacts --warning-mode all
 
-      - name: Attach the four jars to the GitHub release
+      - name: Attach the release jars to the GitHub release
         if: ${{ steps.release_context.outputs.active == 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -144,17 +144,19 @@ jobs:
           fabric_1_21_11_games=$(jq -r '.fabric.targets[] | select(.id == "1.21.11") | .releaseMinecraftVersions[]' compatibility.json)
           fabric_26_1_games=$(jq -r '.fabric.targets[] | select(.id == "26.1") | .releaseMinecraftVersions[]' compatibility.json)
           fabric_26_2_games=$(jq -r '.fabric.targets[] | select(.id == "26.2") | .releaseMinecraftVersions[]' compatibility.json)
+          fabric_26_3_games=$(jq -r '.fabric.targets[] | select(.id == "26.3") | .releaseMinecraftVersions[]' compatibility.json)
           curl -fsSL \
             -H "Authorization: $MODRINTH_TOKEN" \
             -H 'User-Agent: Vanilla-Game/simple-voice-chat-better-groups release workflow' \
             'https://api.modrinth.com/v2/project/scOrYDTf/version' > modrinth-versions.json
           output_lines=()
-          for kind in paper fabric_1_21_11 fabric_26_1 fabric_26_2; do
+          for kind in paper fabric_1_21_11 fabric_26_1 fabric_26_2 fabric_26_3; do
             case "$kind" in
               paper) version="paper-${RELEASE_VERSION}+26.1.2" ;;
               fabric_1_21_11) version="fabric-${RELEASE_VERSION}+1.21.11" ;;
               fabric_26_1) version="fabric-${RELEASE_VERSION}+26.1" ;;
               fabric_26_2) version="fabric-${RELEASE_VERSION}+26.2" ;;
+              fabric_26_3) version="fabric-${RELEASE_VERSION}+26.3" ;;
             esac
             publish=true
             if jq -e --arg version "$version" 'any(.[]; .version_number == $version)' modrinth-versions.json >/dev/null; then
@@ -177,6 +179,9 @@ jobs:
             echo 'fabric_26_2_games<<EOF_FABRIC_26_2_GAMES'
             echo "$fabric_26_2_games"
             echo 'EOF_FABRIC_26_2_GAMES'
+            echo 'fabric_26_3_games<<EOF_FABRIC_26_3_GAMES'
+            echo "$fabric_26_3_games"
+            echo 'EOF_FABRIC_26_3_GAMES'
           } > "$GITHUB_OUTPUT"
 
       - name: Publish server plugin to Modrinth
@@ -251,6 +256,24 @@ jobs:
             fabric-api(required)
           changelog-file: changelog.md
 
+      - name: Publish Fabric 26.3 client to Modrinth
+        if: ${{ steps.release_context.outputs.active == 'true' && steps.modrinth.outputs.fabric_26_3_publish == 'true' }}
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          modrinth-id: scOrYDTf
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          files: build/release/svc-better-groups-fabric-26.3-${{ steps.release_context.outputs.version }}.jar
+          name: "Simple Voice Chat Better Groups ${{ steps.release_context.outputs.version }}"
+          version: ${{ steps.modrinth.outputs.fabric_26_3_version }}
+          version-type: release
+          environment: client
+          loaders: fabric
+          game-versions: ${{ steps.modrinth.outputs.fabric_26_3_games }}
+          dependencies: |
+            simple-voice-chat(required)
+            fabric-api(required)
+          changelog-file: changelog.md
+
       - name: Reconcile featured Modrinth versions
         if: ${{ steps.release_context.outputs.active == 'true' }}
         shell: bash
@@ -258,6 +281,7 @@ jobs:
           FABRIC_1_21_11_VERSION: ${{ steps.modrinth.outputs.fabric_1_21_11_version }}
           FABRIC_26_1_VERSION: ${{ steps.modrinth.outputs.fabric_26_1_version }}
           FABRIC_26_2_VERSION: ${{ steps.modrinth.outputs.fabric_26_2_version }}
+          FABRIC_26_3_VERSION: ${{ steps.modrinth.outputs.fabric_26_3_version }}
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
           PAPER_VERSION: ${{ steps.modrinth.outputs.paper_version }}
         run: |
@@ -277,6 +301,7 @@ jobs:
             "$FABRIC_1_21_11_VERSION" \
             "$FABRIC_26_1_VERSION" \
             "$FABRIC_26_2_VERSION" \
+            "$FABRIC_26_3_VERSION" \
             > modrinth-unfeature-ids.txt
           mapfile -t unfeature_ids < modrinth-unfeature-ids.txt
 
