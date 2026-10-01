@@ -142,7 +142,7 @@ final class VoiceGroupCommand {
         }
 
         Player target = Bukkit.getPlayerExact(targetName);
-        if (target == null) {
+        if (target == null || !inviter.canSee(target)) {
             inviter.sendMessage(Messages.component(Messages.PLAYER_NOT_ONLINE, NamedTextColor.RED));
             return;
         }
