@@ -6,11 +6,11 @@ Adding these files to GitHub does not upload them to Modrinth.
 
 | Order | Screenshot | Title | Description |
 | --- | --- | --- | --- |
-| 1 | [Player picker](../assets/gallery/01-player-picker.png) | Invite your friends | Find an online player and invite them to your voice group without sharing its password. Requires the optional Better Groups Fabric client. |
-| 2 | [Chat invitation](../assets/gallery/02-chat-invitation.png) | Join with one click | Accept an invitation directly in Minecraft chat. Invitations work with the standard Simple Voice Chat client too. |
-| 3 | [Group management](../assets/gallery/03-group-management.png) | Manage your group | See who leads the group and remove members using the leader's client controls. Leadership can also be transferred with a command. The crown and removal button require the optional Better Groups Fabric client. |
-| 4 | [Join request](../assets/gallery/04-join-request.png) | Ask to join | Don't know the password? Request access from the group leader instead. This button requires the optional Better Groups Fabric client. |
-| 5 | [Pause and return](../assets/gallery/05-pause-return.png) | Step away and come back | Pause your group conversation to use proximity chat, then return with one button. Requires the optional Better Groups Fabric client. |
+| 1 | [Player picker](../assets/gallery/01-player-picker.png) | Invite players | Pick a friend to invite. Requires the Fabric add-on. |
+| 2 | [Chat invitation](../assets/gallery/02-chat-invitation.png) | Chat invitations | Click Accept to join without a password. |
+| 3 | [Group management](../assets/gallery/03-group-management.png) | Group management | See the leader and remove members. Requires the Fabric add-on. |
+| 4 | [Join request](../assets/gallery/04-join-request.png) | Join requests | Ask the leader for access. Requires the Fabric add-on. |
+| 5 | [Pause and return](../assets/gallery/05-pause-return.png) | Pause and return | Switch to proximity chat and back. Requires the Fabric add-on. |
 
 ## Capture environment
 
