@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.1](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/compare/v0.13.0...v0.13.1) (2026-10-01)
+
+
+### Bug Fixes
+
+* prevent voicegroup invites from revealing hidden players ([#84](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/issues/84)) ([a1235bb](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/commit/a1235bb8fa6cac6c859cba2fc135c2cf093e2c64))
+
 ## [0.13.0](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/compare/v0.12.0...v0.13.0) (2026-10-01)
 
 
