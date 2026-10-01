@@ -22,9 +22,9 @@ download returned HTTP 429. No game or mod code was changed for recording.
 
 | GIF | Recorded actions | Duration | Size |
 | --- | --- | --- | --- |
-| `assets/demo-invite.gif` | Alex opens **+**, selects Steve; switch to Steve's client; Steve clicks **Accept** in chat and opens the group containing both players. | 13.7 s | 1,587,349 bytes |
-| `assets/demo-leadership.gif` | Alex's crown and member removal control; Alex types `/voicegroup transfer Steve`; reopen the group to show Steve's crown. | 12.6 s | 1,413,790 bytes |
-| `assets/demo-pause.gif` | Steve clicks **Ⅱ**, sees nearby Alex in proximity mode, opens the group menu, clicks **Return to group**, and returns with his crown restored. | 14.6 s | 1,202,868 bytes |
+| `assets/demo-invite.gif` | Alex opens **+**, selects Steve; switch to Steve's client; Steve clicks **Accept** in chat and opens the group containing both players. | 13.7 s | 1,041,727 bytes |
+| `assets/demo-leadership.gif` | Alex's crown and member removal control; Alex types `/voicegroup transfer Steve`; reopen the group to show Steve's crown. | 12.7 s | 842,481 bytes |
+| `assets/demo-pause.gif` | Steve clicks **Ⅱ**, sees nearby Alex in proximity mode, opens the group menu, clicks **Return to group**, and returns with his crown restored. | 14.7 s | 743,644 bytes |
 
 `Adventure` is password protected. Neither accepting the invite nor returning
 from pause displays a password prompt. Alex remains in the group while Steve
@@ -33,25 +33,27 @@ the current client has a removal button, not a transfer button.
 
 ## Capture and optimization
 
-Capture each 900 × 700 client window with FFmpeg X11 capture at 15 fps, using
+Capture each 960 × 540 client window with FFmpeg X11 capture at 15 fps, using
 `libx264 -preset ultrafast -crf 16` for the intermediate recording. Switch windows
 by raising and focusing the corresponding X11 window; send real mouse and key
 events with `xdotool`. Keep the client directories and intermediate MP4s outside
 the repository.
 
-For each final GIF, reduce to 10 fps, add a 40-pixel caption strip above the game,
+For each final GIF, reduce to 10 fps, scale to 720 × 405, and add a 31-pixel
+caption strip above the game,
 and use a shared 128-color palette:
 
 ```text
-fps=10,pad=iw:ih+40:0:40:color=0x17212b,
+fps=10,scale=720:405:flags=lanczos,pad=iw:ih+31:0:31:color=0x17212b,
 <drawtext captions>,split[a][b];
 [a]palettegen=stats_mode=diff:max_colors=128[p];
 [b][p]paletteuse=dither=none:diff_mode=rectangle
 ```
 
 Encode with `-loop 0`, then optimize with `gifsicle -O3 --careful`. The final
-900 × 740 GIFs total 4,204,007 bytes, about 38% smaller than the initial
-256-color dithered GIFs. Check the decoded invitation, command, crowns, return
+720 × 436 landscape GIFs total 2,627,852 bytes, about 37% smaller than the
+original 900 × 740 README GIFs. The client was recorded again at the wider
+window size so Minecraft adapts its lists and controls to the available height. Check the decoded invitation, command, crowns, return
 button, and final group states before replacing README links.
 
 Use absolute HTTPS image URLs pinned to the commit containing these assets so
