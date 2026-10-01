@@ -18,8 +18,9 @@ On servers without Better Groups, the client's **+** button uses Simple Voice
 Chat's native invite command. Leadership, join requests, and group pause require
 the Better Groups server plugin.
 
-Chat messages follow each player's Minecraft language, with 15 translations
-available. The pause controls have English and Russian translations.
+Chat messages follow each player's Minecraft language, with
+[15 supported locales](locales.md). The pause controls have English and Russian
+translations.
 
 ## Commands
 

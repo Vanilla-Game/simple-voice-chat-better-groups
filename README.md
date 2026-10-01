@@ -12,6 +12,7 @@
 
 **Your voice group, without the hassle.**
 
+- **15 languages, chosen automatically.** Chat messages follow each player's Minecraft language. [See the supported locales](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/blob/main/docs/locales.md).
 - **Password-free invitations.** Send personal, one-time invitations that expire; recipients accept with a click in chat.
 - **Join requests.** Ask to join a password-protected group and let its leader approve in chat.
 - **Group leaders.** The creator leads the group and can remove members or transfer leadership.
@@ -19,7 +20,6 @@
 - **Group pause and return.** With the optional Fabric client, switch to proximity chat and return without entering the password, restoring your previous leader role.
 - **In-game controls.** The optional Fabric client adds a searchable player picker, leader crowns, member removal buttons, and pause / return buttons and key binds.
 - **Server-side commands.** Use `/voicegroup` without the Better Groups client mod; server owners can control access through permissions.
-- **Localized messages.** Chat follows each player's Minecraft language, with 15 translations. Pause controls support English and Russian.
 - **Configurable notifications.** Adjust invitation and request expiry, cooldowns, and notification sounds.
 
 [![Download](https://img.shields.io/badge/Download-2ea043?style=for-the-badge)](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/latest)
