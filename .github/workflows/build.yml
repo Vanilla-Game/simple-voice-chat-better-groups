@@ -24,6 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       mode: ${{ steps.plan.outputs.mode }}
+      run-client: ${{ steps.plan.outputs.run_client }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -44,22 +45,34 @@ jobs:
           set -euo pipefail
 
           mode=none
+          run_client=false
           : > "$CHANGED_FILES"
 
           if [ "$EVENT_NAME" = workflow_dispatch ]; then
             mode="$INPUT_MODE"
+            if [ "$mode" != none ]; then
+              run_client=true
+            fi
           elif [ "$EVENT_NAME" = pull_request ]; then
+            git diff --name-only "$BASE_SHA"..."$HEAD_SHA" > "$CHANGED_FILES"
+
+            # Server-only changes must not start Minecraft client tests.
+            # Shared build and compatibility inputs can change the Fabric jars too.
+            if grep -Eq \
+              '^(client-fabric/|compatibility\.json$|build\.gradle\.kts$|settings\.gradle\.kts$|gradle\.properties$|gradle/|gradlew(\.bat)?$|\.github/workflows/(build|voicechat-compat|voicechat-discovery)\.yml$|scripts/(apply-voicechat-compatibility-results|voicechat-version-discovery)\.rb$)' \
+              "$CHANGED_FILES"; then
+              run_client=true
+            fi
+
             if [[ "$HEAD_REF" == release-please--branches--main--components--* ]]; then
               mode=full
             else
-              git diff --name-only "$BASE_SHA"..."$HEAD_SHA" > "$CHANGED_FILES"
-
               if grep -Eq \
                 '^(compatibility\.json|\.github/workflows/(build|release-please|voicechat-compat|voicechat-discovery|server-compat)\.yml|scripts/(apply-voicechat-compatibility-results|voicechat-version-discovery)\.rb)$' \
                 "$CHANGED_FILES"; then
                 mode=full
               elif grep -Eq \
-                '^(src/|client-fabric/src/|client-fabric/build\.gradle\.kts$|client-fabric/compat-runner/|client-fabric/targets/|build\.gradle\.kts$|settings\.gradle\.kts$|gradle\.properties$|gradle/|gradlew(\.bat)?$)' \
+                '^(src/|client-fabric/|build\.gradle\.kts$|settings\.gradle\.kts$|gradle\.properties$|gradle/|gradlew(\.bat)?$)' \
                 "$CHANGED_FILES"; then
                 mode=smoke
               fi
@@ -67,8 +80,10 @@ jobs:
           fi
 
           echo "mode=$mode" >> "$GITHUB_OUTPUT"
+          echo "run_client=$run_client" >> "$GITHUB_OUTPUT"
           {
             echo "Compatibility mode: \`$mode\`"
+            echo "Minecraft client tests: \`$run_client\`"
             if [ -s "$CHANGED_FILES" ]; then
               echo
               echo '<details><summary>Changed files</summary>'
@@ -190,7 +205,7 @@ jobs:
                   voicechatArtifact: $voicechat
                 }
             ]' compatibility.json)
-            test "$(jq 'length' <<< "$fabric")" -eq 6
+            test "$(jq 'length' <<< "$fabric")" -eq "$(jq '.fabric.targets | length * 2' compatibility.json)"
             test "$(jq 'length' <<< "$server")" -eq 8
           else
             echo "Unsupported compatibility mode: $MODE" >&2
@@ -204,7 +219,7 @@ jobs:
 
   client-compatibility:
     needs: [build, plan-compatibility, read-compatibility]
-    if: ${{ needs.plan-compatibility.outputs.mode != 'none' }}
+    if: ${{ needs.plan-compatibility.outputs.mode != 'none' && needs.plan-compatibility.outputs.run-client == 'true' }}
     uses: ./.github/workflows/voicechat-compat.yml
     with:
       matrix: ${{ needs.read-compatibility.outputs.fabric }}
@@ -227,6 +242,7 @@ jobs:
       - name: Require selected compatibility suite
         env:
           MODE: ${{ needs.plan-compatibility.outputs.mode }}
+          RUN_CLIENT: ${{ needs.plan-compatibility.outputs.run-client }}
           BUILD_RESULT: ${{ needs.build.result }}
           PLAN_RESULT: ${{ needs.plan-compatibility.result }}
           MATRIX_RESULT: ${{ needs.read-compatibility.result }}
@@ -254,10 +270,20 @@ jobs:
               ;;
           esac
 
-          for result in "$MATRIX_RESULT" "$CLIENT_RESULT" "$SERVER_RESULT"; do
+          for result in "$MATRIX_RESULT" "$SERVER_RESULT"; do
             if [ "$result" != "$expected" ]; then
               printf 'Compatibility mode=%s expected=%s matrix=%s client=%s server=%s\n' \
                 "$MODE" "$expected" "$MATRIX_RESULT" "$CLIENT_RESULT" "$SERVER_RESULT" >&2
               exit 1
             fi
           done
+
+          client_expected=skipped
+          if [ "$MODE" != none ] && [ "$RUN_CLIENT" = true ]; then
+            client_expected=success
+          fi
+          if [ "$CLIENT_RESULT" != "$client_expected" ]; then
+            printf 'Minecraft client tests: enabled=%s expected=%s result=%s\n' \
+              "$RUN_CLIENT" "$client_expected" "$CLIENT_RESULT" >&2
+            exit 1
+          fi
