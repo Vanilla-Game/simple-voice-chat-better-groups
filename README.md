@@ -6,17 +6,73 @@
 
 <!-- modrinth:start -->
 
-Invites, join requests, and group leaders for [Simple Voice Chat](https://modrepo.de/minecraft/voicechat/). Install the server plugin to manage groups through chat, and the optional Fabric mod for in-game controls.
+**Your voice group, without the hassle.**
 
-## Features
+Invite friends without sharing passwords, approve join requests, and step away for a local conversation with an easy way back.
 
-- **Invites without passwords.** Send a personal, expiring invite that the recipient accepts in chat.
-- **Join requests.** Ask to join a password-protected group; its leader can accept with one click.
-- **Group leaders.** Remove members, transfer leadership, and automatically choose a successor when the leader leaves.
-- **Client controls.** Invite players from a searchable list, see the leader's crown, and manage members from the group screen.
-- **Group pause.** Leave for a local conversation and return without entering the password again.
+An add-on for [Simple Voice Chat](https://modrepo.de/minecraft/voicechat/) · **Paper & Folia** · **Optional Fabric client**
+
+[Download](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/latest) · [Installation](#installation) · [Commands](#commands)
+
+## Invite a friend. Click Accept. Talk together.
+
+Open your group, click **+**, and choose a player. They accept the invitation in chat and join your group without entering its password.
+
+> **GIF placeholder — Invite a friend**
+>
+> Show: group screen → **+** → choose a player → friend clicks **Accept** in chat → both players in the group.
+>
+> Suggested length: 10–15 seconds; crop around the interface so the text stays readable.
+
+<!-- Replace the placeholder above with the recorded demo using an absolute HTTPS image URL. Suggested asset: assets/demo-invite.gif. -->
+
+The player picker requires the Better Groups Fabric client. With just the server plugin, use `/voicegroup invite <player>`; the recipient still gets a clickable invitation.
+
+## What can you do?
+
+| You want to… | Better Groups helps you… |
+| --- | --- |
+| Bring a friend into your group | Send a personal, expiring invite without sharing the password. |
+| Join a password-protected group | Send a join request that its leader can accept with one click. |
+| Manage your group | Remove members, transfer leadership, and automatically choose a successor when the leader leaves. |
+| Talk to someone nearby | Pause your group conversation and return without entering the password again. |
+
+With the optional Fabric client, you also get a searchable player picker, a leader's crown, and member controls in the group screen.
+
+> **GIF placeholder — Manage your group**
+>
+> Show: leader's crown → member controls → transfer leadership → crown moves to the new leader.
+>
+> Suggested length: 8–12 seconds.
+
+<!-- Replace the placeholder above with the recorded demo using an absolute HTTPS image URL. Suggested asset: assets/demo-leadership.gif. -->
 
 Chat messages follow each player's Minecraft language, with 15 translations available. The pause controls have English and Russian translations.
+
+## Step away. Talk nearby. Come back.
+
+With the Better Groups client and server plugin, click **Ⅱ** to switch from your group to proximity chat. Click **Return to group** when you are ready to rejoin.
+
+**Group chat → Ⅱ Pause → Proximity chat → Return → Group chat**
+
+> **GIF placeholder — Pause and return**
+>
+> Show: group conversation → **Ⅱ** → local conversation → **Return to group** → back in the same group without a password prompt.
+>
+> Suggested length: 10–15 seconds; label “Group chat” and “Proximity chat” because the GIF has no audio.
+
+<!-- Replace the placeholder above with the recorded demo using an absolute HTTPS image URL. Suggested asset: assets/demo-pause.gif. -->
+
+The group must still exist when you return. Joining another group, disconnecting, or restarting the server clears your return permission. See [Group pause details](#group-pause-details) for controls and other behavior.
+
+## What should I install?
+
+| Your role | What you need |
+| --- | --- |
+| **Server owner** | Simple Voice Chat + the Better Groups server plugin. Players get invites, join requests, and group management through chat and commands. |
+| **Player** | Simple Voice Chat on your client. Add the **optional Better Groups Fabric mod** for in-game buttons, the player picker, and pause / return controls. |
+
+Only the **Better Groups client mod** is optional; Simple Voice Chat is required. Leadership, join requests, and group pause require the Better Groups server plugin.
 
 ## Installation
 
@@ -58,9 +114,9 @@ The 26.3 client is included in the next release. Simple Voice Chat 2.6.23 and 2.
 
 <!-- modrinth:exclude:end -->
 
-The **+** button opens the player picker. On servers without Better Groups, it uses Simple Voice Chat's native invite command. Leadership, join requests, and group pause require the Better Groups server plugin.
+On servers without Better Groups, the client's **+** button uses Simple Voice Chat's native invite command.
 
-## Group pause
+## Group pause details
 
 Click **Ⅱ** beside **+**, or assign **Pause / return to group** in **Controls → Key Binds → Better Groups**. The pause button appears only after the server confirms support.
 
