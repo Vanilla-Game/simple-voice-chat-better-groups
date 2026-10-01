@@ -18,7 +18,7 @@ An add-on for [Simple Voice Chat](https://modrepo.de/minecraft/voicechat/) · **
 
 Open your group, click **+**, and choose a player. They accept the invitation in chat and join your group without entering its password.
 
-![Alex invites Steve, who accepts in chat and joins the password-protected group](https://raw.githubusercontent.com/Vanilla-Game/simple-voice-chat-better-groups/3b41e7f207a2f6879e2b68f2ba535d4f6bc0299a/assets/demo-invite.gif)
+![Alex invites Steve, who accepts in chat and joins the password-protected group](https://raw.githubusercontent.com/Vanilla-Game/simple-voice-chat-better-groups/455f77860613d351a6b14e8ef84c182717d9d44f/assets/demo-invite.gif)
 
 The player picker requires the Better Groups Fabric client. With just the server plugin, use `/voicegroup invite <player>`; the recipient still gets a clickable invitation.
 
@@ -33,7 +33,7 @@ The player picker requires the Better Groups Fabric client. With just the server
 
 With the optional Fabric client, you also get a searchable player picker, a leader's crown, and member controls in the group screen.
 
-![Alex transfers leadership to Steve and the crown moves to Steve](https://raw.githubusercontent.com/Vanilla-Game/simple-voice-chat-better-groups/3b41e7f207a2f6879e2b68f2ba535d4f6bc0299a/assets/demo-leadership.gif)
+![Alex transfers leadership to Steve and the crown moves to Steve](https://raw.githubusercontent.com/Vanilla-Game/simple-voice-chat-better-groups/455f77860613d351a6b14e8ef84c182717d9d44f/assets/demo-leadership.gif)
 
 Transfer leadership with `/voicegroup transfer <player>`; the crown identifies the current leader.
 
@@ -45,7 +45,7 @@ With the Better Groups client and server plugin, click **Ⅱ** to switch from yo
 
 **Group chat → Ⅱ Pause → Proximity chat → Return → Group chat**
 
-![Steve pauses for proximity chat and returns to Adventure without a password prompt](https://raw.githubusercontent.com/Vanilla-Game/simple-voice-chat-better-groups/3b41e7f207a2f6879e2b68f2ba535d4f6bc0299a/assets/demo-pause.gif)
+![Steve pauses for proximity chat and returns to Adventure without a password prompt](https://raw.githubusercontent.com/Vanilla-Game/simple-voice-chat-better-groups/455f77860613d351a6b14e8ef84c182717d9d44f/assets/demo-pause.gif)
 
 The group must still exist when you return. Joining another group, disconnecting, or restarting the server clears your return permission. See [Group pause details](#group-pause-details) for controls and other behavior.
 
