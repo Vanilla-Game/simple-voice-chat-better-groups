@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.0](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/compare/v0.12.0...v0.13.0) (2026-10-01)
+
+
+### Features
+
+* **client:** support 26.3 and compact group pause controls ([#78](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/issues/78)) ([384d66b](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/commit/384d66bd8d8210ca9558862a5e4d4ffba9670a40))
+
 ## [0.12.0](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/compare/v0.11.1...v0.12.0) (2026-09-26)
 
 
