@@ -30,8 +30,8 @@ Install [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat), plac
 
 | Download | Minecraft | Server | Java | Simple Voice Chat |
 | --- | --- | --- | --- | --- |
-| [Download](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.12.0/svc-better-groups-0.12.0.jar) | `26.1.2` | Paper; Folia; Leaf (experimental) | `25`+ | Bukkit `2.6.16`–`2.6.21`, `2.6.23`–`2.6.24` |
-| [Download](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.12.0/svc-better-groups-0.12.0.jar) | `26.2` | Paper; Folia; Leaf (experimental) | `25`+ | Bukkit `2.6.19`–`2.6.21`, `2.6.23`–`2.6.24` |
+| [Download](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.13.0/svc-better-groups-0.13.0.jar) | `26.1.2` | Paper; Folia; Leaf (experimental) | `25`+ | Bukkit `2.6.16`–`2.6.21`, `2.6.23`–`2.6.24` |
+| [Download](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.13.0/svc-better-groups-0.13.0.jar) | `26.2` | Paper; Folia; Leaf (experimental) | `25`+ | Bukkit `2.6.19`–`2.6.21`, `2.6.23`–`2.6.24` |
 
 <!-- generated:server-downloads:end -->
 
@@ -47,10 +47,10 @@ Install Fabric Loader, Fabric API, Simple Voice Chat, and the matching Better Gr
 
 | Download | Minecraft | Fabric Loader | Fabric API | Java | Simple Voice Chat |
 | --- | --- | --- | --- | --- | --- |
-| [Download](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.12.0/svc-better-groups-fabric-1.21.11-0.12.0.jar) | `1.21.11` | `0.18.1`+ | `0.139.4+1.21.11`+ | `21`+ | Fabric `2.6.6`–`2.6.24` |
-| [Download](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.12.0/svc-better-groups-fabric-26.1-0.12.0.jar) | `26.1`–`26.1.2` | `0.18.4`+ | `0.144.3+26.1`+ | `25`+ | Fabric `2.6.14`–`2.6.24` |
-| [Download](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.12.0/svc-better-groups-fabric-26.2-0.12.0.jar) | `26.2.x` | `0.19.3`+ | `0.152.1+26.2`+ | `25`+ | Fabric `2.6.18`–`2.6.24` |
-| [Download](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.12.0/svc-better-groups-fabric-26.3-0.12.0.jar) | `26.3.x` | `0.19.5`+ | `0.161.0+26.3`+ | `25`+ | Fabric `2.6.23`–`2.6.24` |
+| [Download](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.13.0/svc-better-groups-fabric-1.21.11-0.13.0.jar) | `1.21.11` | `0.18.1`+ | `0.139.4+1.21.11`+ | `21`+ | Fabric `2.6.6`–`2.6.24` |
+| [Download](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.13.0/svc-better-groups-fabric-26.1-0.13.0.jar) | `26.1`–`26.1.2` | `0.18.4`+ | `0.144.3+26.1`+ | `25`+ | Fabric `2.6.14`–`2.6.24` |
+| [Download](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.13.0/svc-better-groups-fabric-26.2-0.13.0.jar) | `26.2.x` | `0.19.3`+ | `0.152.1+26.2`+ | `25`+ | Fabric `2.6.18`–`2.6.24` |
+| [Download](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.13.0/svc-better-groups-fabric-26.3-0.13.0.jar) | `26.3.x` | `0.19.5`+ | `0.161.0+26.3`+ | `25`+ | Fabric `2.6.23`–`2.6.24` |
 
 <!-- generated:fabric-downloads:end -->
 
