@@ -36,6 +36,7 @@ public final class VoiceChatCompatibilityGameTest implements FabricClientGameTes
             Class.forName("ru.vanillagame.voicechat.bettergroups.client.gui.InvitePlayerList", false, loader);
             Class.forName("ru.vanillagame.voicechat.bettergroups.client.gui.InvitePlayerEntry", false, loader);
             verifyMuteProtocolCodecs();
+            verifyCompactPauseButton(context);
             verifyReturnButton(context);
             verifyPauseChannelLoss(context);
             verifyGroupWithoutVoiceConnection(context);
@@ -44,6 +45,42 @@ public final class VoiceChatCompatibilityGameTest implements FabricClientGameTes
         } catch (Throwable failure) {
             throw new AssertionError("Simple Voice Chat compatibility check failed", failure);
         }
+    }
+
+    private static void verifyCompactPauseButton(ClientGameTestContext context) throws Exception {
+        Class<?> client = Class.forName("ru.vanillagame.voicechat.bettergroups.client.GroupMuteClient");
+        context.runOnClient(mc -> client.getMethod("reset").invoke(null));
+        var group = new de.maxhenkel.voicechat.voice.common.ClientGroup(UUID.randomUUID(), "Preview", false,
+                false, false, de.maxhenkel.voicechat.api.Group.Type.NORMAL);
+        var screen = context.computeOnClient(mc -> new de.maxhenkel.voicechat.gui.group.GroupScreen(group));
+        context.setScreen(() -> screen);
+        context.runOnClient(mc -> {
+            var buttons = screen.children().stream()
+                    .filter(child -> child instanceof net.minecraft.client.gui.components.Button)
+                    .map(child -> (net.minecraft.client.gui.components.Button) child).toList();
+            var invite = buttons.stream().filter(button -> button.getMessage().getString().equals("+"))
+                    .findFirst().orElseThrow();
+            String label = net.minecraft.network.chat.Component.translatable("gui.svc_better_groups.mute_group").getString();
+            var pause = buttons.stream().filter(button -> button.getMessage().getString().equals(label))
+                    .findFirst().orElseThrow();
+            if (pause.visible || pause.active)
+                throw new AssertionError("Pause must be hidden before server support is confirmed");
+            Class<?> payload = Class.forName("ru.vanillagame.voicechat.bettergroups.client.network.MuteStatePayload");
+            Object hello = payload.getConstructor(int.class, int.class, UUID.class).newInstance(0, 0, null);
+            client.getMethod("receive", payload).invoke(null, hello);
+            screen.tick();
+            if (!pause.visible || !pause.active)
+                throw new AssertionError("Server acknowledgement must reveal Pause on an already open screen");
+            if (pause.getWidth() != invite.getWidth() || pause.getHeight() != invite.getHeight())
+                throw new AssertionError("Pause and invite buttons must have the same dimensions");
+            if (pause.getY() != invite.getY() || pause.getX() != invite.getX() + invite.getWidth() + 3)
+                throw new AssertionError("Pause must sit beside invite with the standard three-pixel gap");
+            client.getMethod("unavailable").invoke(null);
+            screen.tick();
+            if (pause.visible || pause.active)
+                throw new AssertionError("Pause must hide when the server withdraws support");
+        });
+        context.setScreen(net.minecraft.client.gui.screens.TitleScreen::new);
     }
 
     private static void verifyReturnButton(ClientGameTestContext context) throws Exception {

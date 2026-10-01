@@ -166,6 +166,30 @@
           { "minecraft": "26.2", "voicechatArtifact": "fabric-2.6.23+26.2" },
           { "minecraft": "26.2", "voicechatArtifact": "fabric-2.6.24+26.2" }
         ]
+      },
+      {
+        "id": "26.3",
+        "projectPath": ":client-fabric:targets:mc26_3",
+        "archiveBaseName": "svc-better-groups-fabric-26.3",
+        "adapterSet": "mc26",
+        "screenAdapterSet": "mc26_2",
+        "java": 25,
+        "obfuscated": false,
+        "compile": {
+          "minecraft": "26.3",
+          "fabricLoader": "0.19.5",
+          "fabricApi": "0.161.0+26.3",
+          "voicechatArtifact": "fabric-2.6.23+26.3"
+        },
+        "minecraftDependency": "26.3.x",
+        "voicechatRange": ">=2.6.23 <2.6.25",
+        "releaseMinecraftVersions": [
+          "26.3"
+        ],
+        "compatibility": [
+          { "minecraft": "26.3", "voicechatArtifact": "fabric-2.6.23+26.3" },
+          { "minecraft": "26.3", "voicechatArtifact": "fabric-2.6.24+26.3" }
+        ]
       }
     ]
   }

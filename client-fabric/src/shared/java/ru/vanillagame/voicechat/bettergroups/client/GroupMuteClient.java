@@ -70,6 +70,7 @@ public final class GroupMuteClient {
         // In particular, a null native group is the expected paused state.
     }
 
+    public static boolean isSupported() { return supported; }
     public static boolean isTransmissionBlocked() { return REQUESTS.isBlocked(); }
     public static boolean isMuted() { return pausedGroup != null; }
     public static boolean isPending() { return REQUESTS.isPending(); }

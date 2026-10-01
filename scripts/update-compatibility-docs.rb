@@ -31,9 +31,9 @@ def declared_range(range)
   "#{match[1]}–#{match[2]}.#{match[3]}.#{match[4].to_i - 1}"
 end
 
-def download_link(filename, version)
+def download_link(filename, version, label)
   url = "https://github.com/#{REPOSITORY}/releases/download/v#{version}/#{filename}"
-  "[`#{filename}`](#{url})"
+  "[#{label}](#{url})"
 end
 
 def minecraft_versions(target)
@@ -47,14 +47,8 @@ def minecraft_versions(target)
 end
 
 def markdown_table(headers, rows)
-  widths = headers.each_index.map do |index|
-    ([headers[index]] + rows.map { |row| row[index] }).map(&:length).max
-  end
-  render = lambda do |values|
-    "| #{values.each_with_index.map { |value, index| value.ljust(widths[index]) }.join(' | ')} |"
-  end
-
-  ([render.call(headers), render.call(widths.map { |width| "-" * width })] + rows.map(&render)).join("\n")
+  render = ->(values) { "| #{values.join(' | ')} |" }
+  ([render.call(headers), render.call(headers.map { "---" })] + rows.map(&render)).join("\n")
 end
 
 def replace_generated_block(content, name, table)
@@ -85,7 +79,7 @@ server_rows = catalog.fetch("server").fetch("targets").map do |target|
   software << "Folia" if target.key?("foliaBuild")
   software << "Leaf (experimental)" if target.key?("leafBuild")
   [
-    download_link(server_filename, version),
+    download_link(server_filename, version, "Download"),
     "`#{target.fetch('minecraft')}`",
     software.join("; "),
     "`#{catalog.fetch('java')}`+",
@@ -93,7 +87,7 @@ server_rows = catalog.fetch("server").fetch("targets").map do |target|
   ]
 end
 server_table = markdown_table(
-  ["Artifact", "Minecraft", "Server software", "Java", "Simple Voice Chat"],
+  ["Download", "Minecraft", "Server", "Java", "Simple Voice Chat"],
   server_rows
 )
 
@@ -101,16 +95,16 @@ fabric_rows = catalog.fetch("fabric").fetch("targets").map do |target|
   compile = target.fetch("compile")
   filename = "#{target.fetch('archiveBaseName')}-#{version}.jar"
   [
-    download_link(filename, version),
+    download_link(filename, version, "Download"),
     "`#{minecraft_versions(target).sub('–', '`–`')}`",
-    "Fabric Loader `#{compile.fetch('fabricLoader')}`+",
+    "`#{compile.fetch('fabricLoader')}`+",
     "`#{compile.fetch('fabricApi')}`+",
     "`#{target.fetch('java')}`+",
     "Fabric `#{declared_range(target.fetch('voicechatRange')).sub('–', '`–`')}`"
   ]
 end
 fabric_table = markdown_table(
-  ["Artifact", "Minecraft", "Mod loader", "Fabric API", "Java", "Simple Voice Chat"],
+  ["Download", "Minecraft", "Fabric Loader", "Fabric API", "Java", "Simple Voice Chat"],
   fabric_rows
 )
 

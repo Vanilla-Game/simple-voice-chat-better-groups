@@ -14,6 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import ru.vanillagame.voicechat.bettergroups.client.GroupMuteClient;
 import ru.vanillagame.voicechat.bettergroups.client.ScreenNavigation;
 import ru.vanillagame.voicechat.bettergroups.client.gui.InvitePlayerScreen;
+import ru.vanillagame.voicechat.bettergroups.client.gui.GroupPauseButton;
 
 @Mixin(value = GroupScreen.class, remap = false)
 public abstract class GroupScreenMixin extends VoiceChatScreenBase {
@@ -35,13 +36,10 @@ public abstract class GroupScreenMixin extends VoiceChatScreenBase {
                 .tooltip(Tooltip.create(Component.translatable("gui.svc_better_groups.invite")))
                 .build();
         addRenderableWidget(inviteButton);
-        svcBetterGroups$groupMute = Button.builder(Component.empty(), button -> {
+        svcBetterGroups$groupMute = new GroupPauseButton(guiLeft + 99, buttonY, button -> {
                     GroupMuteClient.toggle();
                     svcBetterGroups$updateMuteButton();
-                })
-                .bounds(guiLeft + 99, buttonY, 106, 20)
-                .tooltip(Tooltip.create(Component.translatable("gui.svc_better_groups.group_mute_tooltip")))
-                .build();
+                });
         svcBetterGroups$updateMuteButton();
         addRenderableWidget(svcBetterGroups$groupMute);
     }
@@ -53,13 +51,16 @@ public abstract class GroupScreenMixin extends VoiceChatScreenBase {
 
     @Unique
     private void svcBetterGroups$updateMuteButton() {
+        svcBetterGroups$groupMute.visible = GroupMuteClient.isSupported();
+        svcBetterGroups$groupMute.active = svcBetterGroups$groupMute.visible;
         boolean muted = GroupMuteClient.isMuted();
-        svcBetterGroups$groupMute.setTooltip(Tooltip.create(GroupMuteClient.feedback() == null
-                ? Component.translatable("gui.svc_better_groups.group_mute_tooltip")
-                : GroupMuteClient.feedback()));
         svcBetterGroups$groupMute.setMessage(Component.translatable(GroupMuteClient.isPending()
                 ? "gui.svc_better_groups.retry_group" : muted
                 ? "gui.svc_better_groups.unmute_group" : "gui.svc_better_groups.mute_group")
                 .withStyle(muted ? ChatFormatting.RED : ChatFormatting.WHITE));
+        svcBetterGroups$groupMute.setTooltip(Tooltip.create(GroupMuteClient.feedback() == null
+                ? Component.empty().append(svcBetterGroups$groupMute.getMessage()).append("\n")
+                    .append(Component.translatable("gui.svc_better_groups.group_mute_tooltip"))
+                : GroupMuteClient.feedback()));
     }
 }
