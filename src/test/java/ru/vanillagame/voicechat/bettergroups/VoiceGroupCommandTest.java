@@ -42,6 +42,35 @@ class VoiceGroupCommandTest {
     private static final Instant NOW = Instant.parse("2026-08-08T10:00:00Z");
 
     @Test
+    void inviteTreatsHiddenPlayerLikeOfflinePlayer() {
+        BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
+        InviteStore invites = mock(InviteStore.class);
+        VoicechatServerApi api = mock(VoicechatServerApi.class);
+        Player inviter = player("Inviter");
+        Player hidden = player("Hidden");
+        when(inviter.canSee(hidden)).thenReturn(false);
+        when(plugin.getVoicechatApi()).thenReturn(api);
+        when(api.getConnectionOf(inviter.getUniqueId())).thenReturn(connection(group()));
+        VoiceGroupCommand command = command(plugin, invites, new GroupLeadershipRegistry());
+
+        try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
+            bukkit.when(() -> Bukkit.getPlayerExact("Hidden")).thenReturn(hidden);
+
+            execute(command, inviter, "voicegroup invite Hidden");
+            execute(command, inviter, "voicegroup invite Offline");
+        }
+
+        verify(inviter, times(2)).sendMessage(
+                Messages.component(Messages.PLAYER_NOT_ONLINE, NamedTextColor.RED));
+        verify(api, never()).getConnectionOf(hidden.getUniqueId());
+        verify(invites, never()).create(any(), any(), any(), any());
+        verify(hidden, never()).sendMessage(any(Component.class));
+        verify(hidden, never()).playSound(
+                any(net.kyori.adventure.sound.Sound.class),
+                any(net.kyori.adventure.sound.Sound.Emitter.class));
+    }
+
+    @Test
     void inviteCooldownThrottlesRepeatInvitesToSameTargetOnly() {
         BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
         when(plugin.isEnabled()).thenReturn(true);
@@ -564,6 +593,7 @@ class VoiceGroupCommandTest {
         when(player.isOnline()).thenReturn(true);
         when(player.getUniqueId()).thenReturn(playerId);
         when(player.hasPermission("vanillagame.svc_better_groups.use")).thenReturn(true);
+        when(player.canSee(any(Player.class))).thenReturn(true);
         return player;
     }
 
