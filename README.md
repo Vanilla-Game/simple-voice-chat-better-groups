@@ -17,10 +17,12 @@
 - **Join requests.** Ask to join a password-protected group and let its leader approve in chat.
 - **Group leaders.** The creator leads the group and can remove members or transfer leadership.
 - **Automatic succession.** When the leader leaves, the longest-standing remaining member takes over.
-- **Group pause and return.** With the optional Fabric client, switch to proximity chat and return without entering the password, restoring your previous leader role.
-- **In-game controls.** The optional Fabric client adds a searchable player picker, leader crowns, member removal buttons, and pause / return buttons and key binds.
-- **Server-side commands.** Use `/voicegroup` without the Better Groups client mod; server owners can control access through permissions.
+- **Group pause and return.**\* Switch to proximity chat and return without entering the password, restoring your previous leader role.
+- **In-game controls.**\* Use a searchable player picker, leader crowns, member removal buttons, and pause / return buttons and key binds.
+- **Server-side commands.** Manage groups with `/voicegroup`; server owners can control access through permissions.
 - **Configurable notifications.** Adjust invitation and request expiry, cooldowns, and notification sounds.
+
+\* These features require the Better Groups Fabric client mod.
 
 [![Download](https://img.shields.io/badge/Download-2ea043?style=for-the-badge)](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/latest)
 [![Installation](https://img.shields.io/badge/Installation-1f6feb?style=for-the-badge)](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/blob/main/README.md#installation)
