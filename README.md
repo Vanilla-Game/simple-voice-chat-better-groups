@@ -14,7 +14,9 @@
 
 Invite friends without sharing passwords, manage your group, and step away for a nearby conversation with an easy way back.
 
-[Download](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/latest) · [Installation](#installation) · [Usage guide](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/blob/main/docs/usage.md)
+[![Download](https://img.shields.io/badge/Download-2ea043?style=for-the-badge)](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/latest)
+[![Installation](https://img.shields.io/badge/Installation-1f6feb?style=for-the-badge)](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/blob/main/README.md#installation)
+[![Usage guide](https://img.shields.io/badge/Usage_guide-57606a?style=for-the-badge)](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/blob/main/docs/usage.md)
 
 ## Features
 
