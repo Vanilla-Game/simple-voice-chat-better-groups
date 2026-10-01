@@ -1,18 +1,32 @@
+<!-- modrinth:start -->
+
 # Simple Voice Chat Better Groups
+
+<!-- modrinth:exclude:start -->
 
 [![Latest release](https://img.shields.io/github/v/release/Vanilla-Game/simple-voice-chat-better-groups?style=flat-square&logo=github&label=Release)](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/Vanilla-Game/simple-voice-chat-better-groups/total?style=flat-square&logo=github&label=Downloads)](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases)
 [![CI Build](https://img.shields.io/github/actions/workflow/status/Vanilla-Game/simple-voice-chat-better-groups/build.yml?branch=main&style=flat-square&logo=githubactions&logoColor=white&label=Build)](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/actions/workflows/build.yml)
 
-<!-- modrinth:start -->
+<!-- modrinth:exclude:end -->
 
 **Your voice group, without the hassle.**
 
-Invite friends without sharing passwords, manage your group, and step away for a nearby conversation with an easy way back.
+- **Password-free invitations.** Send personal, one-time invitations that expire; recipients accept with a click in chat.
+- **Join requests.** Ask to join a password-protected group and let its leader approve in chat.
+- **Group leaders.** The creator leads the group and can remove members or transfer leadership.
+- **Automatic succession.** When the leader leaves, the longest-standing remaining member takes over.
+- **Group pause and return.**\* Switch to proximity chat and return without entering the password, restoring your previous leader role.
+- **In-game controls.**\* Use a searchable player picker, leader crowns, member removal buttons, and pause / return buttons and key binds.
+- **Server-side commands.** Manage groups with `/voicegroup`; server owners can control access through permissions.
+- **Configurable notifications.** Adjust invitation and request expiry, cooldowns, and notification sounds.
+- **15 languages, chosen automatically.** Chat messages follow each player's Minecraft language. [See the supported locales](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/blob/main/docs/locales.md).
 
-An add-on for [Simple Voice Chat](https://modrepo.de/minecraft/voicechat/) · **Paper & Folia** · **Optional Fabric client**
+\* These features require the Better Groups Fabric client mod.
 
-[Download](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/latest) · [Installation](#installation) · [Usage guide](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/blob/main/docs/usage.md)
+[![Download](https://img.shields.io/badge/Download-2ea043?style=for-the-badge)](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/latest)
+[![Installation](https://img.shields.io/badge/Installation-1f6feb?style=for-the-badge)](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/blob/main/README.md#installation)
+[![Usage guide](https://img.shields.io/badge/Usage_guide-57606a?style=for-the-badge)](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/blob/main/docs/usage.md)
 
 ## Features
 
