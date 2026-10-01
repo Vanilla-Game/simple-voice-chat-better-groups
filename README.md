@@ -18,13 +18,7 @@ An add-on for [Simple Voice Chat](https://modrepo.de/minecraft/voicechat/) · **
 
 Open your group, click **+**, and choose a player. They accept the invitation in chat and join your group without entering its password.
 
-> **GIF placeholder — Invite a friend**
->
-> Show: group screen → **+** → choose a player → friend clicks **Accept** in chat → both players in the group.
->
-> Suggested length: 10–15 seconds; crop around the interface so the text stays readable.
-
-<!-- Replace the placeholder above with the recorded demo using an absolute HTTPS image URL. Suggested asset: assets/demo-invite.gif. -->
+![Alex invites Steve, who accepts in chat and joins the password-protected group](https://raw.githubusercontent.com/Vanilla-Game/simple-voice-chat-better-groups/3b41e7f207a2f6879e2b68f2ba535d4f6bc0299a/assets/demo-invite.gif)
 
 The player picker requires the Better Groups Fabric client. With just the server plugin, use `/voicegroup invite <player>`; the recipient still gets a clickable invitation.
 
@@ -39,13 +33,9 @@ The player picker requires the Better Groups Fabric client. With just the server
 
 With the optional Fabric client, you also get a searchable player picker, a leader's crown, and member controls in the group screen.
 
-> **GIF placeholder — Manage your group**
->
-> Show: leader's crown → member controls → transfer leadership → crown moves to the new leader.
->
-> Suggested length: 8–12 seconds.
+![Alex transfers leadership to Steve and the crown moves to Steve](https://raw.githubusercontent.com/Vanilla-Game/simple-voice-chat-better-groups/3b41e7f207a2f6879e2b68f2ba535d4f6bc0299a/assets/demo-leadership.gif)
 
-<!-- Replace the placeholder above with the recorded demo using an absolute HTTPS image URL. Suggested asset: assets/demo-leadership.gif. -->
+Transfer leadership with `/voicegroup transfer <player>`; the crown identifies the current leader.
 
 Chat messages follow each player's Minecraft language, with 15 translations available. The pause controls have English and Russian translations.
 
@@ -55,13 +45,7 @@ With the Better Groups client and server plugin, click **Ⅱ** to switch from yo
 
 **Group chat → Ⅱ Pause → Proximity chat → Return → Group chat**
 
-> **GIF placeholder — Pause and return**
->
-> Show: group conversation → **Ⅱ** → local conversation → **Return to group** → back in the same group without a password prompt.
->
-> Suggested length: 10–15 seconds; label “Group chat” and “Proximity chat” because the GIF has no audio.
-
-<!-- Replace the placeholder above with the recorded demo using an absolute HTTPS image URL. Suggested asset: assets/demo-pause.gif. -->
+![Steve pauses for proximity chat and returns to Adventure without a password prompt](https://raw.githubusercontent.com/Vanilla-Game/simple-voice-chat-better-groups/3b41e7f207a2f6879e2b68f2ba535d4f6bc0299a/assets/demo-pause.gif)
 
 The group must still exist when you return. Joining another group, disconnecting, or restarting the server clears your return permission. See [Group pause details](#group-pause-details) for controls and other behavior.
 
