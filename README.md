@@ -14,8 +14,6 @@
 
 Invite friends without sharing passwords, manage your group, and step away for a nearby conversation with an easy way back.
 
-An add-on for [Simple Voice Chat](https://modrepo.de/minecraft/voicechat/) · **Paper & Folia** · **Optional Fabric client**
-
 [Download](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/latest) · [Installation](#installation) · [Usage guide](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/blob/main/docs/usage.md)
 
 ## Features
