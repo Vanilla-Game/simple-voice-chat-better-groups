@@ -50,7 +50,8 @@ class VoiceGroupCommandTest {
         Player hidden = player("Hidden");
         when(inviter.canSee(hidden)).thenReturn(false);
         when(plugin.getVoicechatApi()).thenReturn(api);
-        when(api.getConnectionOf(inviter.getUniqueId())).thenReturn(connection(group()));
+        VoicechatConnection inviterConnection = connection(group());
+        when(api.getConnectionOf(inviter.getUniqueId())).thenReturn(inviterConnection);
         VoiceGroupCommand command = command(plugin, invites, new GroupLeadershipRegistry());
 
         try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
