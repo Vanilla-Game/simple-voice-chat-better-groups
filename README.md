@@ -8,63 +8,42 @@
 
 **Your voice group, without the hassle.**
 
-Invite friends without sharing passwords, approve join requests, and step away for a local conversation with an easy way back.
+Invite friends without sharing passwords, manage your group, and step away for a nearby conversation with an easy way back.
 
 An add-on for [Simple Voice Chat](https://modrepo.de/minecraft/voicechat/) · **Paper & Folia** · **Optional Fabric client**
 
-[Download](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/latest) · [Installation](#installation) · [Commands](#commands)
+[Download](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/latest) · [Installation](#installation) · [Usage guide](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/blob/main/docs/usage.md)
 
-## Invite a friend. Click Accept. Talk together.
+## Features
 
-Open your group, click **+**, and choose a player. They accept the invitation in chat and join your group without entering its password.
+### Invite and join
+
+Click **+** and choose a player; they click **Accept** in chat to join without a password. Players can also request access to a protected group for its leader to approve.
 
 ![Alex invites Steve, who accepts in chat and joins the password-protected group](https://raw.githubusercontent.com/Vanilla-Game/simple-voice-chat-better-groups/455f77860613d351a6b14e8ef84c182717d9d44f/assets/demo-invite.gif)
 
-The player picker requires the Better Groups Fabric client. With just the server plugin, use `/voicegroup invite <player>`; the recipient still gets a clickable invitation.
+### Manage your group
 
-## What can you do?
-
-| You want to… | Better Groups helps you… |
-| --- | --- |
-| Bring a friend into your group | Send a personal, expiring invite without sharing the password. |
-| Join a password-protected group | Send a join request that its leader can accept with one click. |
-| Manage your group | Remove members, transfer leadership, and automatically choose a successor when the leader leaves. |
-| Talk to someone nearby | Pause your group conversation and return without entering the password again. |
-
-With the optional Fabric client, you also get a searchable player picker, a leader's crown, and member controls in the group screen.
+See who leads the group, remove members, or transfer leadership with `/voicegroup transfer <player>`. When the leader leaves, a remaining member takes over automatically.
 
 ![Alex transfers leadership to Steve and the crown moves to Steve](https://raw.githubusercontent.com/Vanilla-Game/simple-voice-chat-better-groups/455f77860613d351a6b14e8ef84c182717d9d44f/assets/demo-leadership.gif)
 
-Transfer leadership with `/voicegroup transfer <player>`; the crown identifies the current leader.
+### Pause and return
 
-Chat messages follow each player's Minecraft language, with 15 translations available. The pause controls have English and Russian translations.
-
-## Step away. Talk nearby. Come back.
-
-With the Better Groups client and server plugin, click **Ⅱ** to switch from your group to proximity chat. Click **Return to group** when you are ready to rejoin.
-
-**Group chat → Ⅱ Pause → Proximity chat → Return → Group chat**
+Click **Ⅱ** for proximity chat, then **Return to group** to rejoin without entering the password. The group must still exist; joining another group or disconnecting clears the return permission.
 
 ![Steve pauses for proximity chat and returns to Adventure without a password prompt](https://raw.githubusercontent.com/Vanilla-Game/simple-voice-chat-better-groups/455f77860613d351a6b14e8ef84c182717d9d44f/assets/demo-pause.gif)
-
-The group must still exist when you return. Joining another group, disconnecting, or restarting the server clears your return permission. See [Group pause details](#group-pause-details) for controls and other behavior.
-
-## What should I install?
-
-| Your role | What you need |
-| --- | --- |
-| **Server owner** | Simple Voice Chat + the Better Groups server plugin. Players get invites, join requests, and group management through chat and commands. |
-| **Player** | Simple Voice Chat on your client. Add the **optional Better Groups Fabric mod** for in-game buttons, the player picker, and pause / return controls. |
-
-Only the **Better Groups client mod** is optional; Simple Voice Chat is required. Leadership, join requests, and group pause require the Better Groups server plugin.
 
 ## Installation
 
 ### Server
 
-Install [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat), place the Better Groups server JAR in `plugins/`, and restart the server. One JAR supports both Paper and Folia; Leaf support is experimental.
+Install [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat), place the Better Groups server JAR in `plugins/`, and restart. One JAR supports Paper and Folia; Leaf support is experimental.
 
 <!-- modrinth:exclude:start -->
+
+<details>
+<summary>Server downloads and compatibility</summary>
 
 <!-- generated:server-downloads:start -->
 
@@ -75,13 +54,18 @@ Install [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat), plac
 
 <!-- generated:server-downloads:end -->
 
+</details>
+
 <!-- modrinth:exclude:end -->
 
-### Client (optional)
+### Client
 
-Install Fabric Loader, Fabric API, Simple Voice Chat, and the matching Better Groups client JAR in `mods/`. Players can use the server plugin without this mod.
+Players need Simple Voice Chat on their client. For the controls shown above, install Fabric Loader and add Fabric API plus the matching **Better Groups client JAR** to `mods/`. Better Groups on the client is optional; server chat commands work without it.
 
 <!-- modrinth:exclude:start -->
+
+<details>
+<summary>Fabric downloads and compatibility</summary>
 
 <!-- generated:fabric-downloads:start -->
 
@@ -96,49 +80,10 @@ Install Fabric Loader, Fabric API, Simple Voice Chat, and the matching Better Gr
 
 The 26.3 client is included in the next release. Simple Voice Chat 2.6.23 and 2.6.24 for 26.3 are currently beta builds.
 
+</details>
+
 <!-- modrinth:exclude:end -->
 
-On servers without Better Groups, the client's **+** button uses Simple Voice Chat's native invite command.
-
-## Group pause details
-
-Click **Ⅱ** beside **+**, or assign **Pause / return to group** in **Controls → Key Binds → Better Groups**. The pause button appears only after the server confirms support.
-
-Pausing leaves the group and switches to Simple Voice Chat's normal proximity chat. Click **Return to group** on the group selection screen, or press the same key again, to return. The server remembers the return permission; the client does not store the password.
-
-- Returning to the same group restores your previous leader role.
-- If the last member leaves a nonpersistent group, it disbands and cannot be restored.
-- Joining another group, disconnecting, or restarting the server clears the return permission.
-- A crossed-out group icon indicates that you can return.
-
-While a transition awaits confirmation, microphone transmission is paused. If it times out, use **Retry** or press the key again. Proximity audio follows Simple Voice Chat's usual distance and group-type rules.
-
-## Commands
-
-Commands are available to players through `/voicegroup`. Invite and request notifications include clickable actions.
-
-| Command | Action |
-| --- | --- |
-| `/voicegroup invite <player>` | Invite an online player to your group. |
-| `/voicegroup accept <token>` | Accept your invite; the chat button fills in the token. |
-| `/voicegroup request <group>` | Request access to a visible, password-protected group by name or UUID. |
-| `/voicegroup kick <player>` | Remove a member. Leader only. |
-| `/voicegroup transfer <player>` | Transfer leadership. Leader only. |
-
-The creator leads the group. When the leader leaves, the longest-standing remaining member takes over. An ordinary rejoin places a player at the end of this order; returning through group pause restores their saved leader role.
-
-## Configuration
-
-Settings and examples are in [`plugins/SVCBetterGroups/config.yml`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/blob/main/src/main/resources/config.yml).
-
-The `vanillagame.svc_better_groups.use` permission enables `/voicegroup` and is granted to all players by default. Removing members and transferring leadership also require the player to be the current group leader.
+See the [usage guide](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/blob/main/docs/usage.md) for commands, pause controls and behavior, settings, and permissions.
 
 <!-- modrinth:end -->
-
-## Development
-
-```sh
-./gradlew build
-```
-
-Builds the server plugin and all four Fabric clients, runs the tests, and stages the JARs in `build/release/`. Supported versions and dependencies are defined in [`compatibility.json`](compatibility.json).
