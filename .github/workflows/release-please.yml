@@ -96,6 +96,21 @@ jobs:
           git show "${GITHUB_SHA}:scripts/modrinth-featured-versions.rb" \
             > "$RUNNER_TEMP/modrinth-featured-versions.rb"
 
+      - name: Apply test-only fix for 0.13.1 recovery
+        if: ${{ inputs.recover_version == '0.13.1' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '43c7a76b9ebcb55b1a0bb1d8714a607cc9b72204'
+          fix_commit=a7be3c7780478aec34b378b3d428e6adeabe6ef0
+          test_file=src/test/java/ru/vanillagame/voicechat/bettergroups/VoiceGroupCommandTest.java
+          git fetch --no-tags --depth=2 origin "$fix_commit"
+          git diff "${fix_commit}^" "$fix_commit" -- "$test_file" > "$RUNNER_TEMP/0.13.1-test-fix.patch"
+          test -s "$RUNNER_TEMP/0.13.1-test-fix.patch"
+          git apply --check "$RUNNER_TEMP/0.13.1-test-fix.patch"
+          git apply "$RUNNER_TEMP/0.13.1-test-fix.patch"
+          test "$(git diff --name-only)" = "$test_file"
+
       - name: Set up JDKs 21 and 25
         if: ${{ steps.release_context.outputs.active == 'true' }}
         uses: actions/setup-java@v5
