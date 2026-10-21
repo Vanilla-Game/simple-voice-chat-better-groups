@@ -69,9 +69,14 @@ public final class BetterGroupsPlugin extends JavaPlugin implements Listener {
                 requestCooldowns,
                 settings
         );
-        getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event ->
-                event.registrar().register(commandHandler.createCommand(),
-                        "Manage Simple Voice Chat group invites and members."));
+        getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
+            event.registrar().register(commandHandler.createCommand(),
+                    "Manage Simple Voice Chat group invites, members and chat.");
+            for (var command : commandHandler.createChatCommands()) {
+                event.registrar().register(command,
+                        "Send a message to your current Simple Voice Chat group.");
+            }
+        });
 
         groupSync.register();
         groupMute.register();

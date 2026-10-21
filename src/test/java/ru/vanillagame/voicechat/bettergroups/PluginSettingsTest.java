@@ -5,6 +5,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -102,4 +103,33 @@ class PluginSettingsTest {
 
         assertNull(PluginSettings.load(plugin).requestSound());
     }
+
+    @Test
+    void missingChatAliasesUseVgmAndExplicitListsReplaceIt() {
+        JavaPlugin plugin = mock(JavaPlugin.class);
+        YamlConfiguration config = new YamlConfiguration();
+        when(plugin.getConfig()).thenReturn(config);
+        when(plugin.getLogger()).thenReturn(Logger.getAnonymousLogger());
+        assertEquals(List.of("vgm"), PluginSettings.load(plugin).groupChatAliases());
+        config.set("group-chat.aliases", List.of("gc", "party"));
+        assertEquals(List.of("gc", "party"), PluginSettings.load(plugin).groupChatAliases());
+        config.set("group-chat.aliases", List.of());
+        assertEquals(List.of(), PluginSettings.load(plugin).groupChatAliases());
+    }
+
+    @Test
+    void chatAliasesNormalizeAndSkipInvalidOrReservedEntries() {
+        JavaPlugin plugin = mock(JavaPlugin.class);
+        YamlConfiguration config = new YamlConfiguration();
+        when(plugin.getConfig()).thenReturn(config);
+        when(plugin.getLogger()).thenReturn(Logger.getAnonymousLogger());
+        config.set("group-chat.aliases", List.of(" GC ", "gc", "Party-Chat", "/vgm", "two words",
+                "voicegroup", "plugin:vgm", "", 123, "group_chat"));
+        assertEquals(List.of("gc", "party-chat", "group_chat"), PluginSettings.load(plugin).groupChatAliases());
+        config.set("group-chat.aliases", List.of("/bad", "voicegroup"));
+        assertEquals(List.of(), PluginSettings.load(plugin).groupChatAliases());
+        config.set("group-chat.aliases", "gc");
+        assertEquals(List.of("vgm"), PluginSettings.load(plugin).groupChatAliases());
+    }
+
 }

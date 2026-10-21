@@ -33,8 +33,37 @@ Commands are available to players through `/voicegroup`. Invite and request noti
 | `/voicegroup request <group>` | Request access to a visible, password-protected group by name or UUID. |
 | `/voicegroup kick <player>` | Remove a member. Leader only. |
 | `/voicegroup transfer <player>` | Transfer leadership. Leader only. |
+| `/voicegroup chat <message>` | Send a text message to your current voice group. |
+| `/vgm <message>` | Short form of group chat; configurable by the server owner. |
 
 The creator leads the group. When the leader leaves, the longest-standing remaining member takes over. An ordinary rejoin places a player at the end of this order; returning through group pause restores their saved leader role.
+
+## Group text chat
+
+Use `/vgm Meet at 120 64 -350` to send a message to your current Simple Voice Chat
+group. Messages appear in the normal Minecraft chat with a group prefix and
+the sender's name. The sender also sees their message. The Better Groups client
+mod is not required, and chat works even when the group's leader is unknown.
+
+Only current group members receive new messages. Leaving, being removed, or
+pausing the group stops delivery; a saved return permission does not grant chat
+access. Previously displayed messages remain in the player's Minecraft chat.
+There is no stored group history or automatic switch of the normal chat channel.
+
+Server owners can replace the short commands in `config.yml`:
+
+```yaml
+group-chat:
+  aliases: [vgm]
+```
+
+For example, `[gc]` registers `/gc <message>` instead of `/vgm`, and `[vgm, gc]`
+registers both. Use `[]` to disable short commands. `/voicegroup chat <message>`
+remains available in every case. Restart the server after changing aliases.
+Names are case-insensitive in configuration and are registered in lowercase;
+use letters, digits, `_` or `-`, starting with a letter, without `/` or a namespace.
+Invalid entries and the reserved name `voicegroup` are skipped with a warning.
+Choose names that are not already used by another plugin.
 
 ## Group pause
 
@@ -53,4 +82,7 @@ While a transition awaits confirmation, microphone transmission is paused. If it
 
 Settings and examples are in [`plugins/SVCBetterGroups/config.yml`](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/blob/main/src/main/resources/config.yml).
 
-The `vanillagame.svc_better_groups.use` permission enables `/voicegroup` and is granted to all players by default. Removing members and transferring leadership also require the player to be the current group leader.
+The `vanillagame.svc_better_groups.use` permission enables `/voicegroup` and the
+configured group chat commands, and is granted to all players by default.
+Removing members and transferring leadership also require the player to be the
+current group leader. Receiving group messages requires current group membership.

@@ -13,6 +13,9 @@ final class Messages {
     static final String COMMAND_PLAYERS_ONLY = key("command.players_only");
     static final String COMMAND_NO_PERMISSION = key("command.no_permission");
     static final String COMMAND_USAGE = key("command.usage");
+    static final String CHAT_USAGE = key("chat.usage");
+    static final String CHAT_NOT_IN_GROUP = key("chat.not_in_group");
+    static final String CHAT_MESSAGE = key("chat.message");
     static final String VOICECHAT_NOT_READY = key("voicechat.not_ready");
     static final String CONNECTION_SELF_UNAVAILABLE = key("connection.self_unavailable");
     static final String CONNECTION_TARGET_UNAVAILABLE = key("connection.target_unavailable");
@@ -75,6 +78,9 @@ final class Messages {
             COMMAND_PLAYERS_ONLY,
             COMMAND_NO_PERMISSION,
             COMMAND_USAGE,
+            CHAT_USAGE,
+            CHAT_NOT_IN_GROUP,
+            CHAT_MESSAGE,
             VOICECHAT_NOT_READY,
             CONNECTION_SELF_UNAVAILABLE,
             CONNECTION_TARGET_UNAVAILABLE,

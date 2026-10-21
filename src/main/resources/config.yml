@@ -1,3 +1,10 @@
+# Text chat for the player's current Simple Voice Chat group.
+group-chat:
+  # Short commands: /vgm <message>. This list replaces the default aliases.
+  # Use e.g. [gc] to register /gc instead, or [] to disable short commands.
+  # /voicegroup chat <message> is always available. Restart after changes.
+  aliases: [vgm]
+
 # How long a one-time invite remains valid.
 invites:
   expiration-minutes: 5

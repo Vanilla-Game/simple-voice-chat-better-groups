@@ -219,6 +219,63 @@ class FoliaSchedulingTest {
         verify(member.player(), never()).sendMessage(any(Component.class));
     }
 
+    @Test void groupChatDeliversOnRecipientsRegionAndRechecksMembership() throws Exception {
+        Region sender = region("Sender");
+        Region member = region("Member");
+        Region outsider = region("Outsider");
+        when(api.getConnectionOf(sender.id())).thenAnswer(ignored -> connection(group));
+        when(api.getConnectionOf(member.id())).thenAnswer(ignored -> connection(group));
+        bukkit.when(Bukkit::getOnlinePlayers).thenReturn(java.util.List.of(sender.player(), member.player(), outsider.player()));
+        when(member.player().canSee(sender.player())).thenAnswer(call -> {
+            assertSame(member.player(), owner);
+            return true;
+        });
+        when(sender.player().canSee(sender.player())).thenReturn(true);
+        execute(sender, "voicegroup chat hello group");
+        verify(sender.player()).sendMessage(any(Component.class));
+        verify(member.player(), never()).sendMessage(any(Component.class));
+        assertTrue(outsider.tasks().isEmpty());
+        member.tick();
+        verify(member.player()).sendMessage(any(Component.class));
+
+        clearInvocations(member.player());
+        execute(sender, "voicegroup chat this must not reach a former member");
+        when(api.getConnectionOf(member.id())).thenAnswer(ignored -> connection(null));
+        member.tick();
+        verify(member.player(), never()).sendMessage(any(Component.class));
+    }
+
+    @Test void queuedGroupChatDropsAfterSenderLeavesOrApiStops() throws Exception {
+        Region sender = region("Sender");
+        Region member = region("Member");
+        when(api.getConnectionOf(sender.id())).thenAnswer(ignored -> connection(group));
+        when(api.getConnectionOf(member.id())).thenAnswer(ignored -> connection(group));
+        when(member.player().canSee(sender.player())).thenReturn(true);
+        bukkit.when(Bukkit::getOnlinePlayers).thenReturn(java.util.List.of(member.player()));
+        execute(sender, "voicegroup chat queued before leaving");
+        when(api.getConnectionOf(sender.id())).thenAnswer(ignored -> connection(null));
+        member.tick();
+        verify(member.player(), never()).sendMessage(any(Component.class));
+
+        when(api.getConnectionOf(sender.id())).thenAnswer(ignored -> connection(group));
+        execute(sender, "voicegroup chat queued before shutdown");
+        when(plugin.getVoicechatApi()).thenReturn(null);
+        member.tick();
+        verify(member.player(), never()).sendMessage(any(Component.class));
+    }
+
+    @Test void laterJoinersDoNotReceiveQueuedGroupChat() throws Exception {
+        Region sender = region("Sender");
+        Region joiner = region("Joiner");
+        when(api.getConnectionOf(sender.id())).thenAnswer(ignored -> connection(group));
+        when(api.getConnectionOf(joiner.id())).thenAnswer(ignored -> connection(null));
+        bukkit.when(Bukkit::getOnlinePlayers).thenReturn(java.util.List.of(joiner.player()));
+        execute(sender, "voicegroup chat before joining");
+        when(api.getConnectionOf(joiner.id())).thenAnswer(ignored -> connection(group));
+        assertTrue(joiner.tasks().isEmpty());
+        verify(joiner.player(), never()).sendMessage(any(Component.class));
+    }
+
     private void addMembers(Region leader, Region member) {
         leadership.createGroup(groupId, leader.id());
         leadership.join(groupId, member.id());
@@ -229,7 +286,7 @@ class FoliaSchedulingTest {
         var command = new VoiceGroupCommand(plugin, new InviteStore(Clock.systemUTC()), leadership,
                 new InviteCooldownStore(Clock.systemUTC(), Duration.ZERO), requests,
                 new InviteCooldownStore(Clock.systemUTC(), Duration.ZERO),
-                new PluginSettings(5, 0, null, 1, 1, 5, 0, null, 1, 1));
+                new PluginSettings(5, 0, null, 1, 1, 5, 0, null, 1, 1, java.util.List.of("vgm")));
         var dispatcher = new CommandDispatcher<CommandSourceStack>();
         dispatcher.getRoot().addChild(command.createCommand());
         var source = mock(CommandSourceStack.class);
