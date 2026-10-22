@@ -42,7 +42,8 @@ The creator leads the group. When the leader leaves, the longest-standing remain
 
 Use `/vgm Meet at 120 64 -350` to send a message to your current Simple Voice Chat
 group. Messages appear in the normal Minecraft chat with a group prefix and
-the sender's name. The sender also sees their message. The Better Groups client
+the sender's name. The prefix is aqua, the sender's name is gold, and the message
+text is white. The sender also sees their message. The Better Groups client
 mod is not required, and chat works even when the group's leader is unknown.
 
 Only current group members receive new messages. Leaving, being removed, or

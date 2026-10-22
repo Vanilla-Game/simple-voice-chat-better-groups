@@ -45,7 +45,7 @@ class GroupChatServiceTest {
         }
 
         Component expected = Messages.component(Messages.CHAT_MESSAGE, NamedTextColor.AQUA,
-                Component.text("Sender"), Component.text(text, NamedTextColor.WHITE));
+                Component.text("Sender", NamedTextColor.GOLD), Component.text(text, NamedTextColor.WHITE));
         verify(sender).sendMessage(expected);
         verify(member).sendMessage(expected);
         verify(outsider, never()).sendMessage(any(Component.class));

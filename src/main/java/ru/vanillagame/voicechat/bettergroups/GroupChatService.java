@@ -36,7 +36,7 @@ final class GroupChatService {
 
         UUID groupId = group.getId();
         Component message = Messages.component(Messages.CHAT_MESSAGE, NamedTextColor.AQUA,
-                Component.text(sender.getName()), Component.text(text, NamedTextColor.WHITE));
+                Component.text(sender.getName(), NamedTextColor.GOLD), Component.text(text, NamedTextColor.WHITE));
         for (Player recipient : Bukkit.getOnlinePlayers()) {
             UUID recipientId = recipient.getUniqueId();
             // Capture the audience at send time: later joiners do not receive queued messages.

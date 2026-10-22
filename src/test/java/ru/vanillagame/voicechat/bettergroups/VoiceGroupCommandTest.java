@@ -566,7 +566,7 @@ class VoiceGroupCommandTest {
             execute(command, sender, "voicegroup chat " + text);
         }
         verify(sender, times(2)).sendMessage(Messages.component(Messages.CHAT_MESSAGE, NamedTextColor.AQUA,
-                Component.text("Sender"), Component.text(text, NamedTextColor.WHITE)));
+                Component.text("Sender", NamedTextColor.GOLD), Component.text(text, NamedTextColor.WHITE)));
     }
 
     @Test
