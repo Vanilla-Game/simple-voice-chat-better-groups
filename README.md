@@ -18,6 +18,7 @@
 - **Automatic succession.** When the leader leaves, the longest-standing remaining member takes over.
 - **Group pause and return.**\* Switch to proximity chat and return without entering the password, restoring your previous leader role.
 - **In-game controls.**\* Use a searchable player picker, leader crowns, member removal buttons, and pause / return buttons and key binds.
+- **Group text chat.** Send messages only to your current voice group with `/vgm <message>`; short commands are configurable.
 - **Server-side commands.** Manage groups with `/voicegroup`; server owners can control access through permissions.
 - **Configurable notifications.** Adjust invitation and request expiry, cooldowns, and notification sounds.
 - **15 languages, chosen automatically.** Chat messages follow each player's Minecraft language. [See the supported locales](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/blob/main/docs/locales.md).

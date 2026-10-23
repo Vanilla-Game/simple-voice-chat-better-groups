@@ -86,6 +86,21 @@ class PluginTranslationsTest {
     }
 
     @Test
+    void groupChatUsesRecipientLocaleAndKeepsUserTextLiteral() {
+        PluginTranslations translations = new PluginTranslations();
+        translations.register(getClass().getClassLoader());
+        try {
+            Component message = Messages.component(Messages.CHAT_MESSAGE, NamedTextColor.AQUA,
+                    Component.text("Alex"), Component.text("<red> Meet at {0}'s portal &c"));
+            assertEquals("[Group] Alex: <red> Meet at {0}'s portal &c", render(message, Locale.US));
+            assertEquals("[Группа] Alex: <red> Meet at {0}'s portal &c",
+                    render(message, PluginTranslations.RUSSIAN_LOCALE));
+        } finally {
+            translations.unregister();
+        }
+    }
+
+    @Test
     void inviteLifetimeMessageUsesConfiguredValue() {
         PluginTranslations translations = new PluginTranslations();
         translations.register(getClass().getClassLoader());

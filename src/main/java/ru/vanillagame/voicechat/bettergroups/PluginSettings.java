@@ -6,6 +6,9 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.time.Duration;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
 
 // Sound values are validated sound event keys, or null when disabled.
 record PluginSettings(
@@ -18,7 +21,8 @@ record PluginSettings(
         int requestCooldownSeconds,
         String requestSound,
         float requestSoundVolume,
-        float requestSoundPitch
+        float requestSoundPitch,
+        List<String> groupChatAliases
 ) {
 
     static final int DEFAULT_INVITE_EXPIRATION_MINUTES = 5;
@@ -35,8 +39,11 @@ record PluginSettings(
     private static final String REQUEST_EXPIRATION_PATH = "requests.expiration-minutes";
     private static final String REQUEST_COOLDOWN_PATH = "requests.cooldown-seconds";
     private static final String REQUEST_SOUND_PATH = "requests.sound";
+    private static final String CHAT_ALIASES_PATH = "group-chat.aliases";
+    private static final List<String> DEFAULT_CHAT_ALIASES = List.of("vgm");
 
     PluginSettings {
+        groupChatAliases = List.copyOf(groupChatAliases);
         if (inviteExpirationMinutes <= 0) {
             throw new IllegalArgumentException("inviteExpirationMinutes must be positive");
         }
@@ -66,8 +73,32 @@ record PluginSettings(
                 readInt(plugin, config, REQUEST_COOLDOWN_PATH, DEFAULT_REQUEST_COOLDOWN_SECONDS, 0),
                 requestSound.key(),
                 requestSound.volume(),
-                requestSound.pitch()
+                requestSound.pitch(),
+                readChatAliases(plugin, config)
         );
+    }
+
+    private static List<String> readChatAliases(JavaPlugin plugin, FileConfiguration config) {
+        if (!config.contains(CHAT_ALIASES_PATH)) return DEFAULT_CHAT_ALIASES;
+        List<?> configured = config.getList(CHAT_ALIASES_PATH);
+        if (configured == null) {
+            warn(plugin, CHAT_ALIASES_PATH, DEFAULT_CHAT_ALIASES, "must be a list of command names");
+            return DEFAULT_CHAT_ALIASES;
+        }
+        var aliases = new LinkedHashSet<String>();
+        for (Object entry : configured) {
+            if (!(entry instanceof String name)) {
+                plugin.getLogger().warning("Ignoring non-string group-chat alias: " + entry);
+                continue;
+            }
+            String alias = name.strip().toLowerCase(Locale.ROOT);
+            if (!alias.matches("[a-z][a-z0-9_-]*") || alias.equals("voicegroup")) {
+                plugin.getLogger().warning("Ignoring invalid or reserved group-chat alias: " + name);
+                continue;
+            }
+            aliases.add(alias);
+        }
+        return List.copyOf(aliases);
     }
 
     Duration inviteExpiration() {

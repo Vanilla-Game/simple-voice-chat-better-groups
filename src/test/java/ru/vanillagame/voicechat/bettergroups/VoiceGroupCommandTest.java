@@ -106,7 +106,7 @@ class VoiceGroupCommandTest {
                 cooldowns,
                 new RequestStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ofMinutes(5)),
                 new InviteCooldownStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ZERO),
-                new PluginSettings(5, 10, "block.anvil.land", 1.0F, 1.0F, 5, 30, "block.anvil.land", 1.0F, 1.0F)
+                new PluginSettings(5, 10, "block.anvil.land", 1.0F, 1.0F, 5, 30, "block.anvil.land", 1.0F, 1.0F, List.of("vgm"))
         );
 
         try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
@@ -323,7 +323,7 @@ class VoiceGroupCommandTest {
                 new InviteCooldownStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ZERO),
                 requests,
                 new InviteCooldownStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ZERO),
-                new PluginSettings(5, 10, "block.anvil.land", 1.0F, 1.0F, 5, 30, "block.anvil.land", 1.0F, 1.0F)
+                new PluginSettings(5, 10, "block.anvil.land", 1.0F, 1.0F, 5, 30, "block.anvil.land", 1.0F, 1.0F, List.of("vgm"))
         );
 
         try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
@@ -372,7 +372,7 @@ class VoiceGroupCommandTest {
                 new InviteCooldownStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ZERO),
                 requests,
                 new InviteCooldownStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ZERO),
-                new PluginSettings(5, 10, "block.anvil.land", 1.0F, 1.0F, 5, 30, "block.anvil.land", 1.0F, 1.0F)
+                new PluginSettings(5, 10, "block.anvil.land", 1.0F, 1.0F, 5, 30, "block.anvil.land", 1.0F, 1.0F, List.of("vgm"))
         );
 
         execute(command, requester, "voicegroup request Open");
@@ -546,6 +546,85 @@ class VoiceGroupCommandTest {
         assertEquals(List.of(), suggest(command, player, "voicegroup approve "));
     }
 
+    @Test
+    void shortAndFullChatCommandsPreserveMessageText() {
+        BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
+        when(plugin.isEnabled()).thenReturn(true);
+        VoicechatServerApi api = mock(VoicechatServerApi.class);
+        when(plugin.getVoicechatApi()).thenReturn(api);
+        Player sender = player("Sender");
+        Group group = group();
+        VoicechatConnection connection = connection(group);
+        when(api.getConnectionOf(sender.getUniqueId())).thenReturn(connection);
+        // No observed creation or leader is necessary for text chat.
+        VoiceGroupCommand command = command(plugin, mock(InviteStore.class), new GroupLeadershipRegistry());
+        String text = "Я у портала 120 64 -350  <red> &c /op @a";
+        try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
+            bukkit.when(Bukkit::getOnlinePlayers).thenReturn(List.of(sender));
+            bukkit.when(() -> Bukkit.isOwnedByCurrentRegion(sender)).thenReturn(true);
+            execute(command, sender, "vgm " + text);
+            execute(command, sender, "voicegroup chat " + text);
+        }
+        verify(sender, times(2)).sendMessage(Messages.component(Messages.CHAT_MESSAGE, NamedTextColor.AQUA,
+                Component.text("Sender", NamedTextColor.GOLD), Component.text(text, NamedTextColor.WHITE)));
+    }
+
+    @Test
+    void bareChatCommandsShowUsageWithoutAccessingVoiceChat() {
+        BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
+        Player sender = player("Sender");
+        VoiceGroupCommand command = command(plugin, mock(InviteStore.class), new GroupLeadershipRegistry());
+        execute(command, sender, "vgm");
+        execute(command, sender, "voicegroup chat");
+        verify(sender).sendMessage(Messages.component(Messages.CHAT_USAGE, NamedTextColor.YELLOW,
+                Component.text("/vgm")));
+        verify(sender).sendMessage(Messages.component(Messages.CHAT_USAGE, NamedTextColor.YELLOW,
+                Component.text("/voicegroup chat")));
+        verify(plugin, never()).getVoicechatApi();
+    }
+
+    @Test
+    void shortChatCommandsEnforcePermissionPlayerSenderAndApiReadiness() {
+        BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
+        Player sender = player("Sender");
+        VoiceGroupCommand command = command(plugin, mock(InviteStore.class), new GroupLeadershipRegistry());
+        when(sender.hasPermission("vanillagame.svc_better_groups.use")).thenReturn(false);
+        assertThrows(CommandSyntaxException.class, () -> dispatcher(command).execute("vgm hello", source(sender)));
+        assertFalse(command.createChatCommands().getFirst().canUse(source(sender)));
+        verify(plugin, never()).getVoicechatApi();
+
+        CommandSender console = mock(CommandSender.class);
+        when(console.hasPermission("vanillagame.svc_better_groups.use")).thenReturn(true);
+        assertEquals(0, execute(command, console, "vgm hello"));
+        verify(console).sendMessage(Messages.component(Messages.COMMAND_PLAYERS_ONLY, NamedTextColor.RED));
+        verify(plugin, never()).getVoicechatApi();
+
+        when(sender.hasPermission("vanillagame.svc_better_groups.use")).thenReturn(true);
+        assertEquals(0, execute(command, sender, "vgm hello"));
+        verify(sender).sendMessage(Messages.component(Messages.VOICECHAT_NOT_READY, NamedTextColor.RED));
+    }
+
+    @Test
+    void configuredChatAliasesReplaceDefaultsAndCanBeDisabled() {
+        BetterGroupsPlugin plugin = mock(BetterGroupsPlugin.class);
+        Player sender = player("Sender");
+        for (List<String> aliases : List.of(List.of("gc", "party"), List.<String>of())) {
+            VoiceGroupCommand command = new VoiceGroupCommand(plugin, mock(InviteStore.class),
+                    new GroupLeadershipRegistry(), new InviteCooldownStore(Clock.systemUTC(), Duration.ZERO),
+                    new RequestStore(Clock.systemUTC(), Duration.ofMinutes(5)),
+                    new InviteCooldownStore(Clock.systemUTC(), Duration.ZERO),
+                    new PluginSettings(5, 0, null, 1, 1, 5, 0, null, 1, 1, aliases));
+            var dispatcher = dispatcher(command);
+            assertThrows(CommandSyntaxException.class, () -> dispatcher.execute("vgm hello", source(sender)));
+            for (String alias : aliases) {
+                execute(command, sender, alias);
+                verify(sender).sendMessage(Messages.component(Messages.CHAT_USAGE, NamedTextColor.YELLOW,
+                        Component.text("/" + alias)));
+            }
+            assertEquals(1, execute(command, sender, "voicegroup chat"));
+        }
+    }
+
     private static CommandSourceStack source(CommandSender sender) {
         CommandSourceStack source = mock(CommandSourceStack.class);
         when(source.getSender()).thenReturn(sender);
@@ -555,6 +634,7 @@ class VoiceGroupCommandTest {
     private static CommandDispatcher<CommandSourceStack> dispatcher(VoiceGroupCommand command) {
         CommandDispatcher<CommandSourceStack> dispatcher = new CommandDispatcher<>();
         dispatcher.getRoot().addChild(command.createCommand());
+        command.createChatCommands().forEach(dispatcher.getRoot()::addChild);
         return dispatcher;
     }
 
@@ -580,7 +660,7 @@ class VoiceGroupCommandTest {
                 new InviteCooldownStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ZERO),
                 new RequestStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ofMinutes(5)),
                 new InviteCooldownStore(Clock.fixed(NOW, ZoneOffset.UTC), Duration.ZERO),
-                new PluginSettings(5, 10, "block.anvil.land", 1.0F, 1.0F, 5, 30, "block.anvil.land", 1.0F, 1.0F)
+                new PluginSettings(5, 10, "block.anvil.land", 1.0F, 1.0F, 5, 30, "block.anvil.land", 1.0F, 1.0F, List.of("vgm"))
         );
     }
 

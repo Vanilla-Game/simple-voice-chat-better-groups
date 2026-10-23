@@ -101,6 +101,20 @@ cannot reconstruct the creator or historical join order from the public API.
 For such a group, leader-only actions remain disabled and clients receive no
 leader identity.
 
+## Group text chat
+
+`/voicegroup chat <message>` and configurable short commands (default `/vgm`)
+share the same player, permission and SVC readiness checks. Text is rendered as
+literal Adventure components, without interpreting formatting or commands.
+The server reads membership from live SVC connections rather than the leadership
+registry, so groups whose creation was not observed can still use text chat.
+
+Recipients must belong to the group at send time and at delivery. Delivery uses
+each player's entity scheduler and rechecks the API instance, sender membership,
+recipient membership and sender visibility. A paused player has left the native
+SVC group and cannot send or receive group messages through their return grant.
+Messages use the normal Minecraft chat; no history or client protocol is added.
+
 ## Client protocol
 
 The client first negotiates a protocol version, then receives group state on a

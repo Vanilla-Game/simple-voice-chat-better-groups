@@ -23,6 +23,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -38,6 +39,7 @@ final class VoiceGroupCommand {
     private final RequestStore requests;
     private final InviteCooldownStore requestCooldowns;
     private final PluginSettings settings;
+    private final GroupChatService groupChat;
 
     VoiceGroupCommand(
             BetterGroupsPlugin plugin,
@@ -55,6 +57,7 @@ final class VoiceGroupCommand {
         this.requests = requests;
         this.requestCooldowns = requestCooldowns;
         this.settings = settings;
+        this.groupChat = new GroupChatService(plugin);
     }
 
     LiteralCommandNode<CommandSourceStack> createCommand() {
@@ -72,7 +75,34 @@ final class VoiceGroupCommand {
                 .then(subcommand("request", "group", StringArgumentType.greedyString(), this::request,
                         this::suggestGroups))
                 .then(subcommand("approve", "token", StringArgumentType.word(), this::approve, null))
+                .then(subcommand("chat", "message", StringArgumentType.greedyString(), this::chat, null)
+                        .executes(context -> showChatUsage(context, "voicegroup chat")))
                 .build();
+    }
+
+    List<LiteralCommandNode<CommandSourceStack>> createChatCommands() {
+        return settings.groupChatAliases().stream().map(this::createChatCommand).toList();
+    }
+
+    private LiteralCommandNode<CommandSourceStack> createChatCommand(String name) {
+        return Commands.literal(name)
+                .requires(source -> source.getSender().hasPermission(PERMISSION))
+                .executes(context -> showChatUsage(context, name))
+                .then(Commands.argument("message", StringArgumentType.greedyString())
+                        .executes(context -> execute(context, "message", this::chat)))
+                .build();
+    }
+
+    private int showChatUsage(CommandContext<CommandSourceStack> context, String command) {
+        Player player = senderPlayer(context.getSource());
+        if (player == null) return 0;
+        player.sendMessage(Messages.component(Messages.CHAT_USAGE, NamedTextColor.YELLOW,
+                Component.text("/" + command)));
+        return 1;
+    }
+
+    private void chat(Player sender, String text, VoicechatServerApi api) {
+        groupChat.send(sender, text, api);
     }
 
     private LiteralArgumentBuilder<CommandSourceStack> subcommand(
