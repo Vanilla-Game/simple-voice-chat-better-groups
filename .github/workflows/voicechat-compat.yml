@@ -206,14 +206,7 @@ jobs:
             args+=("-PcompatProbe=true")
           fi
 
-          result=fail
-          if python3 scripts/run-client-compat.py --log compat-results/client.log -- ./gradlew "${args[@]}"; then
-            result=ok
-          fi
-          file="fabric__${TARGET}__${MINECRAFT}__${VOICECHAT_ARTIFACT}"
-          printf '%s\n' "$result" > "compat-results/$file"
-          echo "- \`$TARGET / $MINECRAFT / $VOICECHAT_ARTIFACT\`: $result" >> "$GITHUB_STEP_SUMMARY"
-          test "$result" = ok
+          python3 scripts/run-client-compat.py --log compat-results/client.log -- ./gradlew "${args[@]}"
 
       - name: Confirm packaged client was not modified
         if: ${{ always() && steps.client.outcome == 'success' }}
@@ -225,6 +218,25 @@ jobs:
           set -euo pipefail
           actual=$(sha256sum "$CLIENT_PATH" | awk '{ print $1 }')
           test "$actual" = "$CLIENT_SHA256"
+
+      - name: Record result
+        if: always()
+        shell: bash
+        env:
+          JOB_STATUS: ${{ job.status }}
+          TARGET: ${{ matrix.target }}
+          MINECRAFT: ${{ matrix.minecraft }}
+          VOICECHAT_ARTIFACT: ${{ matrix.voicechatArtifact }}
+        run: |
+          set -euo pipefail
+          mkdir -p compat-results
+          result=fail
+          if [ "$JOB_STATUS" = success ]; then
+            result=ok
+          fi
+          file="fabric__${TARGET}__${MINECRAFT}__${VOICECHAT_ARTIFACT}"
+          printf '%s\n' "$result" > "compat-results/$file"
+          echo "- \`$TARGET / $MINECRAFT / $VOICECHAT_ARTIFACT\`: $result" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload result
         if: always()
