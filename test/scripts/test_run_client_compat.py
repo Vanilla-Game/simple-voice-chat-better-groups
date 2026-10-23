@@ -25,12 +25,17 @@ class ClientRunnerTest(unittest.TestCase):
 
     def test_success_and_assertion_failure_are_preserved_without_retry(self):
         for expected in (0, 7):
-            code, log = self.run_client(f"print('one attempt'); raise SystemExit({expected})")
+            code, log = self.run_client(f"print('one attempt'); print({runner.PASSED_MARKER!r}); raise SystemExit({expected})")
             self.assertEqual(expected, code)
-            self.assertEqual("one attempt\n", log)
+            self.assertEqual(f"one attempt\n{runner.PASSED_MARKER}\n", log)
+
+    def test_zero_exit_without_running_the_test_is_not_success(self):
+        code, log = self.run_client("print('client stopped')")
+        self.assertEqual(1, code)
+        self.assertIn("without confirming", log)
 
     def test_one_failed_backend_allows_successful_fallback(self):
-        code, _ = self.run_client("print('Failed to create backend Vulkan')")
+        code, _ = self.run_client(f"print('Failed to create backend Vulkan'); print({runner.PASSED_MARKER!r})")
         self.assertEqual(0, code)
 
     def test_both_failed_backends_stop_hung_dialog(self):

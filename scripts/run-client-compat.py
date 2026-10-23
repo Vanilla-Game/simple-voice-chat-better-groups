@@ -11,6 +11,8 @@ import subprocess
 import sys
 import time
 
+PASSED_MARKER = "[svc_better_groups_client_test] compatibility game test passed"
+
 
 def run(command, log_path, setup_timeout=900, game_timeout=300, idle_timeout=120):
     log_path.parent.mkdir(parents=True, exist_ok=True)
@@ -19,6 +21,7 @@ def run(command, log_path, setup_timeout=900, game_timeout=300, idle_timeout=120
     backends_failed = set()
     pending = ""
     failure = None
+    test_passed = False
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                start_new_session=True)
     selector = selectors.DefaultSelector()
@@ -40,6 +43,8 @@ def run(command, log_path, setup_timeout=900, game_timeout=300, idle_timeout=120
                     lines = pending.split("\n")
                     pending = lines.pop()
                     for line in lines:
+                        if PASSED_MARKER in line:
+                            test_passed = True
                         if re.search(r"^> Task .*:runProductionClientGameTest(?:\s|$)", line):
                             game_started = game_started or time.monotonic()
                         match = re.search(r"Failed to create backend (OpenGL|Vulkan)", line)
@@ -59,7 +64,13 @@ def run(command, log_path, setup_timeout=900, game_timeout=300, idle_timeout=120
                     log.write(message.encode())
                     print(message, flush=True)
                     return 124
-            return process.wait()
+            result = process.wait()
+            if result == 0 and not test_passed:
+                message = "\n::error::Client exited without confirming that the compatibility game test passed.\n"
+                log.write(message.encode())
+                print(message, flush=True)
+                return 1
+            return result
     finally:
         selector.close()
         process.stdout.close()
