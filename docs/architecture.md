@@ -1,11 +1,12 @@
 # Architecture
 
-This repository builds four release artifacts:
+This repository builds five release artifacts:
 
 - one Paper/Folia-compatible plugin that owns group state and authorizes every action;
 - an optional Fabric 1.21.11 mod built with Mojang mappings, remapped to intermediary names, and targeting Java 21;
 - an optional Fabric 26.1.x mod that adds controls to the Simple Voice Chat UI;
-- an optional Fabric 26.2.x mod built from the same client sources.
+- an optional Fabric 26.2.x mod built from the same client sources;
+- an optional Fabric 26.3.x mod built from the same client sources.
 
 The client is never trusted with membership or leadership decisions. Players
 without the client mod retain the complete command workflow.
@@ -13,25 +14,50 @@ without the client mod retain the complete command workflow.
 ## Compatibility boundary
 
 The server jar targets the lowest stable baseline, Paper 26.1.2 and Java 25,
-and is tested unchanged on Paper and Folia 26.1.2 and 26.2. Leaf uses the Paper API but
-is treated as experimental: minimum and maximum supported SVC releases receive
-blocking smoke tests on both Minecraft versions. Server versions 26.1 and
+and is tested unchanged on Paper and Folia 26.1.2 and 26.2. Leaf is not part of
+the CI compatibility matrix. Server versions 26.1 and
 26.1.1 are outside the contract.
 
-The three Fabric jars deliberately share protocol and mod ID while carrying
+The four Fabric jars deliberately share protocol and mod ID while carrying
 Minecraft-specific dependency metadata. The 1.21.11 jar uses the `mc1_21_11`
-UI and networking adapter set over the shared protocol; the 26.1 and 26.2 jars
-use the `mc26` adapter set. The 26.1 jar covers 26.1, 26.1.1, and 26.1.2; the
-26.2 jar covers 26.2.x. A client must install exactly one. Forge, NeoForge, and
+UI and networking adapter set over the shared protocol; the 26.1, 26.2, and 26.3
+jars use the `mc26` adapter set. The 26.1 jar covers 26.1, 26.1.1, and 26.1.2;
+the 26.2 and 26.3 jars cover their respective Minecraft lines. A client must
+install exactly one. Forge, NeoForge, and
 Quilt clients are not supported.
 
-Compatibility is defined by `compatibility.json`. The complete published jar,
-not a separately recompiled substitute, is launched for every declared
-Minecraft/SVC pair. SVC server and client patch numbers may differ inside the
+Compatibility is defined by `compatibility.json`. Runtime CI launches the exact
+packaged release JAR, with its SHA-256 checked before and after the test. The
+normal build supplies these JARs to both runtime workflows; standalone discovery
+packages only the server JAR or the explicitly non-publishable client probes.
+SVC server and client patch numbers may differ inside the
 supported 2.6 line, but 2.5.x, 2.7.x, beta, and unlisted builds are excluded.
-CI runs every pair as an independently named job so GitHub shows the exact
-Fabric target, Minecraft runtime, and Simple Voice Chat artifact under test.
-Results and failure artifacts remain independent for every declared pair.
+Each selected pair has an independently named job showing the exact Fabric
+target, Minecraft runtime, and Simple Voice Chat artifact under test.
+
+Runtime checks have three tiers, with counts derived from the current catalog:
+
+| Tier | Client checks | Server checks | Total |
+| --- | --- | --- | --- |
+| PR smoke, both sides changed | 4 | 4 | 8 |
+| Release boundaries | 12 | 8 | 20 |
+| Full weekly matrix | 61 | 30 | 91 |
+
+PR smoke checks the newest supported Minecraft/SVC pair for each client JAR,
+and the newest SVC on both Paper and Folia for each server Minecraft version.
+Changes confined to one side run only that side's runtime checks; shared build,
+catalog, and CI changes select both. Release checks cover the oldest and newest
+SVC for every supported Minecraft runtime. Full checks cover every catalogued
+pair weekly and can also be requested manually. Leaf checks are excluded from
+all tiers. Compilation, unit tests, and other build validation remain separate
+from these runtime counts.
+
+Boundary checks can miss a failure limited to an intermediate SVC release; the
+weekly full run retains that coverage. Discovery tests new SVC candidates before
+widening the catalog. Successful packaging-job outputs identify the artifact
+downloaded by retrying jobs, so a partial rerun does not assume that packaging
+ran again. Result and failure-log artifact names include the run attempt to
+avoid collisions with immutable artifacts from an earlier attempt.
 
 ## Client source layout and version evolution
 
@@ -53,6 +79,7 @@ The current mapping is:
 | `1.21.11` | `mc1_21_11` |
 | `26.1` | `mc26` |
 | `26.2` | `mc26` |
+| `26.3` | `mc26` |
 
 These names describe API families, not their relative age. A newly supported
 Minecraft version must first be compiled and runtime-tested with an existing
@@ -63,8 +90,9 @@ family it supports, never `legacy`, `modern`, `latest`, or `main`.
 Code belongs in `shared` only while it compiles and behaves consistently for
 every target. When a shared integration point diverges, move all variants of
 that point into their respective adapter sets so no target is the implicit
-default. Changes to a shared source or an adapter set require the complete
-compatibility matrix for every target that consumes it. Removing a target or
+default. Shared client changes select client smoke checks; release and weekly
+tiers provide the wider compatibility coverage. Use a manual full run when a
+change needs every supported pair verified before release. Removing a target or
 adapter set is an explicit support-policy decision, not an automatic result of
 adding a newer Minecraft version.
 
@@ -76,7 +104,7 @@ use different formats:
 | Purpose | Value |
 | --- | --- |
 | Display name | Simple Voice Chat Better Groups |
-| Artifact names | `svc-better-groups`, `svc-better-groups-fabric-1.21.11`, `svc-better-groups-fabric-26.1`, `svc-better-groups-fabric-26.2` |
+| Artifact names | `svc-better-groups`, `svc-better-groups-fabric-1.21.11`, `svc-better-groups-fabric-26.1`, `svc-better-groups-fabric-26.2`, `svc-better-groups-fabric-26.3` |
 | Protocol and resource namespaces | `svc_better_groups[_client]` |
 
 `/voicegroup` is the command used by both chat and the client mod. It is registered
@@ -159,8 +187,10 @@ Shutdown cancels global tasks and bStats; queued player callbacks check whether
 the plugin is still enabled. bStats 3.2.1 handles Folia internally.
 
 CI checks the identical packaged JAR on both Paper and Folia. Full runs cover
-every catalogued SVC artifact, and smoke runs cover the oldest and newest for
-each Minecraft version. Startup checks keep servers running long enough to
+every catalogued SVC artifact, release runs cover the oldest and newest, and
+smoke runs cover the newest for each Minecraft version. Startup checks keep
+servers running long enough to
 exercise the periodic cleanup, then stop them normally. Unit tests separately
 exercise deferred cross-region operations; startup smoke tests do not replace
-multiplayer voice and client UI testing.
+multiplayer voice and client UI testing. Passing these CI tiers is not proof
+of real multiplayer voice transport or player-to-player gameplay behavior.
