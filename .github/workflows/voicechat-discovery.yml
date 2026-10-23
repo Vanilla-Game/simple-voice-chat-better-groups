@@ -81,8 +81,11 @@ jobs:
         uses: actions/download-artifact@v7
         with:
           pattern: compat-result-*
-          merge-multiple: true
-          path: compat-results
+          merge-multiple: false
+          path: compat-result-artifacts
+
+      - name: Select latest result for each compatibility check
+        run: ruby scripts/merge-compatibility-results.rb compat-result-artifacts compat-results
 
       - name: Apply independent contiguous green prefixes
         id: widen

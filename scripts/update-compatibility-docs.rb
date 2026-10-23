@@ -77,7 +77,6 @@ server_filename = "svc-better-groups-#{version}.jar"
 server_rows = catalog.fetch("server").fetch("targets").map do |target|
   software = ["Paper"]
   software << "Folia" if target.key?("foliaBuild")
-  software << "Leaf (experimental)" if target.key?("leafBuild")
   [
     download_link(server_filename, version, "Download"),
     "`#{target.fetch('minecraft')}`",

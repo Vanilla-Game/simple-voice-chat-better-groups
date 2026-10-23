@@ -26,6 +26,8 @@ permissions:
 jobs:
   package:
     runs-on: ubuntu-latest
+    outputs:
+      artifact-id: ${{ steps.clients.outputs.artifact-id }}
     steps:
       - name: Checkout
         if: ${{ inputs.probe || inputs.clients-artifact == '' }}
@@ -80,6 +82,7 @@ jobs:
           done
 
       - name: Upload packaged clients
+        id: clients
         uses: actions/upload-artifact@v6
         with:
           name: fabric-compat-clients-${{ github.run_id }}-${{ github.run_attempt }}
@@ -101,12 +104,12 @@ jobs:
             client-fabric/targets/mc26_2/build/libs/*-compat-probe.jar.sha256
             client-fabric/targets/mc26_3/build/libs/*-compat-probe.jar.sha256
           if-no-files-found: error
-          retention-days: 1
+          retention-days: 7
 
   check:
     needs: package
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
@@ -127,15 +130,21 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v5
 
-      - name: Verify preinstalled Xvfb
+      - name: Set up software graphics
         run: |
-          command -v Xvfb
-          command -v xvfb-run
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends xvfb xauth mesa-utils libgl1-mesa-dri libglx-mesa0 libegl-mesa0
+
+      - name: Verify software OpenGL under Xvfb
+        env:
+          LIBGL_ALWAYS_SOFTWARE: 'true'
+          GALLIUM_DRIVER: llvmpipe
+        run: xvfb-run -a -s '-screen 0 1280x1024x24 +extension GLX -nolisten tcp' glxinfo -B
 
       - name: Download packaged clients
         uses: actions/download-artifact@v7
         with:
-          name: fabric-compat-clients-${{ github.run_id }}-${{ github.run_attempt }}
+          artifact-ids: ${{ needs.package.outputs.artifact-id }}
           path: packaged-clients
 
       - name: Resolve exact client jar
@@ -165,6 +174,14 @@ jobs:
       - name: Run packaged client compatibility test
         env:
           ALSOFT_DRIVERS: 'null'
+          # Use Mesa's CPU renderer on hosted runners. SDL (MC 26.3+) must
+          # select X11, matching the Xvfb display created by Loom.
+          LIBGL_ALWAYS_SOFTWARE: 'true'
+          GALLIUM_DRIVER: llvmpipe
+          SDL_VIDEO_DRIVER: x11
+          # MC 26.3 requests an sRGB framebuffer; Mesa's EGL path supports
+          # it under Xvfb without relying on a matching GLX visual.
+          SDL_VIDEO_FORCE_EGL: ${{ matrix.target == '26.3' && '1' || '0' }}
           TARGET: ${{ matrix.target }}
           MINECRAFT: ${{ matrix.minecraft }}
           VOICECHAT_ARTIFACT: ${{ matrix.voicechatArtifact }}
@@ -175,6 +192,8 @@ jobs:
           set -euo pipefail
           mkdir -p compat-results
           args=(
+            --no-daemon
+            --console=plain
             --build-cache
             :client-fabric:compat-runner:runProductionClientGameTest
             -PcompatRunnerOnly=true
@@ -187,14 +206,7 @@ jobs:
             args+=("-PcompatProbe=true")
           fi
 
-          result=fail
-          if ./gradlew "${args[@]}"; then
-            result=ok
-          fi
-          file="fabric__${TARGET}__${MINECRAFT}__${VOICECHAT_ARTIFACT}"
-          printf '%s\n' "$result" > "compat-results/$file"
-          echo "- \`$TARGET / $MINECRAFT / $VOICECHAT_ARTIFACT\`: $result" >> "$GITHUB_STEP_SUMMARY"
-          test "$result" = ok
+          python3 scripts/run-client-compat.py --log compat-results/client.log -- ./gradlew "${args[@]}"
 
       - name: Confirm packaged client was not modified
         if: ${{ always() && steps.client.outcome == 'success' }}
@@ -207,12 +219,31 @@ jobs:
           actual=$(sha256sum "$CLIENT_PATH" | awk '{ print $1 }')
           test "$actual" = "$CLIENT_SHA256"
 
+      - name: Record result
+        if: always()
+        shell: bash
+        env:
+          JOB_STATUS: ${{ job.status }}
+          TARGET: ${{ matrix.target }}
+          MINECRAFT: ${{ matrix.minecraft }}
+          VOICECHAT_ARTIFACT: ${{ matrix.voicechatArtifact }}
+        run: |
+          set -euo pipefail
+          mkdir -p compat-results
+          result=fail
+          if [ "$JOB_STATUS" = success ]; then
+            result=ok
+          fi
+          file="fabric__${TARGET}__${MINECRAFT}__${VOICECHAT_ARTIFACT}"
+          printf '%s\n' "$result" > "compat-results/$file"
+          echo "- \`$TARGET / $MINECRAFT / $VOICECHAT_ARTIFACT\`: $result" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload result
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: compat-result-fabric-${{ matrix.target }}-${{ matrix.minecraft }}-${{ matrix.voicechatArtifact }}
-          path: compat-results/
+          name: compat-result-fabric-${{ matrix.target }}-${{ matrix.minecraft }}-${{ matrix.voicechatArtifact }}-attempt-${{ github.run_attempt }}
+          path: compat-results/fabric__*
           if-no-files-found: error
           retention-days: 7
 
@@ -220,7 +251,9 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v6
         with:
-          name: compat-logs-fabric-${{ matrix.target }}-${{ matrix.minecraft }}-${{ matrix.voicechatArtifact }}
-          path: client-fabric/compat-runner/build/run/
+          name: compat-logs-fabric-${{ matrix.target }}-${{ matrix.minecraft }}-${{ matrix.voicechatArtifact }}-attempt-${{ github.run_attempt }}
+          path: |
+            compat-results/client.log
+            client-fabric/compat-runner/build/run/
           if-no-files-found: ignore
           retention-days: 7

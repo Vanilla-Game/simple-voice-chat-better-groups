@@ -53,7 +53,7 @@ Click **Ⅱ** for proximity chat, then **Return to group** to rejoin without ent
 
 ### Server
 
-Install [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat), place the Better Groups server JAR in `plugins/`, and restart. One JAR supports Paper and Folia; Leaf support is experimental.
+Install [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat), place the Better Groups server JAR in `plugins/`, and restart. One JAR supports Paper and Folia.
 
 <!-- modrinth:exclude:start -->
 
@@ -64,8 +64,8 @@ Install [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat), plac
 
 | Download | Minecraft | Server | Java | Simple Voice Chat |
 | --- | --- | --- | --- | --- |
-| [Download](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.13.1/svc-better-groups-0.13.1.jar) | `26.1.2` | Paper; Folia; Leaf (experimental) | `25`+ | Bukkit `2.6.16`–`2.6.21`, `2.6.23`–`2.6.25` |
-| [Download](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.13.1/svc-better-groups-0.13.1.jar) | `26.2` | Paper; Folia; Leaf (experimental) | `25`+ | Bukkit `2.6.19`–`2.6.21`, `2.6.23`–`2.6.25` |
+| [Download](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.13.1/svc-better-groups-0.13.1.jar) | `26.1.2` | Paper; Folia | `25`+ | Bukkit `2.6.16`–`2.6.21`, `2.6.23`–`2.6.25` |
+| [Download](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.13.1/svc-better-groups-0.13.1.jar) | `26.2` | Paper; Folia | `25`+ | Bukkit `2.6.19`–`2.6.21`, `2.6.23`–`2.6.25` |
 
 <!-- generated:server-downloads:end -->
 
