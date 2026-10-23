@@ -15,8 +15,14 @@ class CiCompatibilityPlanTest < Minitest::Test
     @catalog = JSON.parse(File.read(File.join(ROOT, "compatibility.json")))
   end
 
-  def test_current_catalog_has_eight_smoke_twenty_release_and_ninety_one_full_checks
-    { "smoke" => [4, 4], "release" => [12, 8], "full" => [61, 30] }.each do |mode, counts|
+  def test_catalog_has_small_pr_and_release_suites_and_full_covers_all_declared_pairs
+    # New SVC patches discovered automatically must not require updating a
+    # hard-coded full-matrix size just to get their compatibility PR green.
+    full_counts = [
+      @catalog.fetch("fabric").fetch("targets").sum { |target| target.fetch("compatibility").size },
+      @catalog.fetch("server").fetch("targets").sum { |target| target.fetch("voicechatArtifacts").size * 2 }
+    ]
+    { "smoke" => [4, 4], "release" => [12, 8], "full" => full_counts }.each do |mode, counts|
       result = CiCompatibilityPlan.matrices(@catalog, mode: mode)
       assert_equal counts, [result.fetch("fabric").size, result.fetch("server").size], mode
       assert_equal %w[folia paper], result.fetch("server").map { |row| row.fetch("platform") }.uniq.sort

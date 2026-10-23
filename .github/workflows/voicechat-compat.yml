@@ -179,6 +179,9 @@ jobs:
           LIBGL_ALWAYS_SOFTWARE: 'true'
           GALLIUM_DRIVER: llvmpipe
           SDL_VIDEO_DRIVER: x11
+          # MC 26.3 requests an sRGB framebuffer; Mesa's EGL path supports
+          # it under Xvfb without relying on a matching GLX visual.
+          SDL_VIDEO_FORCE_EGL: ${{ matrix.target == '26.3' && '1' || '0' }}
           TARGET: ${{ matrix.target }}
           MINECRAFT: ${{ matrix.minecraft }}
           VOICECHAT_ARTIFACT: ${{ matrix.voicechatArtifact }}
