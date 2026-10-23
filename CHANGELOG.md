@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.14.0](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/compare/v0.13.1...v0.14.0) (2026-10-23)
+
+
+### Features
+
+* add members-only voice group text chat ([#88](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/issues/88)) ([0a2de2a](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/commit/0a2de2a817db216907aebf8d20065e96f51dfb7b))
+
+
+### Bug Fixes
+
+* widen Simple Voice Chat compatibility ([#89](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/issues/89)) ([3bc8fd8](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/commit/3bc8fd88caca4bd54c587c875564243ef2513f16))
+
 ## [0.13.1](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/compare/v0.13.0...v0.13.1) (2026-10-01)
 
 
