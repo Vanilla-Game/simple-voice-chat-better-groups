@@ -134,7 +134,6 @@ val validateCompatibilityCatalog = tasks.register("validateCompatibilityCatalog"
             // The server matrix enumerates exact artifacts rather than a dependency range.
             checkPatches(artifacts, "bukkit", "Server ${target["minecraft"]}", contiguous = false)
             check((target.getValue("paperBuild") as Number).toInt() > 0)
-            check((target.getValue("leafBuild") as Number).toInt() > 0)
             check((target.getValue("foliaBuild") as Number).toInt() > 0)
         }
 
