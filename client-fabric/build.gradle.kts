@@ -16,8 +16,8 @@ import org.gradle.language.jvm.tasks.ProcessResources
 
 plugins {
     base
-    id("net.fabricmc.fabric-loom") version "1.17.19" apply false
-    id("net.fabricmc.fabric-loom-remap") version "1.17.19" apply false
+    id("net.fabricmc.fabric-loom") version "1.19.2" apply false
+    id("net.fabricmc.fabric-loom-remap") version "1.19.2" apply false
 }
 
 group = rootProject.group
