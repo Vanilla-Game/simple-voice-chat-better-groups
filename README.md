@@ -86,14 +86,14 @@ Players need Simple Voice Chat on their client. For the controls shown above, in
 
 | Download | Minecraft | Fabric Loader | Fabric API | Java | Simple Voice Chat |
 | --- | --- | --- | --- | --- | --- |
-| [Download](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.14.1/svc-better-groups-fabric-1.21.11-0.14.1.jar) | `1.21.11` | `0.18.1`+ | `0.139.4+1.21.11`+ | `21`+ | Fabric `2.6.6`–`2.6.25` |
-| [Download](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.14.1/svc-better-groups-fabric-26.1-0.14.1.jar) | `26.1`–`26.1.2` | `0.18.4`+ | `0.144.3+26.1`+ | `25`+ | Fabric `2.6.14`–`2.6.25` |
-| [Download](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.14.1/svc-better-groups-fabric-26.2-0.14.1.jar) | `26.2.x` | `0.19.3`+ | `0.152.1+26.2`+ | `25`+ | Fabric `2.6.18`–`2.6.25` |
-| [Download](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.14.1/svc-better-groups-fabric-26.3-0.14.1.jar) | `26.3.x` | `0.19.5`+ | `0.161.0+26.3`+ | `25`+ | Fabric `2.6.23`–`2.6.25` |
+| [Download](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.14.1/svc-better-groups-fabric-1.21.11-0.14.1.jar) | `1.21.11` | `0.18.1`+ | `0.139.4+1.21.11`+ | `21`+ | Fabric `2.6.6`–`2.6.26` |
+| [Download](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.14.1/svc-better-groups-fabric-26.1-0.14.1.jar) | `26.1`–`26.1.2` | `0.18.4`+ | `0.144.3+26.1`+ | `25`+ | Fabric `2.6.14`–`2.6.26` |
+| [Download](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.14.1/svc-better-groups-fabric-26.2-0.14.1.jar) | `26.2.x` | `0.19.3`+ | `0.152.1+26.2`+ | `25`+ | Fabric `2.6.18`–`2.6.26` |
+| [Download](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/releases/download/v0.14.1/svc-better-groups-fabric-26.3-0.14.1.jar) | `26.3.x` | `0.19.5`+ | `0.161.0+26.3`+ | `25`+ | Fabric `2.6.23`–`2.6.26` |
 
 <!-- generated:fabric-downloads:end -->
 
-Simple Voice Chat 2.6.23–2.6.25 for 26.3 are currently beta builds.
+Simple Voice Chat 2.6.23–2.6.26 for 26.3 are currently beta builds.
 
 </details>
 
