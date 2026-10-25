@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.14.2](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/compare/v0.14.1...v0.14.2) (2026-10-25)
+
+
+### Bug Fixes
+
+* **client:** support Simple Voice Chat 2.6.26 ([#94](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/issues/94)) ([a82db05](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/commit/a82db0520418b8769992f065c4fb2e75af58afba))
+
 ## [0.14.1](https://github.com/Vanilla-Game/simple-voice-chat-better-groups/compare/v0.14.0...v0.14.1) (2026-10-24)
 
 
