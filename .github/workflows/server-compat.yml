@@ -140,7 +140,6 @@ jobs:
           voicechat=$(jq -ce --arg artifact "$VOICECHAT_ARTIFACT" '
             first(.[] | select(
               .version_number == $artifact and
-              .version_type == "release" and
               .status == "listed"
             ))
           ' voicechat-versions.json)
